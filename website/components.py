@@ -351,7 +351,7 @@ def photos(area=None, featured=False):
     return [p for p in C.PHOTOS if (area is None or p.get("area") == area) and (not featured or p.get("featured"))]
 
 
-def photo_img(ctx, p, sizes="(max-width: 700px) 100vw, 33vw", eager=False):
+def photo_img(ctx, p, sizes="(max-width: 700px) 100vw, 50vw", eager=False):
     base = ctx.asset(f"img/homes/{p['key']}")
     load = 'fetchpriority="high"' if eager else 'loading="lazy"'
     return (f'<img src="{base}-1200.webp" srcset="{base}-640.webp 640w, {base}-1200.webp 1200w" sizes="{sizes}" '
@@ -363,7 +363,7 @@ def gallery(ctx, items):
     figs = "".join(
         f'<figure class="photo reveal"><a href="{ctx.asset("img/homes/" + p["key"] + "-1200.webp")}" target="_blank" rel="noopener">'
         f'{photo_img(ctx, p)}</a><figcaption>{E(p["where"])}</figcaption></figure>' for p in items)
-    return f'<div class="gallery">{figs}</div>'
+    return f'<div class="gallery{" gallery--2" if len(items) == 2 else ""}">{figs}</div>'
 
 
 # ------------------------------------------------------------------ art

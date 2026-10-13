@@ -256,10 +256,6 @@ def home():
 
 
 # ------------------------------------------------------------------ STAYS
-STAYS_GALLERY = ("nw8-a-living", "w1k-kitchen", "w9-bedroom", "nw8-c-living", "nw8-a-bathroom", "w1k-living",
-                 "nw8-b-kitchen", "e4-living", "wc1x-studio")
-
-
 def stays():
     ctx = Ctx("stays/")
     rows = [
@@ -293,13 +289,6 @@ def stays():
   <div class="wrap">
     {section_head("In every home", "The space of an apartment. <em>The standards of a hotel.</em>")}
     {amenity_cards()}
-  </div>
-</section>
-
-<section class="section section--sand">
-  <div class="wrap">
-    {section_head("Inside our homes", "Living rooms, kitchens, <em>proper bedrooms.</em>", "Whole homes, not rooms. Live availability and every photo are on the booking page.")}
-    {gallery(ctx, [p for p in C.PHOTOS if p["key"] in STAYS_GALLERY])}
   </div>
 </section>
 
@@ -842,15 +831,7 @@ def area_page(a):
         ("Is it cheaper to book direct?", f"Yes. Our direct rate is {F['direct_discount']} below the price on Airbnb and Booking.com for the same home."),
     ]
     pics = photos(area=a["slug"])
-    art = photo_img(ctx, pics[0], sizes="(max-width: 900px) 100vw, 480px", eager=True) if pics else area_art(a, 400, 500)
-    pics_section = f"""
-<section class="section section--white">
-  <div class="wrap">
-    {section_head("Our homes here", f"Inside our <em>{E(a['name'])}</em> homes.")}
-    {gallery(ctx, pics[:9])}
-  </div>
-</section>
-""" if pics else ""
+    art = photo_img(ctx, pics[-1], sizes="(max-width: 900px) 100vw, 480px", eager=True) if pics else area_art(a, 400, 500)
     others = [o for o in C.AREAS if o["slug"] != a["slug"]][:4]
     other_cards = "".join(
         f'<a class="area reveal" href="{ctx.url("areas/" + o["slug"] + "/")}">{area_art(o)}<h3>{E(o["name"])}</h3><span>{E(o["postcode"])}</span></a>' for o in others)
@@ -891,7 +872,7 @@ def area_page(a):
     {amenity_cards()}
   </div>
 </section>
-{pics_section}
+
 <section class="section section--sand">
   <div class="wrap split">
     <div class="reveal">{section_head("Questions", f"Staying in <em>{E(a['name'])}.</em>")}{faq_block(faq)}</div>
@@ -915,7 +896,7 @@ def area_page(a):
 """
     schema = [faq_schema(faq), crumbs_schema(ctx, [("", "Home"), ("areas/", "Areas"), (ctx.path, a["name"])]),
               {"@context": "https://schema.org", "@type": "LodgingBusiness", "name": f"{C.BRAND} — {a['name']}",
-               "url": ctx.abs(), "image": C.SITE_URL + (f"/assets/img/homes/{pics[0]['key']}-1200.webp" if pics else "/assets/img/og.png"), "priceRange": "££",
+               "url": ctx.abs(), "image": C.SITE_URL + (f"/assets/img/homes/{pics[-1]['key']}-1200.webp" if pics else "/assets/img/og.png"), "priceRange": "££",
                "address": {"@type": "PostalAddress", "addressLocality": "London" if a["postcode"] != "WD4" else "Kings Langley",
                            "postalCode": a["postcode"], "addressCountry": "GB"},
                "parentOrganization": {"@id": C.SITE_URL + "/#org"}}]
