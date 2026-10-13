@@ -19,11 +19,11 @@ FACEBOOK = ""                                   # CONFIRM: page URL
 TIKTOK = ""                                     # CONFIRM: profile URL
 
 # --- Booking engine (Smoobu) ---------------------------------------------
-BOOKING_URL = "https://seekerestates.myweb.smoobu.com"
-# What the on-site /book/ page shows in its frame. Paste the URL from Smoobu →
-# Settings → Booking Engine → website integration (iframe) here when you have it;
-# until then the hosted booking site is framed, with an "open in a new tab" fallback.  # CONFIRM
-BOOKING_EMBED_URL = BOOKING_URL
+BOOKING_URL = "https://seekerestates.myweb.smoobu.com"   # hosted booking site: new-tab fallback only (it refuses to be framed)
+# What the on-site /book/ page frames: Smoobu's booking-tool iframe for all apartments.
+# Taken from the current site's /reservation/ embed (Smoobu → booking tool 843651, which
+# serves this URL). The hosted myweb site above sends X-Frame-Options and can't be framed.
+BOOKING_EMBED_URL = "https://booking.smoobu.com/9A843651"
 # Query-string names the booking bar passes through. Smoobu's hosted site may
 # ignore them, in which case guests just pick dates again on the next screen.  # CONFIRM
 BOOKING_PARAMS = {"arrival": "arrival", "departure": "departure", "guests": "guests"}
@@ -193,4 +193,57 @@ AREAS = [
         "homes": "A two-bedroom apartment sleeping 6, with a balcony, lift and parking.",
         "palette": ("#2E2A4F", "#F0C27B"), "motif": "hill",
     },
+]
+
+# --- Photos of our homes ----------------------------------------------------
+# Taken from the old site's /reservation/ property pages (Oct 2026). tools/import_photos.py
+# downloads each "src", strips camera metadata and writes assets/img/homes/<key>-640.webp
+# and -1200.webp. "area" puts the photo on that area page; "featured" puts it on the
+# home page. Remove any home that is no longer in the portfolio.  # CONFIRM
+OLD = "https://seekerestates.com/wp-content/uploads/"
+PHOTOS = [
+    {"key": "nw8-a-living", "src": OLD + "2024/04/IMG_4592.jpg", "where": "St John's Wood, NW8", "area": "st-johns-wood", "featured": True,
+     "alt": "Bright living room with a fireplace, sofas and tall sash windows"},
+    {"key": "nw8-a-lounge", "src": OLD + "2024/04/IMG_4593.jpg", "where": "St John's Wood, NW8", "area": "st-johns-wood",
+     "alt": "Open living room with wooden floors and a dining table"},
+    {"key": "nw8-a-kitchen", "src": OLD + "2024/04/IMG_4594.jpg", "where": "St John's Wood, NW8", "area": "st-johns-wood",
+     "alt": "Fitted kitchen with stone worktops"},
+    {"key": "nw8-a-bedroom", "src": OLD + "2024/04/IMG_4595.jpg", "where": "St John's Wood, NW8", "area": "st-johns-wood",
+     "alt": "Double bedroom with floor-to-ceiling curtains"},
+    {"key": "nw8-a-bathroom", "src": OLD + "2024/04/IMG_4597.jpg", "where": "St John's Wood, NW8", "area": "st-johns-wood",
+     "alt": "Marble bathroom with a bath and shower"},
+    {"key": "nw8-b-living", "src": OLD + "2024/03/IMG_4536.jpg", "where": "St John's Wood, NW8", "area": "st-johns-wood", "featured": True,
+     "alt": "Light open-plan living and dining room with a staircase"},
+    {"key": "nw8-b-kitchen", "src": OLD + "2024/03/IMG_4537.jpg", "where": "St John's Wood, NW8", "area": "st-johns-wood",
+     "alt": "Wooden kitchen with an oven, hob and microwave"},
+    {"key": "nw8-b-loft", "src": OLD + "2024/03/IMG_4538.jpg", "where": "St John's Wood, NW8", "area": "st-johns-wood",
+     "alt": "Top-floor room with a skylight"},
+    {"key": "nw8-c-living", "src": OLD + "2024/03/IMG_4553.jpg", "where": "Wellington Road, NW8", "area": "st-johns-wood", "featured": True,
+     "alt": "Living and dining room with a balcony door and wooden floors"},
+    {"key": "nw8-c-kitchen", "src": OLD + "2024/03/IMG_4554.jpg", "where": "Wellington Road, NW8", "area": "st-johns-wood",
+     "alt": "Galley kitchen with a window over the sink"},
+    {"key": "nw8-c-bedroom", "src": OLD + "2024/03/IMG_4555.jpg", "where": "Wellington Road, NW8", "area": "st-johns-wood",
+     "alt": "Double bedroom with built-in wardrobes"},
+    {"key": "w9-living", "src": OLD + "2024/03/IMG_4492.jpg", "where": "Warwick Avenue, W9", "area": "st-johns-wood", "featured": True,
+     "alt": "Cream living room with a corner sofa and bay window"},
+    {"key": "w9-kitchen", "src": OLD + "2024/03/IMG_4493.jpg", "where": "Warwick Avenue, W9", "area": "st-johns-wood",
+     "alt": "Open-plan living room and kitchen with wood panelling"},
+    {"key": "w9-bedroom", "src": OLD + "2024/03/IMG_4494.jpg", "where": "Warwick Avenue, W9", "area": "st-johns-wood",
+     "alt": "Bedroom with a padded headboard and white linen"},
+    {"key": "w9-bathroom", "src": OLD + "2024/03/IMG_4497.jpg", "where": "Warwick Avenue, W9", "area": "st-johns-wood",
+     "alt": "Bathroom with a wide basin and walk-in shower"},
+    {"key": "w1k-living", "src": OLD + "2024/03/IMG_4511.jpg", "where": "Mayfair, W1K", "featured": True,
+     "alt": "Large white living room with sofas and built-in shelves"},
+    {"key": "w1k-kitchen", "src": OLD + "2024/03/IMG_4513.jpg", "where": "Mayfair, W1K",
+     "alt": "Modern kitchen with an island and bar stools"},
+    {"key": "w1k-bedroom", "src": OLD + "2024/03/IMG_4516.jpg", "where": "Mayfair, W1K", "featured": True,
+     "alt": "Large bedroom with white linen and a reading chair"},
+    {"key": "w1k-bathroom", "src": OLD + "2024/03/IMG_4519.jpg", "where": "Mayfair, W1K",
+     "alt": "Bathroom with a freestanding bath, twin basins and skylights"},
+    {"key": "wc1x-studio", "src": OLD + "2024/03/IMG_4388.jpg", "where": "King's Cross, WC1X",
+     "alt": "Bright studio with a double bed and a desk"},
+    {"key": "e4-living", "src": OLD + "2024/03/IMG_4435.jpg", "where": "South Chingford, E4",
+     "alt": "Open-plan kitchen and living room with wooden floors"},
+    {"key": "se17-living", "src": OLD + "2024/03/IMG_4417.jpg", "where": "Walworth Road, SE17",
+     "alt": "Living and dining room with an open kitchen"},
 ]

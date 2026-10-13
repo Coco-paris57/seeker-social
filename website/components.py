@@ -345,6 +345,27 @@ def lead_form(ctx, kind="landlord", title="Get your free appraisal", button="Req
 </form>"""
 
 
+# ------------------------------------------------------------------ photos
+def photos(area=None, featured=False):
+    """Photos from site_config.PHOTOS, filtered by area slug or the featured flag."""
+    return [p for p in C.PHOTOS if (area is None or p.get("area") == area) and (not featured or p.get("featured"))]
+
+
+def photo_img(ctx, p, sizes="(max-width: 700px) 100vw, 33vw", eager=False):
+    base = ctx.asset(f"img/homes/{p['key']}")
+    load = 'fetchpriority="high"' if eager else 'loading="lazy"'
+    return (f'<img src="{base}-1200.webp" srcset="{base}-640.webp 640w, {base}-1200.webp 1200w" sizes="{sizes}" '
+            f'alt="{E(p["alt"])}" width="1200" height="800" decoding="async" {load}>')
+
+
+def gallery(ctx, items):
+    """Photo grid; each tile opens the large version."""
+    figs = "".join(
+        f'<figure class="photo reveal"><a href="{ctx.asset("img/homes/" + p["key"] + "-1200.webp")}" target="_blank" rel="noopener">'
+        f'{photo_img(ctx, p)}</a><figcaption>{E(p["where"])}</figcaption></figure>' for p in items)
+    return f'<div class="gallery">{figs}</div>'
+
+
 # ------------------------------------------------------------------ art
 def area_art(area, w=300, h=400):
     """Deterministic illustrated tile for an area card / hero."""

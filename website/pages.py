@@ -1,7 +1,7 @@
 """Page content for the Seeker Estates website. Each function returns (path, html)."""
 import site_config as C
 from components import (E, Ctx, area_art, bookbar, crumbs, crumbs_schema, cta_band, faq_block, faq_schema,
-                        icon, lead_form, lodging_schema, mini_estimator, org_schema, page, section_head)
+                        gallery, icon, photo_img, photos, lead_form, lodging_schema, mini_estimator, org_schema, page, section_head)
 
 F = C.FACTS
 P = C.PRICING
@@ -190,6 +190,14 @@ def home():
   </div>
 </section>
 
+<section class="section section--sand">
+  <div class="wrap">
+    {section_head("Inside our homes", "Real homes, <em>photographed as they are.</em>", "A few of the apartments and houses guests book with us.")}
+    {gallery(ctx, photos(featured=True))}
+    <p style="margin-top:28px"><a class="btn" {BOOK}>See all homes and prices {icon('arrow')}</a></p>
+  </div>
+</section>
+
 {proof_block()}
 
 <section class="section">
@@ -248,6 +256,10 @@ def home():
 
 
 # ------------------------------------------------------------------ STAYS
+STAYS_GALLERY = ("nw8-a-living", "w1k-kitchen", "w9-bedroom", "nw8-c-living", "nw8-a-bathroom", "w1k-living",
+                 "nw8-b-kitchen", "e4-living", "wc1x-studio")
+
+
 def stays():
     ctx = Ctx("stays/")
     rows = [
@@ -271,7 +283,7 @@ def stays():
       </ul>
     </div>
     <div class="hero-art">
-      <div class="arch"><img src="{ctx.asset('img/hero-london.svg')}" alt="" width="400" height="500"></div>
+      <div class="arch">{photo_img(ctx, photos(featured=True)[0], sizes="(max-width: 900px) 100vw, 480px", eager=True)}</div>
       <div class="float-card float-card--a"><span class="dot">{icon('key')}</span><span><strong>Self check-in</strong>arrive on your schedule</span></div>
     </div>
   </div>
@@ -281,6 +293,13 @@ def stays():
   <div class="wrap">
     {section_head("In every home", "The space of an apartment. <em>The standards of a hotel.</em>")}
     {amenity_cards()}
+  </div>
+</section>
+
+<section class="section section--sand">
+  <div class="wrap">
+    {section_head("Inside our homes", "Living rooms, kitchens, <em>proper bedrooms.</em>", "Whole homes, not rooms. Live availability and every photo are on the booking page.")}
+    {gallery(ctx, [p for p in C.PHOTOS if p["key"] in STAYS_GALLERY])}
   </div>
 </section>
 
@@ -353,7 +372,7 @@ def book():
 <section class="section--tight" id="booking" style="padding-top:0">
   <div class="wrap">
     <div class="booking-frame">
-      <iframe id="booking-frame" title="Seeker Estates booking engine" loading="eager" allow="payment" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      <iframe id="booking-frame" title="Seeker Estates booking engine" loading="eager" allow="payment" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
     </div>
     <p class="small muted" style="margin-top:14px">Booking engine not loading? <a id="booking-newtab" href="{C.BOOKING_URL}" target="_blank" rel="noopener">Open it in a new tab</a> or email <a href="mailto:{C.EMAIL}">{C.EMAIL}</a>.</p>
   </div>
@@ -365,7 +384,7 @@ def book():
   </div>
 </section>
 """
-    return ctx.path, page(ctx, scripts=("book.js",),
+    return ctx.path, page(ctx, scripts=("iframeResizer.min.js", "book.js"),
         title="Book Direct: London Serviced Apartments | Seeker Estates",
         description=f"Check live availability and book a Seeker Estates home directly. {F['direct_discount']} below Airbnb and Booking.com, secure payment, instant confirmation.",
         body=body, schema=[lodging_schema(), faq_schema(FAQ_GUEST[:5]), crumbs_schema(ctx, [("", "Home"), ("book/", "Book direct")])])
@@ -822,6 +841,16 @@ def area_page(a):
         (f"How do I get around from {a['name']}?", f"Nearest stations and lines: {a['lines']}."),
         ("Is it cheaper to book direct?", f"Yes. Our direct rate is {F['direct_discount']} below the price on Airbnb and Booking.com for the same home."),
     ]
+    pics = photos(area=a["slug"])
+    art = photo_img(ctx, pics[0], sizes="(max-width: 900px) 100vw, 480px", eager=True) if pics else area_art(a, 400, 500)
+    pics_section = f"""
+<section class="section section--white">
+  <div class="wrap">
+    {section_head("Our homes here", f"Inside our <em>{E(a['name'])}</em> homes.")}
+    {gallery(ctx, pics[:9])}
+  </div>
+</section>
+""" if pics else ""
     others = [o for o in C.AREAS if o["slug"] != a["slug"]][:4]
     other_cards = "".join(
         f'<a class="area reveal" href="{ctx.url("areas/" + o["slug"] + "/")}">{area_art(o)}<h3>{E(o["name"])}</h3><span>{E(o["postcode"])}</span></a>' for o in others)
@@ -837,7 +866,7 @@ def area_page(a):
       {bookbar()}
     </div>
     <div class="hero-art">
-      <div class="arch" style="position:relative">{area_art(a, 400, 500)}</div>
+      <div class="arch" style="position:relative">{art}</div>
       <div class="float-card float-card--a"><span class="dot">{icon('train')}</span><span><strong>Getting around</strong>{E(a['lines'].split(',')[0].split('(')[0].strip())}</span></div>
     </div>
   </div>
@@ -862,7 +891,7 @@ def area_page(a):
     {amenity_cards()}
   </div>
 </section>
-
+{pics_section}
 <section class="section section--sand">
   <div class="wrap split">
     <div class="reveal">{section_head("Questions", f"Staying in <em>{E(a['name'])}.</em>")}{faq_block(faq)}</div>
@@ -886,7 +915,7 @@ def area_page(a):
 """
     schema = [faq_schema(faq), crumbs_schema(ctx, [("", "Home"), ("areas/", "Areas"), (ctx.path, a["name"])]),
               {"@context": "https://schema.org", "@type": "LodgingBusiness", "name": f"{C.BRAND} — {a['name']}",
-               "url": ctx.abs(), "image": C.SITE_URL + "/assets/img/og.png", "priceRange": "££",
+               "url": ctx.abs(), "image": C.SITE_URL + (f"/assets/img/homes/{pics[0]['key']}-1200.webp" if pics else "/assets/img/og.png"), "priceRange": "££",
                "address": {"@type": "PostalAddress", "addressLocality": "London" if a["postcode"] != "WD4" else "Kings Langley",
                            "postalCode": a["postcode"], "addressCountry": "GB"},
                "parentOrganization": {"@id": C.SITE_URL + "/#org"}}]
