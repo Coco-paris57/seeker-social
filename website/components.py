@@ -7,6 +7,8 @@ import re
 import site_config as C
 
 E = html.escape
+# Preview builds (hosted where self-hosted font files may be blocked) also pull the same faces from Google Fonts.
+GFONTS = '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">'
 
 # ------------------------------------------------------------------ icons
 _I = {
@@ -435,6 +437,7 @@ def page(ctx, *, title, description, body, audience="guest", schema=(), scripts=
 <link rel="preload" href="{ctx.asset('fonts/fraunces-latin-wght-normal.woff2')}" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="{ctx.asset('fonts/plus-jakarta-sans-latin-400-normal.woff2')}" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="{ctx.asset('css/site.css')}">
+{GFONTS if ctx.preview else ""}
 <script>window.SEEKER={json.dumps(cfg)};</script>
 {ld}
 </head>
