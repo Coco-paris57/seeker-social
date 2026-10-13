@@ -5,7 +5,7 @@ from components import (E, Ctx, area_art, bookbar, crumbs, crumbs_schema, cta_ba
 
 F = C.FACTS
 P = C.PRICING
-BOOK = f'href="{C.BOOKING_URL}" data-book target="_blank" rel="noopener"'
+BOOK = 'href="~/book/" data-book'
 
 # ------------------------------------------------------------------ shared FAQ copy
 FAQ_GUEST = [
@@ -333,6 +333,42 @@ def stays():
         title="Book Serviced Apartments in London Direct | Seeker Estates",
         description=f"Whole apartments and houses across London with kitchen, Wi-Fi and self check-in. Book direct and save {F['direct_discount']} vs Airbnb and Booking.com.",
         body=body, schema=schema)
+
+
+# ------------------------------------------------------------------ BOOK
+def book():
+    ctx = Ctx("book/")
+    body = f"""
+<section class="page-hero" style="padding-bottom:24px">
+  <div class="wrap">
+    {crumbs(ctx, [("", "Home"), ("book/", "Book direct")])}
+    <span class="eyebrow">Book direct · {F['direct_discount']} below Airbnb &amp; Booking.com</span>
+    <h1>Choose your dates <em>and your home.</em></h1>
+    <p class="lead">Live availability and prices for all {F['homes']} homes. Secure payment, instant confirmation, and our team on hand from the first message.</p>
+    <ul class="trust">
+      <li>{icon('lock')} Secure payment</li><li>{icon('tag')} Best rate, guaranteed direct</li><li>{icon('star')} {F['reviews']} guest reviews</li>
+    </ul>
+  </div>
+</section>
+<section class="section--tight" id="booking" style="padding-top:0">
+  <div class="wrap">
+    <div class="booking-frame">
+      <iframe id="booking-frame" title="Seeker Estates booking engine" loading="eager" allow="payment" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    </div>
+    <p class="small muted" style="margin-top:14px">Booking engine not loading? <a id="booking-newtab" href="{C.BOOKING_URL}" target="_blank" rel="noopener">Open it in a new tab</a> or email <a href="mailto:{C.EMAIL}">{C.EMAIL}</a>.</p>
+  </div>
+</section>
+<section class="section section--sand">
+  <div class="wrap">
+    {section_head("Before you book", "Good to <em>know.</em>")}
+    {faq_block(FAQ_GUEST[:5])}
+  </div>
+</section>
+"""
+    return ctx.path, page(ctx, scripts=("book.js",),
+        title="Book Direct: London Serviced Apartments | Seeker Estates",
+        description=f"Check live availability and book a Seeker Estates home directly. {F['direct_discount']} below Airbnb and Booking.com, secure payment, instant confirmation.",
+        body=body, schema=[lodging_schema(), faq_schema(FAQ_GUEST[:5]), crumbs_schema(ctx, [("", "Home"), ("book/", "Book direct")])])
 
 
 # ------------------------------------------------------------------ MID-TERM
@@ -942,7 +978,7 @@ def contact():
       <h1>Talk to <em>the team.</em></h1>
       <p class="lead">Questions about a stay, a monthly quote for your company, or a property you'd like us to manage. We reply within one working day.</p>
       <ul class="checklist">
-        <li>{icon('mail')}<div><strong>Email</strong><span><a href="mailto:{C.EMAIL}">{C.EMAIL}</a></span></div></li>
+        <li>{icon('mail')}<div><strong>Email</strong><span>{" · ".join(f'<a href="mailto:{e}">{e}</a>' for e in C.EMAILS)}</span></div></li>
         {phone}{wa}
         <li>{icon('calendar')}<div><strong>Ready to book?</strong><span><a {BOOK}>Check availability and book direct</a></span></div></li>
         <li>{icon('home')}<div><strong>Own a property?</strong><span><a href="{ctx.url('landlords/')}#enquire">Request a free appraisal</a></span></div></li>
@@ -1000,7 +1036,7 @@ def not_found():
 
 
 def all_pages():
-    out = [home(), stays(), mid_term(), landlords(), pricing(), calculator(), areas_index(), about(), faq_page(),
+    out = [home(), book(), stays(), mid_term(), landlords(), pricing(), calculator(), areas_index(), about(), faq_page(),
            contact(), privacy(), not_found()]
     out += [area_page(a) for a in C.AREAS]
     return out

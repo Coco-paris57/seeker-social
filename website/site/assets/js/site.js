@@ -78,9 +78,9 @@
     doc.querySelectorAll(".reveal").forEach(function (el) { el.classList.add("is-in"); });
   }
 
-  /* ---------- Booking links: add UTM + track ---------- */
-  function bookingUrl(extra) {
-    var u = new URL(C.bookingUrl);
+  /* ---------- Booking: everything leads to the on-site /book/ page ---------- */
+  function bookingUrl(base, extra) {
+    var u = new URL(base);
     var here = new URLSearchParams(location.search);
     u.searchParams.set("utm_source", here.get("utm_source") || "website");
     u.searchParams.set("utm_medium", here.get("utm_medium") || "direct");
@@ -89,9 +89,11 @@
     Object.keys(extra || {}).forEach(function (k) { if (extra[k]) u.searchParams.set(k, extra[k]); });
     return u.toString();
   }
+  window.seekerBookingUrl = bookingUrl;
   doc.querySelectorAll("[data-book]").forEach(function (a) {
     a.addEventListener("click", function () {
-      a.href = bookingUrl();
+      // Carry ad/UTM parameters through to the booking page.
+      if (location.search) a.href = a.getAttribute("href").split("?")[0] + location.search;
       track("begin_checkout", { source: doc.body.getAttribute("data-page") }, C.adsBookLabel);
     });
   });
@@ -111,14 +113,12 @@
     });
     f.addEventListener("submit", function (e) {
       e.preventDefault();
-      var params = {};
-      if (C.bookingParams) {
-        params[C.bookingParams.arrival] = a && a.value;
-        params[C.bookingParams.departure] = d && d.value;
-        params[C.bookingParams.guests] = f.guests && f.guests.value;
-      }
+      var q = new URLSearchParams(location.search);
+      if (a && a.value) q.set("arrival", a.value);
+      if (d && d.value) q.set("departure", d.value);
+      if (f.guests) q.set("guests", f.guests.value);
       track("begin_checkout", { arrival: a && a.value, departure: d && d.value, guests: f.guests && f.guests.value }, C.adsBookLabel);
-      window.open(bookingUrl(params), "_blank", "noopener");
+      location.href = C.bookPage + "?" + q.toString() + "#booking";
     });
   });
 
@@ -160,6 +160,13 @@
       var calc = doc.querySelector("[data-calc-summary]");
       if (calc && calc.textContent) data.estimate = calc.textContent;
       var kind = f.getAttribute("data-lead");
+      if (data._honey) return; // spam bot filled the hidden field
+      delete data._honey;
+      data._subject = (kind === "landlord" ? "New landlord lead — " + (data.postcode || "") : "New website enquiry — " + (data.topic || "")).trim();
+      if (C.cc) data._cc = C.cc;
+      data._template = "table";
+      data._captcha = "false";
+      if (data.email) data._replyto = data.email;
       function ok() {
         if (status) { status.className = "form-status ok"; status.textContent = "Thank you — we'll be in touch within one working day."; }
         f.reset();
@@ -167,7 +174,7 @@
       }
       if (C.formEndpoint) {
         fetch(C.formEndpoint, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify(data) })
-          .then(function (r) { if (!r.ok) throw new Error(r.status); ok(); })
+          .then(function (r) { return r.json().then(function (j) { if (!r.ok || String(j.success) === "false") throw new Error(j.message || r.status); ok(); }); })
           .catch(function () { if (status) { status.className = "form-status err"; status.textContent = "Something went wrong. Please email " + C.email + "."; } });
       } else {
         var subject = kind === "landlord" ? "Property enquiry — " + (data.postcode || "") : "Website enquiry";

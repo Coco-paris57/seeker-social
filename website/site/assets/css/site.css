@@ -442,3 +442,7 @@ textarea.input { min-height: 120px; resize: vertical; }
 @media (max-width: 680px) { .areas--3 { grid-template-columns: repeat(2, 1fr); } }
 .areas--3 .area { aspect-ratio: 1 / 1.05; }
 @media (max-width: 900px) { .hero-art { max-width: 320px; } .float-card { font-size: .8rem; padding: 10px 14px; } }
+
+/* On-site booking engine */
+.booking-frame { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); }
+.booking-frame iframe { display: block; width: 100%; height: min(1400px, 160vh); min-height: 900px; border: 0; }

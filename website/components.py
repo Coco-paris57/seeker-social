@@ -108,9 +108,9 @@ def header(ctx, audience):
                f'<a class="btn btn--clay btn--sm" href="{ctx.url("landlords/")}#enquire">Get a free appraisal</a>')
     else:
         top = (f'Book direct and save {C.FACTS["direct_discount"]} compared with Airbnb and Booking.com. '
-               f'<a href="{C.BOOKING_URL}" data-book target="_blank" rel="noopener">Check availability →</a>')
+               f'<a href="{ctx.url('book/')}" data-book>Check availability →</a>')
         cta = (f'<a class="btn btn--ghost btn--sm" href="{ctx.url("landlords/")}">List your property</a>'
-               f'<a class="btn btn--sm" href="{C.BOOKING_URL}" data-book target="_blank" rel="noopener">Book a stay</a>')
+               f'<a class="btn btn--sm" href="{ctx.url('book/')}" data-book>Book a stay</a>')
     return f"""
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-header">
@@ -126,7 +126,7 @@ def header(ctx, audience):
 
 def footer(ctx):
     areas = "".join(f'<li><a href="{ctx.url("areas/" + a["slug"] + "/")}">{E(a["name"])}</a></li>' for a in C.AREAS[:6])
-    contact = [f'<li><a href="mailto:{C.EMAIL}">{C.EMAIL}</a></li>']
+    contact = [f'<li><a href="mailto:{e}">{e}</a></li>' for e in C.EMAILS]
     if C.PHONE:
         contact.append(f'<li><a href="tel:{C.PHONE.replace(" ", "")}">{E(C.PHONE)}</a></li>')
     for label, u in (("Instagram", C.INSTAGRAM), ("Facebook", C.FACEBOOK), ("TikTok", C.TIKTOK)):
@@ -145,7 +145,7 @@ def footer(ctx):
       <div>
         <h4>Guests</h4>
         <ul>
-          <li><a href="{C.BOOKING_URL}" data-book target="_blank" rel="noopener">Book direct</a></li>
+          <li><a href="{ctx.url('book/')}" data-book>Book direct</a></li>
           <li><a href="{ctx.url('stays/')}">Stay with us</a></li>
           <li><a href="{ctx.url('mid-term-stays/')}">Mid-term &amp; corporate stays</a></li>
           <li><a href="{ctx.url('areas/')}">All areas</a></li>
@@ -184,7 +184,7 @@ def mobile_cta(ctx, audience):
         return (f'<div class="mobile-cta"><a class="btn btn--ghost" href="{ctx.url("revenue-calculator/")}">Calculator</a>'
                 f'<a class="btn btn--clay" href="{ctx.url("landlords/")}#enquire">Free appraisal</a></div>')
     return (f'<div class="mobile-cta"><a class="btn btn--ghost" href="{ctx.url("landlords/")}">Landlords</a>'
-            f'<a class="btn" href="{C.BOOKING_URL}" data-book target="_blank" rel="noopener">Book direct</a></div>')
+            f'<a class="btn" href="{ctx.url('book/')}" data-book>Book direct</a></div>')
 
 
 # ------------------------------------------------------------------ schema
@@ -280,7 +280,7 @@ def cta_band(ctx, audience="guest", title=None, text=None):
     else:
         t = title or "Your London home is ready."
         x = text or f"Book direct for our best rate — {C.FACTS['direct_discount']} below the price on Airbnb and Booking.com, with the same homes and the same team."
-        a = (f'<a class="btn btn--clay" href="{C.BOOKING_URL}" data-book target="_blank" rel="noopener">Check availability</a>'
+        a = (f'<a class="btn btn--clay" href="{ctx.url('book/')}" data-book>Check availability</a>'
              f'<a class="btn btn--light" href="{ctx.url("contact/")}">Ask us a question</a>')
     return f'<section class="section--tight"><div class="wrap"><div class="cta-band reveal"><div><h2>{t}</h2><p>{x}</p></div><div class="actions">{a}</div></div></div></section>'
 
@@ -307,7 +307,7 @@ def mini_estimator(ctx):
 
 
 def lead_form(ctx, kind="landlord", title="Get your free appraisal", button="Request my appraisal"):
-    beds = "".join(f'<option value="{k}">{v["label"]}</option>' for k, v in C.CALC["beds"].items())
+    beds = "".join(f'<option value="{k}"{" selected" if k == "2" else ""}>{v["label"]}</option>' for k, v in C.CALC["beds"].items())
     if kind == "landlord":
         extra = f"""
   <div class="form-row">
@@ -338,6 +338,7 @@ def lead_form(ctx, kind="landlord", title="Get your free appraisal", button="Req
   </div>
   <label class="field"><span>Phone</span><input class="input" type="tel" name="phone"{phone_req} autocomplete="tel"></label>
   {extra}
+  <input type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
   <label class="consent"><input type="checkbox" name="consent" required> <span>I agree that {C.BRAND} may contact me about this enquiry. See our <a href="{ctx.url('privacy/')}">privacy policy</a>.</span></label>
   <button class="btn btn--clay btn--block" type="submit">{button}</button>
   <p class="form-status" role="status" aria-live="polite"></p>
@@ -394,7 +395,10 @@ def page(ctx, *, title, description, body, audience="guest", schema=(), scripts=
     cfg = {
         "root": ctx.url(""),
         "email": C.EMAIL,
+        "cc": ",".join(C.EMAILS[1:]),
         "bookingUrl": C.BOOKING_URL,
+        "bookingEmbedUrl": C.BOOKING_EMBED_URL,
+        "bookPage": ctx.url("book/"),
         "bookingParams": C.BOOKING_PARAMS,
         "formEndpoint": C.FORM_ENDPOINT,
         "ga4": C.GA4_ID, "adsId": C.ADS_ID,

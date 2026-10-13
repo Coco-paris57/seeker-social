@@ -48,7 +48,7 @@ def build(out, preview=False):
     def prio(p):
         if p == "":
             return "1.0"
-        if p in ("landlords/", "revenue-calculator/", "stays/", "pricing/"):
+        if p in ("landlords/", "revenue-calculator/", "stays/", "pricing/", "book/"):
             return "0.9"
         return "0.7" if p.startswith("areas/") or p == "mid-term-stays/" else "0.5"
 

@@ -9,7 +9,8 @@ BRAND = "Seeker Estates"
 TAGLINE = "London homes, properly run."
 
 # --- Contact --------------------------------------------------------------
-EMAIL = "hello@seekerestates.com"               # CONFIRM: public inbox for enquiries
+EMAIL = "corentin@seekerestates.com"            # main public inbox (forms are delivered here)
+EMAILS = ["corentin@seekerestates.com", "reyhan@seekerestates.com"]  # both shown on the site; Reyhan is cc'd on every form
 PHONE = ""                                      # CONFIRM: optional, e.g. "+44 20 xxxx xxxx" (leave "" to hide)
 WHATSAPP = ""                                   # CONFIRM: optional, digits only e.g. "447700900000"
 COMPANY_LEGAL = ""                              # CONFIRM: e.g. "Seeker Estates Ltd · Company no. 12345678 · Registered in England & Wales"
@@ -19,15 +20,20 @@ TIKTOK = ""                                     # CONFIRM: profile URL
 
 # --- Booking engine (Smoobu) ---------------------------------------------
 BOOKING_URL = "https://seekerestates.myweb.smoobu.com"
+# What the on-site /book/ page shows in its frame. Paste the URL from Smoobu →
+# Settings → Booking Engine → website integration (iframe) here when you have it;
+# until then the hosted booking site is framed, with an "open in a new tab" fallback.  # CONFIRM
+BOOKING_EMBED_URL = BOOKING_URL
 # Query-string names the booking bar passes through. Smoobu's hosted site may
 # ignore them, in which case guests just pick dates again on the next screen.  # CONFIRM
 BOOKING_PARAMS = {"arrival": "arrival", "departure": "departure", "guests": "guests"}
 
 # --- Forms ----------------------------------------------------------------
-# A JSON endpoint that receives landlord/contact form posts (Formspree, Basin,
-# Make/Zapier webhook, HubSpot, etc.). Leave "" to fall back to opening the
-# visitor's email app pre-filled to EMAIL.                                    # CONFIRM
-FORM_ENDPOINT = ""
+# Free, no-account form delivery by FormSubmit (formsubmit.co). Each submission is
+# emailed to EMAIL with the other EMAILS in cc. The very first submission sends an
+# activation email to EMAIL: click "Activate" once and every later lead arrives.
+# FormSubmit then offers a random alias to use instead of the address; paste it here.
+FORM_ENDPOINT = f"https://formsubmit.co/ajax/{EMAIL}"
 
 # --- Google tags (leave "" until the accounts exist) ---------------------  # CONFIRM
 GA4_ID = ""             # "G-XXXXXXXXXX"
@@ -41,12 +47,12 @@ FACTS = {
     "homes": "19",
     "reviews": "520+",
     "booking_score": "8.9",          # Booking.com guest score
-    "occupancy": "90%",              # CONFIRM: last 12 months
+    "occupancy": "90%",              # last 12 months, confirmed by Corentin
     "avg_stay": "6 nights",
     "direct_discount": "10%",
 }
 
-# --- Landlord pricing (PROPOSAL — CONFIRM before launch) ------------------
+# --- Landlord pricing (confirmed by Corentin, Oct 2026) ------------------
 PRICING = {
     "managed_fee": 15,       # % of booking revenue, + VAT
     "midterm_fee": 12,       # % of rent, + VAT, stays of 1 month+

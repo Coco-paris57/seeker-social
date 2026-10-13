@@ -2,7 +2,7 @@
 
 A fast, static, SEO-first replacement for seekerestates.com, with three jobs:
 
-1. **Guests book direct**: the booking bar and every "Book" button go to the Smoobu booking engine with UTM tags.
+1. **Guests book direct**: the booking bar and every "Book" button lead to the on-site `/book/` page, which embeds the Smoobu booking engine with dates and UTM tags.
 2. **Landlords see the service and pricing**: `/landlords/`, `/pricing/`, and a free **earnings calculator** (`/revenue-calculator/`, Houst-style) that turns into a lead form.
 3. **Google Ads landing pages**: one page per intent (`/stays/`, `/mid-term-stays/`, `/landlords/`, `/revenue-calculator/`) and per area (`/areas/canary-wharf/` …).
 
@@ -38,18 +38,20 @@ The HTML build needs only the Python standard library.
 - After going live, submit `https://seekerestates.com/sitemap.xml` in Google Search Console.
 - Add 301 redirects from the old site's URLs (for example the old property pages and `/reservation/`) to `/stays/` or the matching area page, so you keep existing Google ranking.
 
-## Before launch: decisions needed (`# CONFIRM` in `site_config.py`)
+## Status of launch items
 
-1. **Pricing.** The proposed plans are 15% + VAT fully managed, 12% + VAT mid-term only, guaranteed rent quoted per property, £0 set-up, 12-month initial term, 60 days' notice. Market range: Houst from 12% (18% flexible), Pass the Keys 12–15%, GuestReady from 12%.
-2. **Public email**, plus optional phone, WhatsApp, social links and the legal line (company name and number).
-3. **Form endpoint.** Without one, forms open the visitor's email app. With Formspree, Basin, HubSpot or a Make/Zapier webhook, leads arrive silently and the Google Ads conversion fires.
-4. **Google tags.** GA4 ID, Google Ads ID and the two conversion labels (lead, book click). The cookie banner and Consent Mode v2 switch on automatically once an ID is set.
-5. **Facts.** 90% occupancy (last 12 months), 520+ reviews, 8.9 on Booking.com, 19 homes.
-6. **Calculator assumptions** (`CALC`). Tune them to your own portfolio data. The method is shown to visitors, so keep it honest.
-7. **Booking bar parameters.** Check whether Smoobu's hosted site pre-fills dates from `?arrival=&departure=&guests=`. If it doesn't, guests simply pick dates again.
-8. **Journey times** on area pages are approximate. Verify any you quote in ads.
-9. **Privacy policy** is a template. Have it reviewed.
-10. **Photos.** The site uses drawn illustrations because there's no photography yet. Swap in real photos: replace the `<img>` inside any `.arch` frame, or the `area_art()` call on area pages.
+| Item | Status |
+|---|---|
+| Pricing (15% / 12% + VAT, guaranteed rent quoted, £0 set-up) | Confirmed |
+| Facts (90% occupancy, 520+ reviews, 8.9 Booking.com, 19 homes) | Confirmed |
+| Public emails | corentin@ and reyhan@seekerestates.com shown on the site |
+| Forms | Free [FormSubmit](https://formsubmit.co) AJAX endpoint, emailed to corentin@ with reyhan@ in cc, honeypot spam filter. **The first live submission sends an activation email to corentin@: click "Activate" once.** |
+| Booking | On-site `/book/` page frames the Smoobu booking engine, passing dates, guests, UTM and gclid. Every "Book" button leads there. Put Smoobu's own website-integration (iframe) URL in `BOOKING_EMBED_URL` once you have it. |
+| Google tags | Waiting for GA4 ID, Ads ID and conversion labels |
+| Property photos | Waiting: to be taken from the current site's /reservation/ pages |
+| Optional | Phone, WhatsApp, social links, company legal line, Search Console verification code |
+| Privacy policy | Template, needs a review |
+| Journey times on area pages | Approximate, verify any you quote in ads |
 
 ## SEO built in
 
