@@ -47,7 +47,10 @@ The HTML build needs only the Python standard library.
 | Public emails | corentin@ and reyhan@seekerestates.com shown on the site |
 | Forms | Free [FormSubmit](https://formsubmit.co) AJAX endpoint, emailed to corentin@ with reyhan@ in cc, honeypot spam filter. **The first live submission sends an activation email to corentin@: click "Activate" once.** |
 | Booking | On-site `/book/` page frames Smoobu's embeddable booking tool (`booking.smoobu.com/9A843651`, the same engine as the current `/reservation/` page), auto-sized with iframe-resizer, passing dates, guests, UTM and gclid. The hosted `seekerestates.myweb.smoobu.com` refuses to be framed, so it is only the new-tab fallback. **Check on the live domain:** that the engine loads, and whether it pre-fills the dates (if not, guests pick dates again in Smoobu). |
-| Google tags | Waiting for GA4 ID, Ads ID and conversion labels |
+| Google Analytics | Existing GA4 property `G-W3H8XF3EEN` (from the current site) is wired in, behind the cookie banner |
+| Google Ads | Waiting for the Ads conversion ID and labels (needs someone logged into the Google Ads account) |
+| Phone | +44 7397 573367, as published on the current site |
+| Old URLs | `_redirects` sends /reservation/, /property-list/, /property/* and /category/* to the new pages (301) |
 | Property photos | Only the 2 photos on the old site's `/reservation/` page (St John's Wood and Wellington Road, NW8): home page gallery, `/stays/` and St John's Wood heroes. To add more, list them in `PHOTOS` in `site_config.py`, run `tools/import_photos.py` and rebuild. |
 | Optional | Phone, WhatsApp, social links, company legal line, Search Console verification code |
 | Privacy policy | Template, needs a review |

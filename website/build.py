@@ -68,6 +68,17 @@ def build(out, preview=False):
     ico = os.path.join(SRC, "favicon.ico")
     if os.path.exists(ico):
         shutil.copy(ico, os.path.join(out, "favicon.ico"))
+    # 301s from the old WordPress site (Netlify / Cloudflare Pages format), so Google keeps its ranking.
+    redirects = [
+        ("/reservation/*", "/book/"), ("/reservation", "/book/"),
+        ("/property-list/*", "/stays/"), ("/property-list", "/stays/"),
+        ("/property/st-johns-wood-nw8*", "/areas/st-johns-wood/"), ("/property/wellington-road-nw8*", "/areas/st-johns-wood/"),
+        ("/property/finchley-road-nw8*", "/areas/st-johns-wood/"), ("/property/warwick-avenue-w9*", "/areas/st-johns-wood/"),
+        ("/property/paddington-w2*", "/areas/notting-hill-bayswater/"), ("/property/marble-arch-w2*", "/areas/notting-hill-bayswater/"),
+        ("/property/gloucester-terrace*", "/areas/notting-hill-bayswater/"), ("/property/mayfair-w1k*", "/areas/marylebone/"),
+        ("/property/*", "/stays/"), ("/category/*", "/stays/"), ("/thank-you/*", "/"), ("/thank-you", "/"),
+    ]
+    write(out, "_redirects", "".join(f"{a}  {b}  301\n" for a, b in redirects))
     # Netlify / Cloudflare Pages: long cache on fingerprint-free assets is risky, keep it modest.
     write(out, "_headers", "/assets/*\n  Cache-Control: public, max-age=604800\n/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n")
     print(f"built {len(urls) + 1} pages → {os.path.relpath(out)}")

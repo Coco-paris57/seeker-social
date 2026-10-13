@@ -11,7 +11,7 @@ TAGLINE = "London homes, properly run."
 # --- Contact --------------------------------------------------------------
 EMAIL = "corentin@seekerestates.com"            # main public inbox (forms are delivered here)
 EMAILS = ["corentin@seekerestates.com", "reyhan@seekerestates.com"]  # both shown on the site; Reyhan is cc'd on every form
-PHONE = ""                                      # CONFIRM: optional, e.g. "+44 20 xxxx xxxx" (leave "" to hide)
+PHONE = "+44 7397 573367"                       # as published on the current seekerestates.com ("" to hide)
 WHATSAPP = ""                                   # CONFIRM: optional, digits only e.g. "447700900000"
 COMPANY_LEGAL = ""                              # CONFIRM: e.g. "Seeker Estates Ltd · Company no. 12345678 · Registered in England & Wales"
 INSTAGRAM = ""                                  # CONFIRM: profile URL
@@ -36,7 +36,7 @@ BOOKING_PARAMS = {"arrival": "arrival", "departure": "departure", "guests": "gue
 FORM_ENDPOINT = f"https://formsubmit.co/ajax/{EMAIL}"
 
 # --- Google tags (leave "" until the accounts exist) ---------------------  # CONFIRM
-GA4_ID = ""             # "G-XXXXXXXXXX"
+GA4_ID = "G-W3H8XF3EEN"  # existing GA4 property, taken from the current site (Google Ads ID still to add)
 ADS_ID = ""             # "AW-XXXXXXXXXX"
 ADS_LEAD_LABEL = ""     # conversion label for landlord leads
 ADS_BOOK_LABEL = ""     # conversion label for "Book" clicks (true bookings tracked in Smoobu)

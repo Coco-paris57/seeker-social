@@ -1,0 +1,16 @@
+/reservation/*  /book/  301
+/reservation  /book/  301
+/property-list/*  /stays/  301
+/property-list  /stays/  301
+/property/st-johns-wood-nw8*  /areas/st-johns-wood/  301
+/property/wellington-road-nw8*  /areas/st-johns-wood/  301
+/property/finchley-road-nw8*  /areas/st-johns-wood/  301
+/property/warwick-avenue-w9*  /areas/st-johns-wood/  301
+/property/paddington-w2*  /areas/notting-hill-bayswater/  301
+/property/marble-arch-w2*  /areas/notting-hill-bayswater/  301
+/property/gloucester-terrace*  /areas/notting-hill-bayswater/  301
+/property/mayfair-w1k*  /areas/marylebone/  301
+/property/*  /stays/  301
+/category/*  /stays/  301
+/thank-you/*  /  301
+/thank-you  /  301
