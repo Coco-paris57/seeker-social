@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" role="img" aria-label="Illustration of the London skyline at dusk seen through an arched window">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0F3D2E"/>
+      <stop offset=".45" stop-color="#3E6B55"/>
+      <stop offset=".78" stop-color="#E9A27F"/>
+      <stop offset="1" stop-color="#F6D7B8"/>
+    </linearGradient>
+    <linearGradient id="river" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9B08F"/>
+      <stop offset="1" stop-color="#0F3D2E"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="500" fill="url(#sky)"/>
+  <!-- stars -->
+  <g fill="#F6F1E7" opacity=".7">
+    <circle cx="70" cy="90" r="1.4"/><circle cx="300" cy="70" r="1.2"/><circle cx="240" cy="130" r="1"/>
+    <circle cx="120" cy="150" r="1"/><circle cx="340" cy="150" r="1.4"/><circle cx="190" cy="60" r="1"/>
+  </g>
+  <!-- sun -->
+  <circle cx="250" cy="300" r="52" fill="#F6E3CC"/>
+  <!-- far skyline -->
+  <g fill="#7E9A86" opacity=".55">
+    <rect x="0" y="300" width="40" height="80"/><rect x="36" y="280" width="26" height="100"/>
+    <rect x="300" y="285" width="30" height="95"/><rect x="326" y="300" width="40" height="80"/><rect x="360" y="270" width="40" height="110"/>
+  </g>
+  <!-- Shard -->
+  <path d="M286 380 L300 170 L304 168 L322 380 Z" fill="#2B5A46"/>
+  <path d="M300 170 L304 168 L312 300 Z" fill="#4E7B65" opacity=".7"/>
+  <!-- Gherkin -->
+  <path d="M120 380 C112 330 116 262 136 238 C156 262 160 330 152 380 Z" fill="#2B5A46"/>
+  <path d="M136 238 C150 258 154 320 148 380" stroke="#4E7B65" stroke-width="2" fill="none"/>
+  <!-- tower blocks -->
+  <g fill="#1F4A39">
+    <rect x="60" y="290" width="44" height="90"/>
+    <rect x="164" y="306" width="36" height="74"/>
+    <rect x="206" y="262" width="30" height="118"/>
+    <path d="M206 262 L221 246 L236 262 Z"/>
+    <rect x="240" y="320" width="40" height="60"/>
+    <rect x="330" y="300" width="34" height="80"/>
+  </g>
+  <!-- Elizabeth Tower -->
+  <g fill="#173F31">
+    <rect x="22" y="262" width="22" height="118"/>
+    <rect x="19" y="250" width="28" height="18"/>
+    <path d="M19 250 L33 214 L47 250 Z"/>
+    <rect x="31.5" y="200" width="3" height="16"/>
+  </g>
+  <circle cx="33" cy="259" r="6" fill="#F6E3CC"/>
+  <!-- lit windows -->
+  <g fill="#F6D7B8">
+    <rect x="68" y="300" width="6" height="8"/><rect x="82" y="300" width="6" height="8"/><rect x="68" y="318" width="6" height="8"/><rect x="90" y="336" width="6" height="8"/>
+    <rect x="212" y="276" width="5" height="7"/><rect x="224" y="290" width="5" height="7"/><rect x="212" y="318" width="5" height="7"/>
+    <rect x="172" y="320" width="6" height="7"/><rect x="186" y="340" width="6" height="7"/>
+    <rect x="248" y="332" width="6" height="7"/><rect x="264" y="348" width="6" height="7"/>
+    <rect x="338" y="312" width="5" height="7"/><rect x="350" y="330" width="5" height="7"/>
+  </g>
+  <!-- river -->
+  <rect x="0" y="380" width="400" height="120" fill="url(#river)"/>
+  <g stroke="#F6E3CC" stroke-linecap="round" opacity=".6">
+    <path d="M210 400h80" stroke-width="3"/><path d="M226 414h50" stroke-width="2.5"/><path d="M236 428h30" stroke-width="2"/><path d="M244 442h14" stroke-width="2"/>
+  </g>
+  <!-- Georgian terrace foreground -->
+  <g>
+    <path d="M0 430 H400 V500 H0 Z" fill="#0B3125"/>
+    <g fill="#0F3D2E">
+      <rect x="0" y="404" width="120" height="96"/>
+      <rect x="280" y="396" width="120" height="104"/>
+    </g>
+    <g fill="#E9A27F">
+      <path d="M18 440 v-14 a8 8 0 0 1 16 0 v14 z"/><path d="M50 440 v-14 a8 8 0 0 1 16 0 v14 z"/><path d="M82 440 v-14 a8 8 0 0 1 16 0 v14 z"/>
+      <path d="M298 432 v-14 a8 8 0 0 1 16 0 v14 z"/><path d="M330 432 v-14 a8 8 0 0 1 16 0 v14 z"/><path d="M362 432 v-14 a8 8 0 0 1 16 0 v14 z"/>
+    </g>
+    <g fill="#F6F1E7" opacity=".85">
+      <rect x="20" y="460" width="12" height="16" rx="1"/><rect x="84" y="460" width="12" height="16" rx="1"/>
+      <rect x="300" y="456" width="12" height="16" rx="1"/><rect x="364" y="456" width="12" height="16" rx="1"/>
+    </g>
+    <!-- front door with keyhole arch -->
+    <path d="M52 500 v-26 a8 8 0 0 1 16 0 v26 z" fill="#C8582F"/>
+    <path d="M332 500 v-26 a8 8 0 0 1 16 0 v26 z" fill="#C8582F"/>
+  </g>
+</svg>
