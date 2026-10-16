@@ -377,19 +377,18 @@ PREVIEW_BOOKING = ('<div style="padding:72px 24px;text-align:center;background:v
 def book():
     ctx = Ctx("book/")
     body = f"""
-<section class="page-hero" style="padding-bottom:24px">
+<section class="page-hero page-hero--compact">
   <div class="wrap">
     {crumbs(ctx, [("", "Home"), ("book/", "Book direct")])}
-    <span class="eyebrow">Book direct · {F['direct_discount']} below Airbnb &amp; Booking.com</span>
     <h1>Choose your dates <em>and your home.</em></h1>
-    <p class="lead">Live availability and prices for all {F['homes']} homes. Secure payment, instant confirmation, and our team on hand from the first message.</p>
     <ul class="trust">
-      <li>{icon('lock')} Secure payment</li><li>{icon('tag')} Best rate, guaranteed direct</li><li>{icon('star')} {F['reviews']} guest reviews</li>
+      <li>{icon('lock')} Secure payment</li><li>{icon('tag')} {F['direct_discount']} below Airbnb &amp; Booking.com</li><li>{icon('star')} {F['reviews']} guest reviews</li>
     </ul>
   </div>
 </section>
 <section class="section--tight" id="booking" style="padding-top:0">
   <div class="wrap">
+    <p class="booking-dates" id="booking-dates" hidden></p>
     <div class="booking-frame">
       {PREVIEW_BOOKING if Ctx.preview else '''<iframe id="booking-frame" title="Seeker Estates booking engine" loading="eager" allow="payment" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>'''}
     </div>

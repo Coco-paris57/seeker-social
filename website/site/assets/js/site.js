@@ -132,7 +132,7 @@
       if (d && d.value) q.set("departure", d.value);
       if (f.guests) q.set("guests", f.guests.value);
       track("begin_checkout", { arrival: a && a.value, departure: d && d.value, guests: f.guests && f.guests.value }, C.adsBookLabel);
-      location.href = C.bookPage + "?" + q.toString() + "#booking";
+      location.href = C.bookPage + "?" + q.toString();
     });
   });
 
