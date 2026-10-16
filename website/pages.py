@@ -1,3 +1,4 @@
+import json
 """Page content for the Seeker Estates website. Each function returns (path, html)."""
 import site_config as C
 from components import (E, Ctx, area_art, wa_link, bookbar, crumbs, crumbs_schema, cta_band, faq_block, faq_schema,
@@ -68,6 +69,26 @@ def proof_block():
     </div>
   </div>
 </section>"""
+
+
+def homes_map(ctx, area=None, title="Our homes on the map"):
+    """Interactive map of approximate home locations (map.js); the area grid stays the no-JS fallback."""
+    names = {a["slug"]: a["name"] for a in C.AREAS}
+    homes = [h for h in C.HOMES if area is None or h[3] == area]
+    if not homes:
+        return ""
+    data = {
+        "tiles": C.MAP_TILES, "book": ctx.url("book/"), "farLabel": "+ 1 home near the Studio Tour",
+        "homes": [{"label": h[1], "sleeps": h[2], "area": names[h[3]], "district": h[4], "lat": h[5], "lng": h[6], "far": h[5] > 51.65,
+                   "areaUrl": ctx.url("areas/" + h[3] + "/")} for h in homes],
+    }
+    n = len(homes)
+    sub = f"{n} home{'s' if n > 1 else ''}" + ("" if area else " across London and Hertfordshire")
+    return f"""<div class="homes-map reveal" data-homes-map='{E(json.dumps(data))}'>
+  <div class="homes-map-canvas" role="region" aria-label="{E(title)}: map"></div>
+  <p class="homes-map-hint" hidden>Tap the map to move it</p>
+  <div class="homes-map-legend"><span class="dot"></span><span><strong>{E(title)}</strong> · {sub}. Circles show the neighbourhood, not the exact address, which is shared when you book.</span></div>
+</div>"""
 
 
 def areas_grid(ctx, limit=None, cols=4):
@@ -203,6 +224,7 @@ def home():
 <section class="section">
   <div class="wrap">
     {section_head("Where we host", "Homes in the London <em>you actually want to be in.</em>", "From Canary Wharf to St John's Wood. Close to the stadiums, venues, parks and stations people travel for.")}
+    {homes_map(ctx)}
     {areas_grid(ctx, cols=3)}
   </div>
 </section>
@@ -817,7 +839,7 @@ def areas_index():
     <p class="lead">Homes near the stations, stadiums, venues and parks people come to London for. Pick an area to see what's nearby, then check dates.</p>
   </div>
 </section>
-<section class="section--tight" style="padding-top:0"><div class="wrap">{areas_grid(ctx, cols=3)}</div></section>
+<section class="section--tight" style="padding-top:0"><div class="wrap">{homes_map(ctx)}{areas_grid(ctx, cols=3)}</div></section>
 {cta_band(ctx)}
 """
     schema = [crumbs_schema(ctx, [("", "Home"), ("areas/", "Areas")]),
@@ -890,6 +912,12 @@ def area_page(a):
       <p class="muted">See what it could earn as a professionally managed serviced apartment, after fees and costs.</p>
       <a class="btn btn--clay" href="{ctx.url('revenue-calculator/')}?postcode={a['postcode']}#calculator">Estimate my earnings {icon('arrow')}</a>
     </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    {homes_map(ctx, area=a["slug"], title="Our homes in " + a["name"])}
   </div>
 </section>
 
@@ -1028,6 +1056,8 @@ def privacy():
   <ul><li>To reply to your enquiry and provide an appraisal or quote (our legitimate interests, or steps before a contract).</li>
   <li>To manage your stay or management agreement (contract).</li>
   <li>To measure and improve our website and advertising (your consent, which you can withdraw at any time).</li></ul>
+  <h2>Maps</h2>
+  <p>Our map of homes loads map images from OpenStreetMap when you scroll to it. Like any website, their servers receive your IP address to deliver the images. See the <a href="https://osmfoundation.org/wiki/Privacy_Policy" rel="noopener">OpenStreetMap privacy policy</a>.</p>
   <h2>Cookies</h2>
   <p>We only set analytics and advertising cookies after you click "Accept". To change your choice, clear this site's data in your browser and you'll be asked again.</p>
   <h2>How long we keep it</h2>

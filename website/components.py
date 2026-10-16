@@ -504,6 +504,9 @@ def page(ctx, *, title, description, body, audience="guest", schema=(), scripts=
     if "calculator.js" in scripts:
         cfg["calc"] = C.CALC
     ld = "".join(f'<script type="application/ld+json">{json.dumps(s, ensure_ascii=False)}</script>' for s in schema)
+    if "data-homes-map" in body:
+        scripts = tuple(scripts) + ("map.js",)
+        cfg["leaflet"] = {"js": vasset(ctx, "vendor/leaflet/leaflet.js"), "css": vasset(ctx, "vendor/leaflet/leaflet.css")}
     js = "".join(f'<script src="{vasset(ctx, "js/" + s)}" defer></script>' for s in scripts)
     verify = f'<meta name="google-site-verification" content="{C.GOOGLE_SITE_VERIFICATION}">' if C.GOOGLE_SITE_VERIFICATION else ""
     robots = "noindex, follow" if noindex else "index, follow, max-image-preview:large"

@@ -212,3 +212,34 @@ PHOTOS = [
     {"key": "nw8-c-living", "src": OLD + "2024/03/IMG_4553.jpg", "where": "Wellington Road, NW8", "area": "st-johns-wood", "featured": True,
      "alt": "Living and dining room with a balcony door and wooden floors"},
 ]
+
+# --- Homes on the map -------------------------------------------------------
+# Approximate neighbourhood coordinates only, never the building: the map draws a
+# ~350 m circle per home. Postcode districts only are shown. Source: build/properties.py
+# in the social repo (Corentin's info pack, Sep 2026). Remove a row to take a home off the map.
+HOMES = [
+    # ref, label, sleeps, area slug, district, lat, lng
+    ("P01", "2-bed apartment", 5, "canary-wharf", "E14", 51.4990, -0.0200),
+    ("P02", "1-bed apartment", 4, "notting-hill-bayswater", "W10", 51.5200, -0.2100),
+    ("P03", "3-bed apartment", 8, "notting-hill-bayswater", "W2", 51.5125, -0.1880),
+    ("P04", "2-bed apartment", 6, "canary-wharf", "IG11", 51.5300, 0.0850),
+    ("P05", "5-bed house", 8, "st-johns-wood", "NW8", 51.5340, -0.1740),
+    ("P06", "2-bed apartment", 6, "marylebone", "W1", 51.5205, -0.1560),
+    ("P07", "1-bed apartment", 4, "greenwich", "SE18", 51.4920, 0.0700),
+    ("P08", "2-bed home", 5, "islington", "N1", 51.5410, -0.0950),
+    ("P09", "1-bed apartment", 4, "greenwich", "SE10", 51.4800, -0.0100),
+    ("P10", "1-bed apartment", 4, "west-london", "W5", 51.5270, -0.2920),
+    ("P11", "2-bed apartment", 6, "camden-primrose-hill", "NW1", 51.5440, -0.1350),
+    ("P12", "2-bed apartment", 6, "canary-wharf", "E3", 51.5250, -0.0330),
+    ("P13", "2-bed apartment", 6, "west-london", "W12", 51.5050, -0.2250),
+    ("P14", "1-bed house", 4, "camden-primrose-hill", "NW1", 51.5420, -0.1510),
+    ("P15", "1-bed apartment", 4, "canary-wharf", "E3", 51.5220, -0.0170),
+    ("P16", "1-bed apartment", 4, "st-johns-wood", "W9", 51.5240, -0.1840),
+    ("P17", "1-bed apartment", 4, "st-johns-wood", "NW8", 51.5320, -0.1700),
+    ("P18", "1-bed apartment", 4, "west-london", "SW6", 51.4780, -0.1950),
+    ("P19", "2-bed apartment", 6, "harry-potter-studio-tour", "WD4", 51.7140, -0.4500),
+]
+MAP_TILES = {
+    "url": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    "attribution": '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+}
