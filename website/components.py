@@ -148,7 +148,7 @@ def header(ctx, audience):
 <header class="site-header">
   <div class="topbar">{top}</div>
   <nav class="wrap nav" aria-label="Main">
-    <a class="brand" href="{ctx.url('')}" aria-label="{C.BRAND} — home"><img src="{ctx.asset('img/logo.svg')}" alt="{C.BRAND}" width="273" height="88"></a>
+    <a class="brand" href="{ctx.url('')}" aria-label="{C.BRAND} — home"><img src="{vasset(ctx, 'img/logo.svg')}" alt="{C.BRAND}" width="273" height="88"></a>
     <ul class="nav-links">{links}</ul>
     <div class="nav-cta">{cta}</div>
     <button class="menu-btn" aria-label="Menu" aria-expanded="false"><span></span></button>
@@ -170,7 +170,7 @@ def footer(ctx, audience="guest"):
   <div class="wrap">
     <div class="footer-grid">
       <div>
-        <a class="brand" href="{ctx.url('')}"><img src="{ctx.asset('img/logo-reversed.svg')}" alt="{C.BRAND}" width="273" height="88" loading="lazy"></a>
+        <a class="brand" href="{ctx.url('')}"><img src="{vasset(ctx, 'img/logo-reversed.svg')}" alt="{C.BRAND}" width="273" height="88" loading="lazy"></a>
         <p class="footer-tag">{E(C.TAGLINE)}</p>
         <p class="small">Serviced apartments and managed homes across London. Short stays, mid-term stays and property management for landlords.</p>
       </div>
@@ -528,13 +528,13 @@ def page(ctx, *, title, description, body, audience="guest", schema=(), scripts=
 <meta property="og:url" content="{ctx.abs()}">
 <meta property="og:title" content="{E(title)}">
 <meta property="og:description" content="{E(description)}">
-<meta property="og:image" content="{C.SITE_URL}/assets/img/og.png">
+<meta property="og:image" content="{C.SITE_URL}/assets/img/og.png?v={_ver('img/og.png')}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="{ctx.asset('img/favicon.svg')}" type="image/svg+xml">
+<link rel="icon" href="{vasset(ctx, 'img/favicon.svg')}" type="image/svg+xml">
 <link rel="icon" href="{ctx.url('favicon.ico')}" sizes="32x32">
-<link rel="apple-touch-icon" href="{ctx.asset('img/apple-touch-icon.png')}">
+<link rel="apple-touch-icon" href="{vasset(ctx, 'img/apple-touch-icon.png')}">
 <link rel="manifest" href="{ctx.url('site.webmanifest')}">
 <link rel="preload" href="{ctx.asset('fonts/fraunces-latin-wght-normal.woff2')}" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="{ctx.asset('fonts/plus-jakarta-sans-latin-400-normal.woff2')}" as="font" type="font/woff2" crossorigin>

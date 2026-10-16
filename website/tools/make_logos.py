@@ -77,11 +77,9 @@ def mark_keyhole(x, y, size, fill, hole=None, mid="k"):
     t = f'transform="translate({x:.2f} {y:.2f}) scale({s:.4f})"'
     if hole:  # two-colour version: keyhole filled
         return f'<g {t}><path d="{arch}" fill="{fill}"/><path d="{key}" fill="{hole}"/></g>'
-    return (
-        f'<defs><mask id="{mid}" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">'
-        f'<rect width="64" height="64" fill="#fff"/><path d="{key}" fill="#000"/></mask></defs>'
-        f'<g {t}><path d="{arch}" fill="{fill}" mask="url(#{mid})"/></g>'
-    )
+    # Keyhole cut out with fill-rule="evenodd" (no <mask>): renders the same in every
+    # browser, including Safari, and in apps that ignore SVG masks.
+    return f'<g {t}><path d="{arch} {key}" fill="{fill}" fill-rule="evenodd"/></g>'
 
 
 def mark_lens(x, y, size, ring, roof):

@@ -1,6 +1,8 @@
 // Render PNG assets (OG share image, logo.png, app icons) from the SVG sources.
 // Run via: python3 website/build.py --images
 const path = require("path");
+const fs = require("fs");
+const os = require("os");
 let chromium;
 try { ({ chromium } = require("playwright")); }
 catch (e) { ({ chromium } = require("/opt/node22/lib/node_modules/playwright")); }
@@ -31,7 +33,10 @@ const svgPage = (file, w, h, bg = "transparent") =>
   const b = await chromium.launch();
   const shot = async (html, w, h, out, transparent = false) => {
     const p = await b.newPage({ viewport: { width: w, height: h } });
-    await p.setContent(html, { waitUntil: "load" });
+    // Load from a real file:// page; setContent() runs on about:blank, which may not read file:// SVGs or fonts.
+    const tmp = path.join(os.tmpdir(), "seeker-render-" + out + ".html");
+    fs.writeFileSync(tmp, html);
+    await p.goto("file://" + tmp, { waitUntil: "load" });
     await p.evaluate(() => document.fonts.ready);
     await p.screenshot({ path: path.join(IMG, out), omitBackground: transparent });
     await p.close();
