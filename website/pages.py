@@ -363,7 +363,7 @@ def book():
     <div class="booking-frame">
       <iframe id="booking-frame" title="Seeker Estates booking engine" loading="eager" allow="payment" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
     </div>
-    <p class="small muted" style="margin-top:14px">Booking engine not loading? <a id="booking-newtab" href="{C.BOOKING_URL}" target="_blank" rel="noopener">Open it in a new tab</a> or email <a href="mailto:{C.EMAIL}">{C.EMAIL}</a>.</p>
+    <p class="small muted" style="margin-top:14px">Need help with your booking? Message us on {wa_link("guest", label="WhatsApp")} or email <a href="mailto:{C.EMAIL}">{C.EMAIL}</a>.</p>
   </div>
 </section>
 <section class="section section--sand">
