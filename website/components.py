@@ -45,6 +45,33 @@ _I = {
 }
 
 
+WHATSAPP_SVG = ('<svg class="wa-logo" viewBox="0 0 32 32" aria-hidden="true">'
+                '<path fill="#25D366" d="M16 2.7A13.3 13.3 0 0 0 4.6 22.8L2.7 29.3l6.7-1.8A13.3 13.3 0 1 0 16 2.7z"/>'
+                '<path fill="#fff" d="M23.1 19.3c-.4-.2-2.3-1.1-2.6-1.2-.4-.1-.6-.2-.9.2-.3.4-1 1.2-1.2 1.5-.2.2-.4.3-.8.1'
+                '-.4-.2-1.6-.6-3-1.9-1.1-1-1.9-2.2-2.1-2.6-.2-.4 0-.6.2-.8l.6-.7c.2-.2.3-.4.4-.6.1-.3.1-.5 0-.7l-1.2-2.8'
+                'c-.3-.7-.6-.6-.9-.6h-.7c-.3 0-.7.1-1 .5-.4.4-1.4 1.3-1.4 3.2s1.4 3.7 1.6 4c.2.2 2.8 4.2 6.7 5.9 2.3 1 '
+                '3.3 1.1 4.4.9.7-.1 2.3-.9 2.6-1.9.3-.9.3-1.7.2-1.9-.1-.1-.3-.2-.7-.4z"/></svg>')
+
+
+def wa_url(audience="guest"):
+    from urllib.parse import quote
+    return f"https://wa.me/{C.WHATSAPP}?text={quote(C.WHATSAPP_MESSAGE.get(audience, C.WHATSAPP_MESSAGE['guest']))}"
+
+
+def wa_link(audience="guest", label=None, cls="wa-link"):
+    """The phone number as a WhatsApp chat link, with the WhatsApp logo."""
+    text = E(label or C.PHONE)
+    return (f'<a class="{cls}" href="{wa_url(audience)}" target="_blank" rel="noopener" data-wa '
+            f'aria-label="Message us on WhatsApp: {E(C.PHONE)}">{WHATSAPP_SVG}<span>{text}</span></a>')
+
+
+def wa_float(audience):
+    if not C.WHATSAPP:
+        return ""
+    return (f'<a class="wa-float" href="{wa_url(audience)}" target="_blank" rel="noopener" data-wa '
+            f'aria-label="Chat with us on WhatsApp">{WHATSAPP_SVG}<span>Chat on WhatsApp</span></a>')
+
+
 def icon(name, cls=""):
     c = f' class="{cls}"' if cls else ""
     return (f'<svg{c} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" '
@@ -124,11 +151,11 @@ def header(ctx, audience):
 </header>"""
 
 
-def footer(ctx):
+def footer(ctx, audience="guest"):
     areas = "".join(f'<li><a href="{ctx.url("areas/" + a["slug"] + "/")}">{E(a["name"])}</a></li>' for a in C.AREAS[:6])
     contact = [f'<li><a href="mailto:{e}">{e}</a></li>' for e in C.EMAILS]
-    if C.PHONE:
-        contact.append(f'<li><a href="tel:{C.PHONE.replace(" ", "")}">{E(C.PHONE)}</a></li>')
+    if C.WHATSAPP:
+        contact.append(f'<li>{wa_link(audience)}</li>')
     for label, u in (("Instagram", C.INSTAGRAM), ("Facebook", C.FACEBOOK), ("TikTok", C.TIKTOK)):
         if u:
             contact.append(f'<li><a href="{u}" rel="noopener" target="_blank">{label}</a></li>')
@@ -471,8 +498,9 @@ def page(ctx, *, title, description, body, audience="guest", schema=(), scripts=
 <main id="main">
 {body}
 </main>
-{footer(ctx)}
+{footer(ctx, audience)}
 {mobile_cta(ctx, audience)}
+{wa_float(audience)}
 <script src="{ctx.asset('js/site.js')}" defer></script>
 {js}
 </body>

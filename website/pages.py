@@ -1,6 +1,6 @@
 """Page content for the Seeker Estates website. Each function returns (path, html)."""
 import site_config as C
-from components import (E, Ctx, area_art, bookbar, crumbs, crumbs_schema, cta_band, faq_block, faq_schema,
+from components import (E, Ctx, area_art, wa_link, bookbar, crumbs, crumbs_schema, cta_band, faq_block, faq_schema,
                         gallery, icon, photo_img, photos, lead_form, lodging_schema, mini_estimator, org_schema, page, section_head)
 
 F = C.FACTS
@@ -977,8 +977,8 @@ def faq_page():
 # ------------------------------------------------------------------ CONTACT
 def contact():
     ctx = Ctx("contact/")
-    phone = f'<li>{icon("phone")}<div><strong>Phone</strong><span><a href="tel:{C.PHONE.replace(" ", "")}">{E(C.PHONE)}</a></span></div></li>' if C.PHONE else ""
-    wa = f'<li>{icon("chat")}<div><strong>WhatsApp</strong><span><a href="https://wa.me/{C.WHATSAPP}">Message us</a></span></div></li>' if C.WHATSAPP else ""
+    phone = ""
+    wa = f'<li>{icon("chat")}<div><strong>WhatsApp</strong><span>{wa_link("guest")}<br>Tap to start a chat.</span></div></li>' if C.WHATSAPP else ""
     body = f"""
 <section class="page-hero">
   <div class="wrap split" style="align-items:start">

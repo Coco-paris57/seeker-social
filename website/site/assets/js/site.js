@@ -98,6 +98,11 @@
     });
   });
 
+  /* ---------- WhatsApp clicks ---------- */
+  doc.querySelectorAll("[data-wa]").forEach(function (a) {
+    a.addEventListener("click", function () { track("contact_whatsapp", { source: doc.body.getAttribute("data-page") }, C.adsLeadLabel); });
+  });
+
   /* ---------- Booking bar ---------- */
   doc.querySelectorAll("form.bookbar").forEach(function (f) {
     var a = f.querySelector('[name="arrival"]'), d = f.querySelector('[name="departure"]');

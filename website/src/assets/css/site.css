@@ -459,3 +459,16 @@ textarea.input { min-height: 120px; resize: vertical; }
 .booking-frame.is-sized iframe { min-height: 600px; }
 .gallery--2 { grid-template-columns: repeat(2, 1fr); }
 @media (max-width: 560px) { .gallery--2 { grid-template-columns: 1fr; } }
+
+/* WhatsApp */
+.wa-link { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; text-decoration: none; }
+.wa-link:hover span { text-decoration: underline; }
+.wa-logo { width: 22px; height: 22px; flex-shrink: 0; }
+.wa-float { position: fixed; right: 20px; bottom: 20px; z-index: 45; display: inline-flex; align-items: center; gap: 10px; padding: 10px 18px 10px 10px; border-radius: 999px; background: var(--white); color: var(--ink); font-weight: 700; font-size: .92rem; text-decoration: none; box-shadow: var(--shadow); transition: transform .15s ease; }
+.wa-float:hover { transform: translateY(-2px); }
+.wa-float .wa-logo { width: 34px; height: 34px; }
+@media (max-width: 720px) {
+  .wa-float { right: 12px; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); padding: 6px; }
+  .wa-float span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .wa-float .wa-logo { width: 46px; height: 46px; }
+}

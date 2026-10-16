@@ -12,7 +12,12 @@ TAGLINE = "London homes, properly run."
 EMAIL = "corentin@seekerestates.com"            # main public inbox (forms are delivered here)
 EMAILS = ["corentin@seekerestates.com", "reyhan@seekerestates.com"]  # both shown on the site; Reyhan is cc'd on every form
 PHONE = "+44 7397 573367"                       # as published on the current seekerestates.com ("" to hide)
-WHATSAPP = ""                                   # CONFIRM: optional, digits only e.g. "447700900000"
+WHATSAPP = "447397573367"                       # PHONE in international digits; every phone link opens WhatsApp
+# Pre-filled first message for WhatsApp chats, by page audience.
+WHATSAPP_MESSAGE = {
+    "guest": "Hi Seeker Estates, I'd like to ask about a stay in London.",
+    "owner": "Hi Seeker Estates, I own a property in London and would like to know more about your management service.",
+}
 COMPANY_LEGAL = ""                              # CONFIRM: e.g. "Seeker Estates Ltd · Company no. 12345678 · Registered in England & Wales"
 INSTAGRAM = ""                                  # CONFIRM: profile URL
 FACEBOOK = ""                                   # CONFIRM: page URL
