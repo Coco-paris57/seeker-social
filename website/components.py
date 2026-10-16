@@ -1,6 +1,9 @@
 """Shared layout, icons and building blocks for the Seeker Estates site."""
+import functools
+import hashlib
 import html
 import json
+import os
 import random
 import re
 
@@ -73,6 +76,8 @@ def wa_float(audience):
 
 
 def icon(name, cls=""):
+    if name == "arrow":
+        cls = (cls + " i-arrow").strip()
     c = f' class="{cls}"' if cls else ""
     return (f'<svg{c} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" '
             f'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{_I[name]}</svg>')
@@ -441,6 +446,48 @@ def area_art(area, w=300, h=400):
 
 
 # ------------------------------------------------------------------ page shell
+# ------------------------------------------------------------------ motion
+# Loader state is picked before first paint: "ld-first" (first page of a visit),
+# "ld-nav" (arrived via an internal link, the exit curtain is already covering),
+# or "ld-off" (any other load). CSS does the animating; nothing hides without .js.
+LOADER_JS = ('var d=document.documentElement,k="ld-first";d.classList.add("js");'
+             'try{var s=sessionStorage,n=+s.getItem("se-nav");s.removeItem("se-nav");'
+             'k=Date.now()-n<8e3?"ld-nav":s.getItem("se-seen")?"ld-off":k;s.setItem("se-seen",1)}catch(e){}'
+             'd.classList.add(k)')
+LOADER = ('<div class="loader" aria-hidden="true" hidden><svg viewBox="0 0 64 64" width="76" height="76">'
+          '<path class="lm-arch" d="M12 62V30A20 20 0 0 1 52 30V62Z" pathLength="1"/>'
+          '<path class="lm-key" d="M32 22.5a7.5 7.5 0 0 0-3.6 14.08L26.5 50h11l-1.9-13.42A7.5 7.5 0 0 0 32 22.5Z"/>'
+          '</svg></div>')
+
+
+@functools.lru_cache(None)
+def _ver(p):
+    """Short content hash so a changed CSS/JS file is never served stale from cache."""
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "src", "assets", p), "rb") as f:
+        return hashlib.sha1(f.read()).hexdigest()[:8]
+
+
+def vasset(ctx, p):
+    return f"{ctx.asset(p)}?v={_ver(p)}"
+
+
+def _split_h1(body):
+    """Wrap each word of the page's first <h1> in a span so the hero can stagger it in."""
+    m = re.search(r"<h1>(.*?)</h1>", body, re.S)
+    if not m:
+        return body
+    n = [0]
+
+    def words(t):
+        def w(mm):
+            n[0] += 1
+            return f'<span class="w" style="--i:{n[0] - 1}">{mm.group(0)}</span>'
+        return re.sub(r"\S+", w, t)
+
+    inner = "".join(p if p.startswith("<") else words(p) for p in re.split(r"(<[^>]+>)", m.group(1)))
+    return body[:m.start(1)] + inner + body[m.end(1):]
+
+
 def page(ctx, *, title, description, body, audience="guest", schema=(), scripts=(), noindex=False, og_type="website"):
     cfg = {
         "root": ctx.url(""),
@@ -457,16 +504,17 @@ def page(ctx, *, title, description, body, audience="guest", schema=(), scripts=
     if "calculator.js" in scripts:
         cfg["calc"] = C.CALC
     ld = "".join(f'<script type="application/ld+json">{json.dumps(s, ensure_ascii=False)}</script>' for s in schema)
-    js = "".join(f'<script src="{ctx.asset("js/" + s)}" defer></script>' for s in scripts)
+    js = "".join(f'<script src="{vasset(ctx, "js/" + s)}" defer></script>' for s in scripts)
     verify = f'<meta name="google-site-verification" content="{C.GOOGLE_SITE_VERIFICATION}">' if C.GOOGLE_SITE_VERIFICATION else ""
     robots = "noindex, follow" if noindex else "index, follow, max-image-preview:large"
     body = re.sub(r'href="~/([^"]*)"', lambda m: f'href="{ctx.url(m.group(1))}"', body)
     page_id = ctx.path.strip("/").replace("/", "-") or "home"
+    body = _split_h1(body)
     return f"""<!doctype html>
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<script>document.documentElement.classList.add("js")</script>
+<script>{LOADER_JS}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{E(title)}</title>
 <meta name="description" content="{E(description)}">
@@ -490,12 +538,13 @@ def page(ctx, *, title, description, body, audience="guest", schema=(), scripts=
 <link rel="manifest" href="{ctx.url('site.webmanifest')}">
 <link rel="preload" href="{ctx.asset('fonts/fraunces-latin-wght-normal.woff2')}" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="{ctx.asset('fonts/plus-jakarta-sans-latin-400-normal.woff2')}" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="{ctx.asset('css/site.css')}">
+<link rel="stylesheet" href="{vasset(ctx, 'css/site.css')}">
 {GFONTS if ctx.preview else ""}
 <script>window.SEEKER={json.dumps(cfg)};</script>
 {ld}
 </head>
 <body data-page="{page_id}" data-audience="{audience}">
+{LOADER}
 {header(ctx, audience)}
 <main id="main">
 {body}
@@ -503,7 +552,8 @@ def page(ctx, *, title, description, body, audience="guest", schema=(), scripts=
 {footer(ctx, audience)}
 {mobile_cta(ctx, audience)}
 {wa_float(audience)}
-<script src="{ctx.asset('js/site.js')}" defer></script>
+<script src="{vasset(ctx, 'js/site.js')}" defer></script>
+<script src="{vasset(ctx, 'js/motion.js')}" defer></script>
 {js}
 </body>
 </html>

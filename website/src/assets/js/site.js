@@ -70,8 +70,17 @@
 
   /* ---------- Reveal on scroll ---------- */
   if ("IntersectionObserver" in window) {
+    // Items that arrive together (a grid of cards) cascade in; on first paint wait for the loader.
+    var lead = /ld-(first|nav)/.test(doc.documentElement.className) && performance.now() < 800 ? 300 : 0;
     var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add("is-in"); io.unobserve(en.target); } });
+      var n = 0;
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        en.target.style.setProperty("--d", (lead + Math.min(n++, 6) * 80) + "ms");
+        en.target.classList.add("is-in");
+        io.unobserve(en.target);
+      });
+      lead = 0;
     }, { rootMargin: "0px 0px -8% 0px" });
     doc.querySelectorAll(".reveal").forEach(function (el) { io.observe(el); });
   } else {
