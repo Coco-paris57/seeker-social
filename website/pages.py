@@ -343,6 +343,14 @@ def stays():
         body=body, schema=schema)
 
 
+# Preview builds can't frame other websites, so the Book page shows this stand-in instead.
+PREVIEW_BOOKING = ('<div style="padding:72px 24px;text-align:center;background:var(--sand-50)">'
+                   '<p style="font:500 1.6rem/1.2 var(--serif);margin:0 0 10px">The Smoobu booking calendar appears here</p>'
+                   '<p class="muted" style="margin:0 auto;max-width:52ch">Live availability, prices and secure payment, inside this page. '
+                   'Previews can\'t display other websites, so it only shows on the live seekerestates.com. '
+                   'It is the same calendar as on your current Reservation page.</p></div>')
+
+
 # ------------------------------------------------------------------ BOOK
 def book():
     ctx = Ctx("book/")
@@ -361,7 +369,7 @@ def book():
 <section class="section--tight" id="booking" style="padding-top:0">
   <div class="wrap">
     <div class="booking-frame">
-      <iframe id="booking-frame" title="Seeker Estates booking engine" loading="eager" allow="payment" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      {PREVIEW_BOOKING if Ctx.preview else '''<iframe id="booking-frame" title="Seeker Estates booking engine" loading="eager" allow="payment" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>'''}
     </div>
     <p class="small muted" style="margin-top:14px">Need help with your booking? Message us on {wa_link("guest", label="WhatsApp")} or email <a href="mailto:{C.EMAIL}">{C.EMAIL}</a>.</p>
   </div>
