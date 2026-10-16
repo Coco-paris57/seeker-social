@@ -18,7 +18,7 @@ WHATSAPP_MESSAGE = {
     "guest": "Hi Seeker Estates, I'd like to ask about a stay in London.",
     "owner": "Hi Seeker Estates, I own a property in London and would like to know more about your management service.",
 }
-COMPANY_LEGAL = ""                              # CONFIRM: e.g. "Seeker Estates Ltd · Company no. 12345678 · Registered in England & Wales"
+COMPANY_LEGAL = "Seeker Estates Ltd · Company no. 15310020 · Registered in England & Wales"
 INSTAGRAM = ""                                  # CONFIRM: profile URL
 FACEBOOK = ""                                   # CONFIRM: page URL
 TIKTOK = ""                                     # CONFIRM: profile URL

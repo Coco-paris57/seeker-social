@@ -222,6 +222,8 @@ def org_schema():
         "@type": "Organization",
         "@id": C.SITE_URL + "/#org",
         "name": C.BRAND,
+        "legalName": "Seeker Estates Ltd",
+        "identifier": {"@type": "PropertyValue", "propertyID": "Companies House", "value": "15310020"},
         "url": C.SITE_URL + "/",
         "logo": C.SITE_URL + "/assets/img/logo.png",
         "email": C.EMAIL,
