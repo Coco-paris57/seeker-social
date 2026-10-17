@@ -8,6 +8,9 @@ WHICH FILE TO USE
            mark = the keyhole arch on its own   |   app-icon = rounded square icon
   social/  Square profile pictures (1080 px) for Instagram, Facebook, TikTok, WhatsApp,
            Google Business Profile. Safe for circle crops.
+           -with-name = keyhole arch with "Seeker Estates" underneath (recommended)
+  stacked  svg/seeker-estates-stacked-*.svg and png/seeker-estates-stacked-*-2048px.png:
+           the arch above the name, for square spaces (posts, signage, stickers).
 
 COLOURS
   Mayfair Green  #0F3D2E   RGB 15 61 46     (main colour)
