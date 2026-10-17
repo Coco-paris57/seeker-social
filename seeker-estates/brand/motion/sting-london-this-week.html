@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en-GB"><head><meta charset="utf-8"><title>London This Week — title sting (2.5 s)</title>
+<style>
+@font-face { font-family: "Fraunces"; src: url("../fonts/fraunces-latin-wght-normal.woff2") format("woff2"); font-weight: 300 900; }
+@font-face { font-family: "Fraunces"; src: url("../fonts/fraunces-latin-wght-italic.woff2") format("woff2"); font-weight: 300 900; font-style: italic; }
+@font-face { font-family: "Jakarta"; src: url("../fonts/plus-jakarta-sans-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
+* { margin: 0; box-sizing: border-box; }
+html, body { width: 1080px; height: 1920px; overflow: hidden; background: #0F3D2E; }
+#s { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 288px 96px 480px; }
+.w { display: inline-block; }
+h1 { font: 560 150px/1 "Fraunces"; letter-spacing: -.02em; color: #F6F1E7; margin-top: 70px; }
+h1 em { font-style: italic; font-weight: 480; color: #F0A483; }
+p { font: 700 34px/1 "Jakarta"; letter-spacing: .22em; color: #F0A483; margin-top: 40px; }
+</style></head><body>
+<div id="s">
+  <svg viewBox="0 0 64 64" width="240" height="240" style="overflow:visible">
+    <path id="arch" d="M12 62V30A20 20 0 0 1 52 30V62Z" fill="none" stroke="#F6F1E7" stroke-width="1.6" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
+    <path id="fill" d="M12 62V30A20 20 0 0 1 52 30V62Z M32 22.5a7.5 7.5 0 0 0-3.6 14.08L26.5 50h11l-1.9-13.42A7.5 7.5 0 0 0 32 22.5Z" fill="#F6F1E7" fill-rule="evenodd" opacity="0"/>
+    <path id="key" d="M32 22.5a7.5 7.5 0 0 0-3.6 14.08L26.5 50h11l-1.9-13.42A7.5 7.5 0 0 0 32 22.5Z" fill="#C8582F" style="transform-origin:32px 36px;transform:scale(0)"/>
+  </svg>
+  <h1><span class="w">London</span><br><em class="w">this week.</em></h1>
+  <p id="sub">SEEKER ESTATES</p>
+</div>
+<script>
+const clamp = (x) => Math.max(0, Math.min(1, x)), seg = (t, a, b) => clamp((t - a) / (b - a));
+const eo = (x) => 1 - Math.pow(1 - x, 3), eio = (x) => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const back = (x) => { const c = 1.6; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+window.DURATION = 2.5;
+window.render = (t) => {
+  document.getElementById("arch").setAttribute("stroke-dashoffset", 1 - eio(seg(t, 0, .7)));
+  const fo = eo(seg(t, .55, .85)); document.getElementById("fill").setAttribute("opacity", fo); document.getElementById("arch").setAttribute("opacity", 1 - fo);
+  document.getElementById("key").style.transform = `scale(${back(seg(t, .7, 1.05))})`;
+  document.querySelectorAll(".w").forEach((w, i) => { const x = eo(seg(t, .2 + i * .18, .7 + i * .18)); w.style.opacity = x; w.style.transform = `translateY(${(1 - x) * 70}px)`; });
+  const s = eo(seg(t, .8, 1.2)); const sub = document.getElementById("sub"); sub.style.opacity = s; sub.style.letterSpacing = (.05 + .17 * s) + "em";
+  document.getElementById("s").style.transform = `scale(${1 + seg(t, 1.2, 2.5) * .03})`;
+};
+render(0);
+</script></body></html>

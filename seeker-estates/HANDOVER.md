@@ -1,5 +1,8 @@
 # Seeker Estates — handover (10 Sep 2026, 23:40 UK)
 
+> **UPDATE 17 Oct 2026: rebrand.** New website live at https://seekerestates.com and a new brand system: **read `brand/BRAND.md` (v2) first**. New logo (keyhole arch), colours (green #0F3D2E, ivory #F6F1E7, clay #C8582F), fonts (Fraunces + Plus Jakarta Sans), post templates (`brand/templates/`), new Monday title sting (`brand/motion/`). The old navy/Lora/magnifier brand is archived in `brand/archive-v1/`; don't use it.
+> **Booking link changed:** use `https://seekerestates.com/book/?utm_source={network}&utm_medium=social&utm_campaign={yyyy-mm}-{slug}` (the Smoobu engine is embedded there). Landlord CTA: `https://seekerestates.com/revenue-calculator/` (+ same UTM). WhatsApp +44 7397 573367.
+
 Read this first. This folder is the complete working state of the Seeker Estates social media operation, moved from the original Cowork session. Skills `seeker-weekly-content-run`, `seeker-london-desk`, `seeker-landlord-desk`, `seeker-studio` are saved on Corentin's account and describe the operating rules; Metricool, Dropbox and Cloudinary are connected as claude.ai connectors.
 
 ## Immediate next actions (in order)
@@ -15,7 +18,7 @@ Read this first. This folder is the complete working state of the Seeker Estates
 ## Facts confirmed by Corentin (10 Sep)
 - Model: mid-term stays 91+ nights first, short lets up to 90 nights/yr. 19 properties (see `build/properties.py`). Faceless brand — never on camera. Tone: Professional, Premium, Reliable; never cheap.
 - Say: ID-verified guests, security deposit, public liability insured. Never say "fully insured". Never mention licensing or redress schemes.
-- Booking link: https://seekerestates.myweb.smoobu.com (+UTM). Not the website /reservation/ page.
+- Booking link: ~~https://seekerestates.myweb.smoobu.com~~ → **https://seekerestates.com/book/** (+UTM) since 17 Oct 2026.
 - Instagram stays personal (no Business switch). Facebook, Instagram, TikTok all connected in Metricool.
 - Media pipeline: chat attachments → studio edits here → push to GitHub repo → Metricool fetches. Dropbox connector is text-only; Cloudinary needs base64 through chat (too costly). GitHub is the rail.
 
