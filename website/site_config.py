@@ -41,7 +41,7 @@ BOOKING_PARAMS = {"arrival": "arrival", "departure": "departure", "guests": "gue
 FORM_ENDPOINT = f"https://formsubmit.co/ajax/{EMAIL}"
 
 # --- Google tags (leave "" until the accounts exist) ---------------------  # CONFIRM
-GA4_ID = "G-W3H8XF3EEN"  # existing GA4 property, taken from the current site (Google Ads ID still to add)
+GA4_ID = "G-FPF76SCG67"  # Seeker Estates GA4 property (created Oct 2026) (Google Ads ID still to add)
 ADS_ID = ""             # "AW-XXXXXXXXXX"
 ADS_LEAD_LABEL = ""     # conversion label for landlord leads
 ADS_BOOK_LABEL = ""     # conversion label for "Book" clicks (true bookings tracked in Smoobu)
