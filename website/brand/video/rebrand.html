@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Seeker Estates — rebrand video (1080×1920, 30 s)</title>
+<!-- Frame-accurate motion: every frame is drawn by render(t). Open in a browser and press play,
+     or run render.js to export the MP4. Safe zone for captions: 288px top, 480px bottom. -->
+<style>
+@font-face { font-family: "Fraunces"; src: url("../../src/assets/fonts/fraunces-latin-wght-normal.woff2") format("woff2"); font-weight: 300 900; }
+@font-face { font-family: "Fraunces"; src: url("../../src/assets/fonts/fraunces-latin-wght-italic.woff2") format("woff2"); font-weight: 300 900; font-style: italic; }
+@font-face { font-family: "Jakarta"; src: url("../../src/assets/fonts/plus-jakarta-sans-latin-600-normal.woff2") format("woff2"); font-weight: 600; }
+@font-face { font-family: "Jakarta"; src: url("../../src/assets/fonts/plus-jakarta-sans-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
+:root { --green: #0F3D2E; --green2: #1F5A44; --ivory: #F6F1E7; --clay: #C8582F; --clay7: #A9441F; --peach: #F0A483; --sand: #EADFCB; --ink: #13221C; }
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--green); }
+#stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; font-family: "Jakarta", sans-serif; }
+.layer { position: absolute; inset: 0; }
+.serif { font-family: "Fraunces", serif; font-weight: 560; letter-spacing: -.02em; }
+.ital { font-family: "Fraunces", serif; font-style: italic; font-weight: 480; }
+.center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.eyebrow { font: 700 34px/1 "Jakarta"; letter-spacing: .22em; text-transform: uppercase; }
+.word { display: inline-block; will-change: transform, opacity; }
+#bg-ivory { background: var(--ivory); }
+#curtain { background: var(--clay); border-radius: 540px 540px 0 0; }
+#curtain2 { background: var(--green); border-radius: 540px 540px 0 0; }
+.card { background: #fff; border-radius: 40px; box-shadow: 0 30px 80px -30px rgba(0,0,0,.45); overflow: hidden; }
+#phone { position: absolute; left: 50%; top: 560px; width: 560px; height: 1150px; margin-left: -280px; border-radius: 72px; background: #0b1512; padding: 18px; box-shadow: 0 50px 120px -40px rgba(0,0,0,.6); }
+#phone .screen { width: 100%; height: 100%; border-radius: 56px; overflow: hidden; background: var(--ivory); position: relative; }
+#phone .screen img { position: absolute; left: 0; top: 0; width: 100%; }
+#phone .notch { position: absolute; top: 30px; left: 50%; width: 150px; height: 40px; margin-left: -75px; background: #0b1512; border-radius: 30px; z-index: 2; }
+.dot { position: absolute; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%; background: var(--ivory); box-shadow: 0 0 0 10px rgba(240,164,131,.35); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="layer" id="bg-ivory" style="opacity:0"></div>
+
+  <!-- S1 hook -->
+  <div class="layer center" id="s1">
+    <svg id="s1-mark" viewBox="0 0 64 64" width="300" height="300" style="overflow:visible">
+      <path id="s1-arch" d="M12 62V30A20 20 0 0 1 52 30V62Z" fill="none" stroke="#F6F1E7" stroke-width="1.6" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
+      <path id="s1-fill" d="M12 62V30A20 20 0 0 1 52 30V62Z M32 22.5a7.5 7.5 0 0 0-3.6 14.08L26.5 50h11l-1.9-13.42A7.5 7.5 0 0 0 32 22.5Z" fill="#F6F1E7" fill-rule="evenodd" opacity="0"/>
+      <path id="s1-key" d="M32 22.5a7.5 7.5 0 0 0-3.6 14.08L26.5 50h11l-1.9-13.42A7.5 7.5 0 0 0 32 22.5Z" fill="#C8582F" style="transform-origin:32px 36px"/>
+    </svg>
+    <p class="eyebrow" id="s1-eye" style="color:var(--peach);margin-top:70px">Seeker Estates</p>
+    <h1 class="serif" id="s1-h" style="color:var(--ivory);font-size:118px;line-height:1.02;margin-top:26px">
+      <span class="word">Something</span> <span class="word">has</span><br><span class="word ital" style="color:var(--peach)">changed.</span>
+    </h1>
+  </div>
+
+  <!-- S2 old → new -->
+  <div class="layer center" id="s2" style="opacity:0">
+    <p class="eyebrow" id="s2-a" style="color:var(--clay7)">Our old look</p>
+    <div class="card" id="s2-old" style="width:560px;height:560px;margin-top:40px"><img src="assets/old-logo.png" style="width:100%;height:100%;object-fit:cover"></div>
+  </div>
+  <div class="layer" id="curtain" style="transform:translateY(100%)"></div>
+  <div class="layer center" id="s2b" style="opacity:0">
+    <p class="eyebrow" id="s2b-a" style="color:var(--ivory)">Meet the new one</p>
+    <svg viewBox="0 0 64 64" width="520" height="520" id="s2b-mark" style="margin-top:50px">
+      <path d="M12 62V30A20 20 0 0 1 52 30V62Z M32 22.5a7.5 7.5 0 0 0-3.6 14.08L26.5 50h11l-1.9-13.42A7.5 7.5 0 0 0 32 22.5Z" fill="#F6F1E7" fill-rule="evenodd"/>
+    </svg>
+  </div>
+
+  <!-- S3 lockup -->
+  <div class="layer center" id="s3" style="opacity:0;background:var(--green)">
+    <svg viewBox="0 0 64 64" width="250" height="250" id="s3-mark">
+      <path d="M12 62V30A20 20 0 0 1 52 30V62Z M32 22.5a7.5 7.5 0 0 0-3.6 14.08L26.5 50h11l-1.9-13.42A7.5 7.5 0 0 0 32 22.5Z" fill="#F6F1E7" fill-rule="evenodd"/>
+    </svg>
+    <div class="serif" id="s3-name" style="color:var(--ivory);font-size:200px;line-height:1;margin-top:40px"></div>
+    <div id="s3-est" style="color:var(--peach);font:700 52px/1 Jakarta;margin-top:26px">ESTATES</div>
+    <p id="s3-tag" style="margin-top:110px;font-size:76px;line-height:1.15;color:var(--ivory)"><span class="serif">London homes,</span><br><span class="ital" style="color:var(--peach)">properly run.</span></p>
+  </div>
+
+  <!-- S4 website -->
+  <div class="layer" id="s4" style="opacity:0">
+    <div class="center" style="position:absolute;left:0;right:0;top:300px">
+      <p class="eyebrow" id="s4-a" style="color:var(--clay7)">New website</p>
+      <h2 class="serif" id="s4-h" style="color:var(--ink);font-size:92px;line-height:1.05;margin-top:22px">Designed for <span class="ital" style="color:var(--clay7)">you.</span></h2>
+    </div>
+    <div id="phone"><div class="screen"><div class="notch"></div><img id="s4-img" src="assets/site-scroll.jpg"></div></div>
+  </div>
+
+  <!-- S5 -10% -->
+  <div class="layer center" id="s5" style="opacity:0;background:var(--clay7)">
+    <p class="eyebrow" style="color:var(--sand)">Book direct</p>
+    <div class="serif" id="s5-num" style="color:var(--ivory);font-size:420px;line-height:.95;margin-top:30px;font-variant-numeric:tabular-nums">−10%</div>
+    <p id="s5-sub" style="color:var(--ivory);font:600 58px/1.25 Jakarta;margin-top:40px">cheaper than Airbnb<br>&amp; Booking.com</p>
+  </div>
+
+  <!-- S6 map -->
+  <div class="layer" id="s6" style="opacity:0;background:var(--green)">
+    <div class="center" style="position:absolute;left:0;right:0;top:310px">
+      <div class="serif" id="s6-num" style="color:var(--ivory);font-size:260px;line-height:1;font-variant-numeric:tabular-nums">0</div>
+      <p style="color:var(--peach);font:700 56px/1.2 Jakarta;margin-top:10px">homes in &amp; around London</p>
+    </div>
+    <div id="s6-map" style="position:absolute;left:90px;top:860px;width:900px;height:560px">
+      <svg viewBox="0 0 900 560" width="900" height="560" style="position:absolute;inset:0;overflow:visible">
+        <path id="s6-river" d="" fill="none" stroke="#1F5A44" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- S7 landlords -->
+  <div class="layer" id="s7" style="opacity:0;background:var(--ivory)">
+    <div class="center" style="position:absolute;left:0;right:0;top:300px">
+      <p class="eyebrow" style="color:var(--clay7)">For landlords</p>
+      <h2 class="serif" id="s7-h" style="color:var(--ink);font-size:96px;line-height:1.05;margin-top:22px">What could your<br>home <span class="ital" style="color:var(--clay7)">earn?</span></h2>
+    </div>
+    <div class="card" id="s7-card" style="position:absolute;left:150px;top:720px;width:780px;"><img src="assets/calc-out.jpg" style="width:100%;display:block"></div>
+  </div>
+
+  <!-- S8 end -->
+  <div class="layer" id="curtain2" style="transform:translateY(100%)"></div>
+  <div class="layer center" id="s8" style="opacity:0">
+    <svg viewBox="0 0 64 64" width="260" height="260" id="s8-mark">
+      <path d="M12 62V30A20 20 0 0 1 52 30V62Z M32 22.5a7.5 7.5 0 0 0-3.6 14.08L26.5 50h11l-1.9-13.42A7.5 7.5 0 0 0 32 22.5Z" fill="#F6F1E7" fill-rule="evenodd"/>
+      <path d="M32 22.5a7.5 7.5 0 0 0-3.6 14.08L26.5 50h11l-1.9-13.42A7.5 7.5 0 0 0 32 22.5Z" fill="#C8582F"/>
+    </svg>
+    <div class="serif" style="color:var(--ivory);font-size:170px;line-height:1;margin-top:40px">Seeker</div>
+    <div style="color:var(--peach);font:700 46px/1 Jakarta;letter-spacing:.42em;margin:22px 0 0 .42em">ESTATES</div>
+    <div id="s8-url" style="margin-top:110px;padding:30px 56px;border-radius:999px;background:var(--ivory);color:var(--green);font:700 62px/1 Jakarta">seekerestates.com</div>
+    <p id="s8-cta" style="margin-top:40px;color:var(--sand);font:600 44px/1.3 Jakarta">Book direct · Link in bio</p>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const clamp = (x) => Math.max(0, Math.min(1, x));
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const eo = (x) => 1 - Math.pow(1 - x, 3);                 // ease out cubic
+const eio = (x) => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const back = (x) => { const c = 1.6; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const lerp = (a, b, x) => a + (b - a) * x;
+const show = (el, o, ty = 0, s = 1) => { el.style.opacity = o; el.style.transform = `translateY(${ty}px) scale(${s})`; };
+// fade a scene in at a and out at b (with 0.35 s cross-fades)
+// Hard cuts between full-bleed scenes (cross-fading two solid colours looks muddy); elements animate in instead.
+const scene = (id, t, a, b) => { const on = t >= a && t < b; $(id).style.opacity = on ? 1 : 0; $(id).style.visibility = on ? "visible" : "hidden"; return on; };
+
+// S3: letters of "Seeker"
+"Seeker".split("").forEach(ch => { const s = document.createElement("span"); s.className = "word"; s.textContent = ch; $("s3-name").appendChild(s); });
+
+// S6: map projection (London homes only)
+const HOMES = [[51.499,-0.02],[51.52,-0.21],[51.5125,-0.188],[51.53,0.085],[51.534,-0.174],[51.5205,-0.156],[51.492,0.07],[51.541,-0.095],[51.48,-0.01],[51.527,-0.292],[51.544,-0.135],[51.525,-0.033],[51.505,-0.225],[51.542,-0.151],[51.522,-0.017],[51.524,-0.184],[51.532,-0.17],[51.478,-0.195]];
+const RIVER = [[-0.31,51.488],[-0.25,51.49],[-0.225,51.468],[-0.19,51.466],[-0.16,51.48],[-0.125,51.49],[-0.12,51.505],[-0.09,51.509],[-0.07,51.505],[-0.045,51.5],[-0.03,51.507],[-0.012,51.486],[0.002,51.49],[0.008,51.506],[0.035,51.5],[0.07,51.497],[0.1,51.505]];
+const LNG = [-0.31, 0.1], LAT = [51.46, 51.55];
+const px = ([lat, lng]) => [ (lng - LNG[0]) / (LNG[1] - LNG[0]) * 900, (1 - (lat - LAT[0]) / (LAT[1] - LAT[0])) * 560 ];
+$("s6-river").setAttribute("d", RIVER.map((p, i) => { const [x, y] = px([p[1], p[0]]); return (i ? "L" : "M") + x.toFixed(1) + " " + y.toFixed(1); }).join(" "));
+const dots = HOMES.map(h => { const d = document.createElement("div"); d.className = "dot"; const [x, y] = px(h); d.style.left = x + "px"; d.style.top = y + "px"; $("s6-map").appendChild(d); return d; });
+const dotOrder = dots.map((d, i) => i).sort((a, b) => parseFloat(dots[a].style.left) - parseFloat(dots[b].style.left));
+
+const DURATION = 30;
+function render(t) {
+  // S1 0–3.4: arch draws, keyhole pops, hook words rise
+  scene("s1", t, -1, 3.4);
+  // S1 exit: the hook lifts away just before the cut
+  $("s1").style.transform = `translateY(${lerp(0, -60, eio(seg(t, 3.1, 3.4)))}px)`;
+  $("s1-arch").setAttribute("stroke-dashoffset", 1 - eio(seg(t, 0, .9)));
+  $("s1-fill").setAttribute("opacity", eo(seg(t, .75, 1.15)));
+  const k = back(seg(t, .95, 1.4)); $("s1-key").style.transform = `scale(${k})`;
+  show($("s1-eye"), eo(seg(t, .15, .55)), lerp(30, 0, eo(seg(t, .15, .55))));
+  document.querySelectorAll("#s1-h .word").forEach((w, i) => { const x = eo(seg(t, .25 + i * .14, .75 + i * .14)); show(w, x, lerp(70, 0, x)); });
+  $("s1-mark").style.transform = `translateY(${lerp(0, -20, seg(t, 1.4, 3.4))}px)`;
+
+  // S2 3.4–7.6: old logo on ivory, clay arch curtain rises, new mark on clay
+  $("bg-ivory").style.opacity = (t >= 3.4 && t < 7.6) || (t >= 11 && t < 17) ? 1 : 0;
+  scene("s2", t, 3.4, 6.1);
+  { const x = eo(seg(t, 3.3, 3.9)); show($("s2-old"), x, lerp(60, 0, x), lerp(.92, 1, x)); show($("s2-a"), eo(seg(t, 3.4, 3.8)), 0); }
+  const c = eio(seg(t, 5.1, 6.0)); const cOut = eio(seg(t, 7.2, 7.8));
+  $("curtain").style.transform = `translateY(${lerp(100, 0, c) - lerp(0, 0, cOut)}%)`;
+  $("curtain").style.visibility = t < 7.6 ? "visible" : "hidden";
+  scene("s2b", t, 5.85, 7.6);
+  { const x = back(seg(t, 5.9, 6.5)); $("s2b-mark").style.transform = `scale(${lerp(.6, 1, x)}) rotate(${lerp(-6, 0, eo(seg(t, 5.9, 6.5)))}deg)`; show($("s2b-a"), eo(seg(t, 6.0, 6.4)), lerp(30, 0, eo(seg(t, 6.0, 6.4)))); }
+
+  // S3 7.4–11: lockup builds, tagline
+  scene("s3", t, 7.6, 11.0);
+  { const x = eo(seg(t, 7.6, 8.2)); $("s3-mark").style.transform = `translateY(${lerp(80, 0, x)}px) scale(${lerp(.8, 1, x)})`; $("s3-mark").style.opacity = x; }
+  $("s3-name").querySelectorAll(".word").forEach((w, i) => { const x = eo(seg(t, 7.9 + i * .07, 8.4 + i * .07)); show(w, x, lerp(90, 0, x)); });
+  { const x = eo(seg(t, 8.5, 9.1)); $("s3-est").style.opacity = x; $("s3-est").style.letterSpacing = lerp(.05, .42, x) + "em"; }
+  { const x = eo(seg(t, 9.1, 9.7)); show($("s3-tag"), x, lerp(40, 0, x)); }
+
+  // S4 10.8–17: phone scrolls the new homepage
+  scene("s4", t, 11.0, 17.0);
+  { const x = eo(seg(t, 11.0, 11.6)); show($("s4-a"), x, lerp(30, 0, x)); const y = eo(seg(t, 11.15, 11.8)); show($("s4-h"), y, lerp(40, 0, y));
+    const p = eo(seg(t, 11.1, 11.9)); $("phone").style.transform = `translateY(${lerp(500, 0, p)}px) rotate(${lerp(4, 0, p)}deg)`;
+    const img = $("s4-img"); const maxScroll = img.naturalHeight ? img.clientHeight - 1114 : 3000; img.style.transform = `translateY(${-eio(seg(t, 12.2, 16.6)) * Math.min(maxScroll, 3600)}px)`; }
+
+  // S5 16.8–20.6: -10% counter on clay
+  scene("s5", t, 17.0, 20.6);
+  { const n = Math.round(eo(seg(t, 17.1, 18.2)) * 10); $("s5-num").textContent = "−" + n + "%"; const s = back(seg(t, 17.0, 17.6)); $("s5-num").style.transform = `scale(${lerp(.7, 1, s)})`;
+    const x = eo(seg(t, 17.8, 18.4)); show($("s5-sub"), x, lerp(30, 0, x)); }
+
+  // S6 20.4–24.4: river draws, dots pop, counter to 19
+  scene("s6", t, 20.6, 24.4);
+  $("s6-river").setAttribute("stroke-dashoffset", 1 - eio(seg(t, 20.6, 21.8)));
+  dotOrder.forEach((i, n) => { const x = back(seg(t, 21.0 + n * .09, 21.35 + n * .09)); dots[i].style.transform = `scale(${x})`; dots[i].style.opacity = clamp(x * 2); });
+  { const visible = dotOrder.filter((i, n) => t >= 21.2 + n * .09).length; const n = t >= 22.9 ? 19 : visible; $("s6-num").textContent = n; }
+
+  // S7 24.2–27.6: landlord calculator card
+  scene("s7", t, 24.4, 27.9);
+  { const x = eo(seg(t, 24.4, 25.0)); show($("s7-h"), x, lerp(40, 0, x)); const y = eo(seg(t, 24.7, 25.5)); $("s7-card").style.opacity = y * (1 - seg(t, 27.15, 27.45)); $("s7-card").style.transform = `translateY(${lerp(300, 0, y)}px) rotate(${lerp(-3, 0, y)}deg)`; }
+
+  // S8 27.3–30: green arch curtain, end card
+  $("curtain2").style.transform = `translateY(${lerp(100, 0, eio(seg(t, 27.2, 27.9)))}%)`;
+  const o8 = seg(t, 27.7, 28.1); $("s8").style.opacity = o8; $("s8").style.visibility = o8 > 0 ? "visible" : "hidden";
+  { const m = back(seg(t, 27.8, 28.4)); $("s8-mark").style.transform = `scale(${lerp(.5, 1, m)})`;
+    const u = eo(seg(t, 28.4, 28.9)); show($("s8-url"), u, lerp(40, 0, u)); const c2 = eo(seg(t, 28.7, 29.2)); show($("s8-cta"), c2, lerp(30, 0, c2)); }
+}
+window.render = render; window.DURATION = DURATION;
+render(0);
+// Live preview when opened in a browser: ?play
+if (location.search.includes("play")) { const t0 = performance.now(); (function loop(){ const t = ((performance.now() - t0) / 1000) % DURATION; render(t); requestAnimationFrame(loop); })(); }
+</script>
+</body>
+</html>
