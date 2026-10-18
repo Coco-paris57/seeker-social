@@ -136,3 +136,48 @@ def _market_row(ref, prop, nd):
         row["market_occ_30"] = round(sum(occ[0][:30]) / min(30, len(occ[0])) / 100, 3)
         row["market_occ_60"] = round(sum(occ[0][:60]) / min(60, len(occ[0])) / 100, 3)
     return row
+
+
+def pull_smoobu_reservations(day=None, back_days=365, ahead_days=180):
+    """Reservations straight from Smoobu (every channel) into reservations.csv.
+
+    Revenue = Smoobu `basePrice` price elements: the rental amount before cleaning fee and
+    before OTA commission, the same basis as PriceLabs' rental_revenue. Blocked dates and
+    owner blocks are skipped; cancellations are kept with status 'cancelled'. Only apartments
+    mapped in id_map.json are included; others are counted and reported.
+    """
+    from .smoobu import Smoobu
+
+    id_map = json.loads(config.ID_MAP_FILE.read_text())
+    by_sm = {str(v["smoobu"]): ref for ref, v in id_map.items()
+             if not ref.startswith("_") and v.get("smoobu")}
+    today = date.fromisoformat(day) if day else date.today()
+    sm, rows, unmapped, page = Smoobu(), [], {}, 1
+    while True:
+        r = sm._get("/api/reservations", {
+            "from": (today - timedelta(days=back_days)).isoformat(),
+            "to": (today + timedelta(days=ahead_days)).isoformat(),
+            "showCancellation": "true", "excludeBlocked": "true", "includePriceElements": "true",
+            "pageSize": 100, "page": page})
+        for b in r.get("bookings", []):
+            if b.get("is-blocked-booking"):
+                continue
+            apt = str((b.get("apartment") or {}).get("id"))
+            ref = by_sm.get(apt)
+            if not ref:
+                unmapped[apt] = unmapped.get(apt, 0) + 1
+                continue
+            pe = {}
+            for e in b.get("priceElements") or []:
+                pe[e.get("type")] = pe.get(e.get("type"), 0) + float(e.get("amount") or 0)
+            rows.append({"ref": ref, "pricelabs_id": "", "channel": (b.get("channel") or {}).get("name", ""),
+                         "arrival": b.get("arrival"), "departure": b.get("departure"),
+                         "total_gbp": round(pe["basePrice"], 2) if "basePrice" in pe else b.get("price"),
+                         "cleaning_gbp": pe.get("cleaningFee", ""), "commission_gbp": pe.get("commission", ""),
+                         "booked_on": (b.get("created-at") or "")[:10],
+                         "status": "cancelled" if b.get("type") == "cancellation" else "confirmed"})
+        if page >= r.get("page_count", 1):
+            break
+        page += 1
+    save("reservations", rows, day)
+    return {"reservations": len(rows), "unmapped_apartments": unmapped}
