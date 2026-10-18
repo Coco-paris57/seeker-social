@@ -1,23 +1,195 @@
 {
-  "_about": "Our refs (build/properties.py) -> platform ids. Built 18 Oct 2026 from PriceLabs get_listing_data by matching name, coordinates and min/base price to the info pack. 'pricelabs' = the listing whose prices count for the unit; 'pricelabs_other' = duplicate copies (Vrbo/Channex/second Smoobu listing). 'smoobu' assumes the PriceLabs smoobu listing id IS the Smoobu apartment id - verified by `rm.cli check` against Smoobu's apartment list. confidence: high = name+coords+prices match; check = needs Corentin's confirmation.",
-  "P01": {"pricelabs": ["3320302"], "pricelabs_other": ["d1f3bd96-8b7e-4107-b46e-394ed20edcac___29d40c47-74b4-46cf-ade9-8ddf31aa211b"], "smoobu": 3320302, "confidence": "high", "note": "Bowspirit / 82 Bowsprit Point E14; min 120 base 230 match pack"},
-  "P02": {"pricelabs": ["2999946"], "pricelabs_other": ["_units_0004_ca1ccf61-e6a7-4ab5-b901-eaccade87d31"], "smoobu": 2999946, "confidence": "high", "note": "Notting Hill W10; 60/175 match"},
-  "P03": {"pricelabs": ["518457d0-4269-48fd-b116-2249bd1628c5___90c85e5e-f9a9-4410-aaad-4c1ad8d24b96"], "pricelabs_other": [], "smoobu": null, "confidence": "check", "note": "Bayswater 3-bed priced through Channex, no Smoobu listing in PriceLabs; base 323 matches pack"},
-  "P04": {"pricelabs": ["7dc96cda-18fc-4184-b562-1d5f65cb0161___46180933-ae56-4589-abde-6b6690bc10c0"], "pricelabs_other": ["3254047", "_units_0001_20df1e73-0581-4035-9ab6-a123451d720a"], "smoobu": 3254047, "confidence": "check", "note": "Barking: Channex listing pushes (90/220 match); Smoobu listing 3254047 has push off; Vrbo copy pushes and shows fully blocked"},
-  "P05": {"pricelabs": ["3166592"], "pricelabs_other": [], "smoobu": 3166592, "confidence": "high", "note": "Abbey Rd; 150/455 match"},
-  "P06": {"pricelabs": ["3288517"], "pricelabs_other": [], "smoobu": 3288517, "confidence": "high", "note": "Marylebone; 200/340 match"},
-  "P07": {"pricelabs": ["3288427"], "pricelabs_other": [], "smoobu": 3288427, "confidence": "high", "note": "'Modern 1 bed Flat | Quiet Retreat' at Woolwich coordinates; 165/226 match"},
-  "P08": {"pricelabs": ["3318167"], "pricelabs_other": ["10339b41-aa38-4f57-a468-a450d0a21726___7c269045-86eb-404b-a0a0-2c3bd9fd4fb5"], "smoobu": 3318167, "confidence": "high", "note": "Handa Walk N1; 150/250 match"},
-  "P09": {"pricelabs": ["3318172"], "pricelabs_other": ["e36cf9e9-2194-4c4f-9080-b8469103faf6___ad3ac5e1-ca82-4ec3-957e-9281e9168ca9"], "smoobu": 3318172, "confidence": "high", "note": "Torrent Lodge SE10; 100/160 match"},
-  "P10": {"pricelabs": ["3318177"], "pricelabs_other": ["babeec20-d992-4793-ae13-c006b70b5a9d___22ca5aaf-d278-41d2-b482-de2b962a4088"], "smoobu": 3318177, "confidence": "high", "note": "Westgate House W5; 85/160 match"},
-  "P11": {"pricelabs": ["3064196"], "pricelabs_other": ["_units_0001_7fd3a4c7-bb3d-42f3-8f6c-8571115a102f"], "smoobu": 3064196, "confidence": "high", "note": "Camden; 120/260 match"},
-  "P12": {"pricelabs": ["2699998"], "pricelabs_other": ["_units_0001_386e99b2-9237-4ad5-ad0c-cca08a39700f"], "smoobu": 2699998, "confidence": "high", "note": "Mile End (Vrbo copy name says Mile End); 100/270 match"},
-  "P13": {"pricelabs": ["3064856"], "pricelabs_other": ["3090701", "_units_0001_3d48ae56-99a9-43d3-852b-3683c50a0019", "_units_0001_d0a5f202-6972-418c-9811-3aade54097ef", "_units_0001_125c15c5-0846-4b92-a967-1b54ff6089a5"], "smoobu": 3064856, "confidence": "check", "note": "Shepherd's Bush: TWO Smoobu listings (3064856, 3090701) at identical coordinates, both pushing 110/235"},
-  "P14": {"pricelabs": ["3267077"], "pricelabs_other": [], "smoobu": 3267077, "confidence": "high", "note": "Primrose Hill; PriceLabs min 500 base 525 vs pack 400/475"},
-  "P15": {"pricelabs": [], "pricelabs_other": [], "smoobu": null, "confidence": "check", "note": "Bow / Devons Road: no matching PriceLabs listing"},
-  "P16": {"pricelabs": [], "pricelabs_other": [], "smoobu": null, "confidence": "check", "note": "Little Venice: no matching PriceLabs listing"},
-  "P17": {"pricelabs": [], "pricelabs_other": [], "smoobu": null, "confidence": "check", "note": "St John's Wood 1-bed: no matching PriceLabs listing"},
-  "P18": {"pricelabs": [], "pricelabs_other": [], "smoobu": null, "confidence": "check", "note": "Fulham: no matching PriceLabs listing"},
-  "P19": {"pricelabs": [], "pricelabs_other": [], "smoobu": null, "confidence": "check", "note": "Kings Langley: no matching PriceLabs listing"},
-  "_unmatched": {"pricelabs": ["3547481", "_units_0001_a7f5a076-f6c7-4352-b4e8-cd9e58665c55", "_units_0001_4a980bb7-a141-4d59-b94d-66b5124bdd35", "_units_0001_380ddc1a-8218-4d54-a9fa-1eaf04d59b8e"], "note": "Waterford Court (2-bed, E14 Isle of Dogs coords, 220/350, pushing) is not in the info pack. Three Vrbo listings at Marylebone coordinates (incl. 'Old School Grandma London Experience'), push off."}
+ "_about": "Our refs (build/properties.py) -> platform ids. Built 18 Oct 2026 from PriceLabs get_listing_data by matching name, coordinates and min/base price to the info pack. 'pricelabs' = the listing whose prices count for the unit; 'pricelabs_other' = duplicate copies (Vrbo/Channex/second Smoobu listing). 'smoobu' = Smoobu apartment id, verified against Smoobu's apartment list on 18 Oct 2026 (14 apartments). confidence: high = name+coords+prices match; check = needs Corentin's confirmation.",
+ "P01": {
+  "pricelabs": [
+   "3320302"
+  ],
+  "pricelabs_other": [
+   "d1f3bd96-8b7e-4107-b46e-394ed20edcac___29d40c47-74b4-46cf-ade9-8ddf31aa211b"
+  ],
+  "smoobu": 3320302,
+  "confidence": "high",
+  "note": "Bowspirit / 82 Bowsprit Point E14; min 120 base 230 match pack"
+ },
+ "P02": {
+  "pricelabs": [
+   "2999946"
+  ],
+  "pricelabs_other": [
+   "_units_0004_ca1ccf61-e6a7-4ab5-b901-eaccade87d31"
+  ],
+  "smoobu": 2999946,
+  "confidence": "high",
+  "note": "Notting Hill W10; 60/175 match"
+ },
+ "P03": {
+  "pricelabs": [
+   "518457d0-4269-48fd-b116-2249bd1628c5___90c85e5e-f9a9-4410-aaad-4c1ad8d24b96"
+  ],
+  "pricelabs_other": [],
+  "smoobu": null,
+  "confidence": "check",
+  "note": "Bayswater 3-bed: not in Smoobu (checked 18 Oct 2026); priced through Channex; base 323 matches pack"
+ },
+ "P04": {
+  "pricelabs": [
+   "7dc96cda-18fc-4184-b562-1d5f65cb0161___46180933-ae56-4589-abde-6b6690bc10c0"
+  ],
+  "pricelabs_other": [
+   "3254047",
+   "_units_0001_20df1e73-0581-4035-9ab6-a123451d720a"
+  ],
+  "smoobu": null,
+  "confidence": "check",
+  "note": "Barking: not in Smoobu (checked 18 Oct 2026, 14 apartments). Priced by the Channex listing (90/220 match). PriceLabs still holds an old Smoobu listing 3254047 with push off, and a Vrbo copy that pushes and shows fully blocked"
+ },
+ "P05": {
+  "pricelabs": [
+   "3166592"
+  ],
+  "pricelabs_other": [],
+  "smoobu": 3166592,
+  "confidence": "high",
+  "note": "Abbey Rd; 150/455 match"
+ },
+ "P06": {
+  "pricelabs": [
+   "3288517"
+  ],
+  "pricelabs_other": [],
+  "smoobu": 3288517,
+  "confidence": "high",
+  "note": "Marylebone; 200/340 match"
+ },
+ "P07": {
+  "pricelabs": [
+   "3288427"
+  ],
+  "pricelabs_other": [],
+  "smoobu": 3288427,
+  "confidence": "high",
+  "note": "'Modern 1 bed Flat | Quiet Retreat' at Woolwich coordinates; 165/226 match"
+ },
+ "P08": {
+  "pricelabs": [
+   "3318167"
+  ],
+  "pricelabs_other": [
+   "10339b41-aa38-4f57-a468-a450d0a21726___7c269045-86eb-404b-a0a0-2c3bd9fd4fb5"
+  ],
+  "smoobu": 3318167,
+  "confidence": "high",
+  "note": "Handa Walk N1; 150/250 match"
+ },
+ "P09": {
+  "pricelabs": [
+   "3318172"
+  ],
+  "pricelabs_other": [
+   "e36cf9e9-2194-4c4f-9080-b8469103faf6___ad3ac5e1-ca82-4ec3-957e-9281e9168ca9"
+  ],
+  "smoobu": 3318172,
+  "confidence": "high",
+  "note": "Torrent Lodge SE10; 100/160 match"
+ },
+ "P10": {
+  "pricelabs": [
+   "3318177"
+  ],
+  "pricelabs_other": [
+   "babeec20-d992-4793-ae13-c006b70b5a9d___22ca5aaf-d278-41d2-b482-de2b962a4088"
+  ],
+  "smoobu": 3318177,
+  "confidence": "high",
+  "note": "Westgate House W5; 85/160 match"
+ },
+ "P11": {
+  "pricelabs": [
+   "3064196"
+  ],
+  "pricelabs_other": [
+   "_units_0001_7fd3a4c7-bb3d-42f3-8f6c-8571115a102f"
+  ],
+  "smoobu": 3064196,
+  "confidence": "high",
+  "note": "Camden; 120/260 match"
+ },
+ "P12": {
+  "pricelabs": [
+   "2699998"
+  ],
+  "pricelabs_other": [
+   "_units_0001_386e99b2-9237-4ad5-ad0c-cca08a39700f"
+  ],
+  "smoobu": 2699998,
+  "confidence": "high",
+  "note": "Mile End (Vrbo copy name says Mile End); 100/270 match"
+ },
+ "P13": {
+  "pricelabs": [
+   "3064856"
+  ],
+  "pricelabs_other": [
+   "3090701",
+   "_units_0001_3d48ae56-99a9-43d3-852b-3683c50a0019",
+   "_units_0001_d0a5f202-6972-418c-9811-3aade54097ef",
+   "_units_0001_125c15c5-0846-4b92-a967-1b54ff6089a5"
+  ],
+  "smoobu": 3064856,
+  "confidence": "check",
+  "note": "Shepherd's Bush: TWO Smoobu listings (3064856, 3090701) at identical coordinates, both pushing 110/235; Smoobu lists both as separate apartments (3064856 'Top-Floor 2Bed with Private Terrace in W12', 3090701 'Bright 2BR w/Terrace in W12')"
+ },
+ "P14": {
+  "pricelabs": [
+   "3267077"
+  ],
+  "pricelabs_other": [],
+  "smoobu": 3267077,
+  "confidence": "high",
+  "note": "Primrose Hill; PriceLabs min 500 base 525 vs pack 400/475"
+ },
+ "P15": {
+  "pricelabs": [],
+  "pricelabs_other": [],
+  "smoobu": null,
+  "confidence": "check",
+  "note": "Bow / Devons Road: no matching PriceLabs listing"
+ },
+ "P16": {
+  "pricelabs": [],
+  "pricelabs_other": [],
+  "smoobu": null,
+  "confidence": "check",
+  "note": "Little Venice: no matching PriceLabs listing"
+ },
+ "P17": {
+  "pricelabs": [],
+  "pricelabs_other": [],
+  "smoobu": null,
+  "confidence": "check",
+  "note": "St John's Wood 1-bed: no matching PriceLabs listing"
+ },
+ "P18": {
+  "pricelabs": [],
+  "pricelabs_other": [],
+  "smoobu": null,
+  "confidence": "check",
+  "note": "Fulham: no matching PriceLabs listing"
+ },
+ "P19": {
+  "pricelabs": [],
+  "pricelabs_other": [],
+  "smoobu": null,
+  "confidence": "check",
+  "note": "Kings Langley: no matching PriceLabs listing"
+ },
+ "_unmatched": {
+  "pricelabs": [
+   "3547481",
+   "_units_0001_a7f5a076-f6c7-4352-b4e8-cd9e58665c55",
+   "_units_0001_4a980bb7-a141-4d59-b94d-66b5124bdd35",
+   "_units_0001_380ddc1a-8218-4d54-a9fa-1eaf04d59b8e"
+  ],
+  "note": "Waterford Court (2-bed, E14 Isle of Dogs coords, 220/350, pushing) is not in the info pack. Three Vrbo listings at Marylebone coordinates (incl. 'Old School Grandma London Experience'), push off. Smoobu apartment 3547481 'Waterford Court' and 3090701 (second W12 listing) are in Smoobu but not in the info pack."
+ }
 }
