@@ -19,18 +19,25 @@ from datetime import date, timedelta
 from . import config
 
 SCHEMAS = {
-    "prices": "ref,date,pricelabs_price,smoobu_price,available,min_stay",
-    "reservations": "ref,channel,arrival,departure,total_gbp,booked_on,status",
+    "prices": "ref,pricelabs_id,date,pricelabs_price,smoobu_price,available,min_stay,booking_status,booked_price,booked_adr",
+    "reservations": "ref,pricelabs_id,channel,arrival,departure,total_gbp,cleaning_gbp,commission_gbp,booked_on,status",
     "market": "ref,bedrooms,p25,p50,p75,p90,market_occ_30,market_occ_60,market_adr_30,source",
     "comps": "ref,comp_id,platform,url,bedrooms,sleeps,rating,reviews,date,nightly_gbp,source",
     "channel_checks": "ref,channel,date,displayed_nightly_gbp,displayed_discount_pct,source",
-    "listings": ("ref,pricelabs_id,smoobu_id,pl_base,pl_min,pl_max,sync_on,last_push,"
+    "listings": ("ref,pricelabs_id,pms,name,smoobu_id,pl_base,pl_min,pl_max,sync_on,last_push,recommended_base,"
                  "rating_airbnb,reviews_airbnb,rating_booking,reviews_booking"),
+    "pl_kpis": ("ref,pricelabs_id,pms,occupancy_next_7,market_occupancy_next_7,occupancy_next_30,"
+                "market_occupancy_next_30,occupancy_next_60,market_occupancy_next_60,adr_past_30,stly_adr_past_30,"
+                "booking_pickup_past_30,adr_ytd,stly_adr_ytd,adr_next_360,stly_adr_next_360,fully_blocked_next_360"),
 }
 NUMERIC = {"pricelabs_price", "smoobu_price", "min_stay", "total_gbp", "p25", "p50", "p75",
            "p90", "market_occ_30", "market_occ_60", "market_adr_30", "bedrooms", "sleeps", "rating", "reviews",
            "nightly_gbp", "displayed_nightly_gbp", "displayed_discount_pct", "pl_base", "pl_min",
-           "pl_max", "rating_airbnb", "reviews_airbnb", "rating_booking", "reviews_booking"}
+           "pl_max", "rating_airbnb", "reviews_airbnb", "rating_booking", "reviews_booking",
+           "booked_price", "booked_adr", "cleaning_gbp", "commission_gbp", "recommended_base",
+           "occupancy_next_7", "market_occupancy_next_7", "occupancy_next_30", "market_occupancy_next_30",
+           "occupancy_next_60", "market_occupancy_next_60", "adr_past_30", "stly_adr_past_30",
+           "booking_pickup_past_30", "adr_ytd", "stly_adr_ytd", "adr_next_360", "stly_adr_next_360"}
 
 
 def folder(day=None):
@@ -53,7 +60,7 @@ def _coerce(row):
         v = (v or "").strip()
         if k in NUMERIC:
             out[k] = float(v) if v not in ("", "NA") else None
-        elif k == "available" or k == "sync_on":
+        elif k in ("available", "sync_on", "fully_blocked_next_360"):
             out[k] = v.lower() in ("1", "true", "yes", "y")
         else:
             out[k] = v
@@ -79,65 +86,36 @@ def save(name, rows, day=None):
         w.writerows(rows)
 
 
-def pull_live(days_ahead=180, day=None):
-    """Pull PriceLabs + Smoobu into today's snapshot. Needs both API keys and id_map.json."""
-    from .pricelabs import PriceLabs
+def pull_smoobu(days_ahead=180, day=None):
+    """Add Smoobu's stored nightly rate to prices.csv (the PriceLabs -> Smoobu sync check).
+
+    Run after `ingest`, so prices.csv already holds PriceLabs prices from the connector.
+    """
     from .smoobu import Smoobu
 
     id_map = json.loads(config.ID_MAP_FILE.read_text())
+    by_sm = {str(v["smoobu"]): ref for ref, v in id_map.items()
+             if not ref.startswith("_") and v.get("smoobu")}
     start = date.today()
-    end = start + timedelta(days=days_ahead)
-    pl, sm = PriceLabs(), Smoobu()
-    s_iso, e_iso = start.isoformat(), end.isoformat()
-
-    by_pl = {str(v["pricelabs"]): ref for ref, v in id_map.items() if v.get("pricelabs")}
-    by_sm = {str(v["smoobu"]): ref for ref, v in id_map.items() if v.get("smoobu")}
-
-    # PriceLabs listings (settings + sync) and recommended prices.
-    listings = {}
-    for l in pl.listings().get("listings", []):
-        ref = by_pl.get(str(l.get("id")))
-        if ref:
-            listings[ref] = {"ref": ref, "pricelabs_id": l.get("id"), "smoobu_id": id_map[ref].get("smoobu"),
-                             "pl_base": l.get("base"), "pl_min": l.get("min"), "pl_max": l.get("max"),
-                             "sync_on": l.get("push_enabled"), "last_push": l.get("last_date_pushed")}
-    prices = {}
-    for l in pl.listing_prices(list(by_pl), s_iso, e_iso):
-        ref = by_pl.get(str(l.get("id")))
-        for d in l.get("data", []) if ref else []:
-            prices[(ref, d["date"])] = {"ref": ref, "date": d["date"],
-                                        "pricelabs_price": d.get("user_price") or d.get("price")}
-    # Smoobu rates as actually stored in the channel manager.
-    rates = sm.rates(list(by_sm), s_iso, e_iso).get("data", {})
+    rates = Smoobu().rates(list(by_sm), start.isoformat(),
+                           (start + timedelta(days=days_ahead)).isoformat()).get("data", {})
+    sm = {}
     for sid, days in rates.items():
         ref = by_sm.get(str(sid))
         for d, v in (days or {}).items() if ref else []:
-            row = prices.setdefault((ref, d), {"ref": ref, "date": d})
-            row.update(smoobu_price=v.get("price"), available=bool(v.get("available")),
-                       min_stay=v.get("min_length_of_stay"))
-    # Market percentiles per listing.
-    market = []
-    for ref, l in listings.items():
-        try:
-            nd = pl.neighborhood_data(l["pricelabs_id"])
-        except Exception as e:  # neighborhood data is optional; keep the run going
-            print(f"neighborhood_data {ref}: {e}")
-            continue
-        market.append(_market_row(ref, config.BY_REF[ref], nd))
-    # Reservations from Smoobu (every channel) for the last 365 days and the window ahead.
-    res = []
-    for b in Smoobu().reservations((start - timedelta(days=365)).isoformat(), e_iso):
-        ref = by_sm.get(str((b.get("apartment") or {}).get("id")))
-        if ref:
-            res.append({"ref": ref, "channel": (b.get("channel") or {}).get("name", ""),
-                        "arrival": b.get("arrival"), "departure": b.get("departure"),
-                        "total_gbp": b.get("price"), "booked_on": (b.get("created-at") or "")[:10],
-                        "status": "cancelled" if b.get("type") == "cancellation" else "confirmed"})
-    save("listings", listings.values(), day)
-    save("prices", sorted(prices.values(), key=lambda r: (r["ref"], r["date"])), day)
-    save("market", market, day)
-    save("reservations", res, day)
-    return folder(day)
+            sm[(ref, d)] = v
+    rows = [{k: ("" if v is None else v) for k, v in r.items()} for r in _raw_rows("prices", day)]
+    for r in rows:
+        v = sm.get((r["ref"], r["date"]))
+        if v and v.get("price") is not None:
+            r["smoobu_price"] = v["price"]
+    save("prices", rows, day)
+    return len(sm)
+
+
+def _raw_rows(name, day=None):
+    p = folder(day) / f"{name}.csv"
+    return list(csv.DictReader(p.open())) if p.exists() else []
 
 
 def _market_row(ref, prop, nd):

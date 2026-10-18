@@ -2,4 +2,3 @@ __pycache__/
 *.pyc
 .DS_Store
 seeker-estates/revenue/data/snapshots/
-seeker-estates/revenue/data/id_map.json

@@ -33,6 +33,25 @@ def bounds(prices, listings):
     return out
 
 
+def rate_leak(prices, ref, today, horizon=30):
+    """Booked nightly ADR vs the PriceLabs price on the same booked nights.
+
+    A large gap means guests pay well below what PriceLabs set: stacked OTA
+    discounts, length-of-stay discounts, or ADR net of something. It points to
+    where to look; the channel-parity audit establishes which.
+    """
+    from datetime import date as _date, timedelta as _td
+    end = today + _td(days=horizon)
+    rows = [p for p in prices if p["ref"] == ref and p.get("booked_adr") and p.get("booked_price")
+            and today <= _date.fromisoformat(p["date"]) < end]
+    if not rows:
+        return None
+    adr = sum(p["booked_adr"] for p in rows) / len(rows)
+    set_price = sum(p["booked_price"] for p in rows) / len(rows)
+    return {"booked_nights": len(rows), "avg_booked_adr": round(adr, 2),
+            "avg_pricelabs_price": round(set_price, 2), "gap_pct": round(adr / set_price - 1, 3)}
+
+
 def expected_channel_price(base, channel):
     c = config.CHANNELS[channel]
     return round(base * (1 + c["markup"]) * (1 - c["discount"]), 2)

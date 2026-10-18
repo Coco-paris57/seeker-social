@@ -13,7 +13,8 @@ def run(day=None):
     today = date.fromisoformat(day) if day else date.today()
     snap = snapshot.load(today.isoformat())
     prices, res, market = snap["prices"], snap["reservations"], {m["ref"]: m for m in snap["market"]}
-    listings = {l["ref"]: l for l in snap["listings"]}
+    listings = {l["ref"]: l for l in snap["listings"] if l["ref"]}
+    plk = {k["ref"]: k for k in snap["pl_kpis"] if k["ref"]}
     refs = [p["ref"] for p in config.PROPERTIES]
     missing = {name: "empty" for name, rows in snap.items() if not rows}
 
@@ -30,9 +31,15 @@ def run(day=None):
     props = []
     for ref in refs:
         prop = config.BY_REF[ref]
-        mk = market.get(ref, {})
+        mk = dict(market.get(ref, {}))
+        pk = plk.get(ref, {})
+        # PriceLabs' own forward/market occupancy (same source both sides) when there is no market.csv row
+        mk.setdefault("market_occ_30", pk.get("market_occupancy_next_30"))
+        mk.setdefault("market_occ_60", pk.get("market_occupancy_next_60"))
         fwd30 = metrics.forward_occupancy(prices, ref, today, 30)
         fwd60 = metrics.forward_occupancy(prices, ref, today, 60)
+        if fwd30 is None:
+            fwd30, fwd60 = pk.get("occupancy_next_30"), pk.get("occupancy_next_60")
         next30 = [p for p in prices if p["ref"] == ref and p.get("available")
                   and today <= date.fromisoformat(p["date"]) < today + timedelta(days=30)]
         our_price = (round(sum(p.get("smoobu_price") or p.get("pricelabs_price") or 0 for p in next30)
@@ -59,6 +66,11 @@ def run(day=None):
             "gaps": metrics.gaps(prices, ref),
             "sync_issues": sync.get(ref, []) if prices else None, "bounds": bnd.get(ref),
             "parity_flags": [p for p in parity if p["ref"] == ref and p["flag"]],
+            "pricelabs": {k: pk.get(k) for k in ("adr_past_30", "stly_adr_past_30", "booking_pickup_past_30",
+                                                   "adr_ytd", "stly_adr_ytd", "fully_blocked_next_360")} if pk else None,
+            "settings": {k: l.get(k) for k in ("pl_min", "pl_base", "pl_max", "recommended_base", "sync_on",
+                                               "last_push")} if l else None,
+            "rate_leak_next_30": audit.rate_leak(prices, ref, today, 30),
             "recommendation": {"action": action, "price_move": move, "reason": reason},
         })
 
