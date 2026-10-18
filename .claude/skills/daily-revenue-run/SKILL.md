@@ -12,6 +12,29 @@ Commands run from `seeker-estates/revenue`. `D` = today's date (Europe/London), 
 `update_*`, `delete_*`, `accept_nudge`, `map_listings`, `refresh_listing_pricing` or
 `set_neighborhood_data_source`. Changes are proposed to Corentin, never made.
 
+## 0. Revenue Quest dashboard - keep it live through the whole run
+Dashboard: https://claude.ai/artifact/9nekRcg2MguSMR2d3mHSpd (page source
+`seeker-estates/revenue/dashboard/revenue-quest.html`). Write with the `ArtifactData` tool
+(`url` above; read a doc first and pin `if_version`; group writes in one `batch`). Only real
+events and real numbers go in: no placeholders.
+- `agents/<id>` for `dispatcher, occupancy, pricelabs, channel, market, comp-east,
+  comp-central, comp-west, strategy`: `{status: idle|running|waiting|blocked|done, step: <index
+  of current station>, note: <one line on what it is doing / found>, xp, finds, gaps}`.
+  Stations per agent are listed in the page's `AGENTS` array; `step` indexes them.
+- `system/run`: `{date, phase, progress: 0-100, summary}`. At the start set the date, reset every
+  agent to `idle`/`step 0` (keep `xp`), clear `system/finds` and start a fresh `system/log`.
+- `system/connections`: `{pricelabs|smoobu|ota: {status: ok|down|blocked|partial, short, detail}}`.
+- `system/log`: `{events: [{ts (UTC ISO), agent, kind: start|progress|finding|gap|done|blocked, text}]}`,
+  keep the last 200.
+- `system/finds`: `{items: [{agent, severity: critical|high|medium, ref, title, evidence}]}`.
+- `system/scoreboard` (strategy step only, from the KPI pack): `{note, items: [{label, value}]}`
+  e.g. portfolio occupancy, ADR, RevPAR, RGI, rating, direct share.
+- When: a step starts or ends for the Dispatcher; a specialist is launched (`running`, step 0) and
+  returns (`done` or `blocked`, last step, note, finds, gaps); each finding and data gap goes to
+  the log and finds board.
+- XP (mission points): +100 for a completed mission, +15 per critical or high finding, +5 per
+  medium finding, +5 per data gap reported with its source. Blocked missions earn nothing.
+
 ## 1. Connections - report each, continue with what works, label what doesn't
 1. **PriceLabs**: call `mcp__PriceLabs__get_me`. If the tools are missing, PriceLabs is not
    connected in claude.ai (Customize → Connectors): stop and say so.
