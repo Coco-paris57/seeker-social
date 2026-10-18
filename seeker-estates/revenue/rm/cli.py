@@ -3,6 +3,7 @@
   check      test the Smoobu key/secret and confirm the id map against Smoobu apartments
   ingest     convert raw PriceLabs connector JSON (data/snapshots/<date>/raw/) to CSVs
   smoobu     add Smoobu stored rates to prices.csv (sync check)
+  smoobu-res reservations from Smoobu into reservations.csv
   template   create today's snapshot folder with empty CSVs for manual inputs
   analyse    build reports/<date>/kpi_pack.json and kpi_summary.md
 
@@ -70,6 +71,8 @@ def main(argv):
         print(ingest(argv[2] if len(argv) > 2 else None))
     elif cmd == "smoobu":
         print(snapshot.pull_smoobu(day=argv[2] if len(argv) > 2 else None), "Smoobu rate rows")
+    elif cmd == "smoobu-res":
+        print(snapshot.pull_smoobu_reservations(day=argv[2] if len(argv) > 2 else None))
     elif cmd == "template":
         print(snapshot.write_templates())
     elif cmd == "analyse":

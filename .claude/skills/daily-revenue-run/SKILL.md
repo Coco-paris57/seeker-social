@@ -29,6 +29,17 @@ events and real numbers go in: no placeholders.
 - `system/finds`: `{items: [{agent, severity: critical|high|medium, ref, title, evidence}]}`.
 - `system/scoreboard` (strategy step only, from the KPI pack): `{note, items: [{label, value}]}`
   e.g. portfolio occupancy, ADR, RevPAR, RGI, rating, direct share.
+- `properties/<ref>` (P01–P19 that have data): `{area, name, history: [...]}`. Each run APPENDS one
+  entry `{date, adr30, adr30_ly, adr_ytd, adr_ytd_ly, occ_fwd30, mkt_fwd30, occ_fwd60, mkt_fwd60,
+  source}` (replace the entry if today's date is already there; never rewrite older entries).
+  Values come from `pl_kpis.csv` (PriceLabs) for the unit's priced listing; occupancy as 0–1;
+  missing = null. This is how ADR and occupancy improvement per property is tracked over time.
+- `actions/<id>`: `{type: task|advice, priority: critical|high|medium, ref, status: open|done|dismissed,
+  title, why (with the numbers), where (exact screen/setting), impact, source}`. Task = must do,
+  backed by evidence; advice = good to do. The Strategy Captain writes them after its report.
+  Never change an action Corentin has marked done or set aside; update an open one in place
+  instead of adding a duplicate; mark an open task done only when today's data shows it fixed
+  (say so in `why`).
 - When: a step starts or ends for the Dispatcher; a specialist is launched (`running`, step 0) and
   returns (`done` or `blocked`, last step, note, finds, gaps); each finding and data gap goes to
   the log and finds board.
@@ -50,11 +61,14 @@ Save each tool response exactly as returned - do not edit, summarise or recomput
    (60 days keeps responses manageable; extend only when asked.) To save time, give these
    to 3 general-purpose agents in parallel, one per area batch below, each told the exact
    file names and the read-only rule.
-3. `get_pms_reservations` for `pms` = `smoobu` and again for `channex`, stay window
-   `start_date` = D − 365, `end_date` = D + 180, `limit` 100, increasing `offset` while
-   `next_page` is true → `RAW/reservations_<pms>_<n>.json`.
+3. Reservations: `python3 -m rm.cli smoobu-res D` (Smoobu API, every channel, last 365 days
+   to D + 180). Do NOT copy PriceLabs `get_pms_reservations` output by hand: it holds guest
+   records and the copy is blocked. Barking/Bayswater (Channex) have no reservation source yet;
+   report that as a data gap.
 4. `python3 -m rm.cli ingest D`, then (if Smoobu passed) `python3 -m rm.cli smoobu D`, then
    `python3 -m rm.cli analyse D` → `reports/D/kpi_pack.json` + `kpi_summary.md`.
+   Specialists write their sections to `reports/D/sections/<agent>.md` and reply with a JSON
+   block of findings, which the Dispatcher copies to the dashboard.
 
 ## 3. Specialists - launch in ONE message so they run in parallel
 Pass each the date D and the paths of the pack and snapshot; each returns its markdown section

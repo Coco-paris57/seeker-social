@@ -167,7 +167,66 @@ button{font:inherit;color:inherit}
   font-weight:700;padding:8px 14px;border-radius:999px;z-index:30;transition:transform .3s ease;max-width:calc(100% - 32px)}
 .toast.show{transform:translate(-50%,0)}
 
-@media (max-width:860px){.hud,.lower{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+/* Property scoreboard */
+.sechead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.sechead p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.ptiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.ptile{background:var(--panel2);border:1px solid var(--rule);border-radius:10px;padding:10px 12px}
+.ptile b{display:block;font-family:var(--mono);font-size:20px}
+.ptile span{font-size:12px;color:var(--muted)}
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:12px;background:var(--panel)}
+table.props{width:100%;border-collapse:collapse;min-width:900px;font-size:13.5px}
+.props th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;font-weight:600;padding:10px 12px;border-bottom:1px solid var(--rule);white-space:nowrap}
+.props td{padding:9px 12px;border-bottom:1px solid var(--rule);vertical-align:middle}
+.props tr:last-child td{border-bottom:none}
+.props tbody tr.row{cursor:pointer}
+.props tbody tr.row:hover{background:var(--panel2)}
+.props td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.delta{font-family:var(--mono);font-size:12px;margin-left:6px;white-space:nowrap}
+.delta.up{color:var(--ok)}.delta.down{color:var(--bad)}.delta.flat{color:var(--muted)}
+.occbar{position:relative;width:120px;height:10px;border-radius:5px;background:var(--panel2);border:1px solid var(--rule)}
+.occbar i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:var(--run)}
+.occbar u{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--signal)}
+.occtxt{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap}
+.pname b{display:block}
+.pname small{color:var(--muted)}
+.spark{display:block}
+.sel select{background:var(--panel2);color:var(--fg);border:1px solid var(--rule);border-radius:8px;padding:5px 8px;font:inherit;font-size:13px}
+.detailrow td{background:var(--panel2)}
+.pdetail{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.pdetail h4{margin:0 0 6px;font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;font-weight:600}
+.chartbox svg{width:100%;height:auto;display:block}
+.hist{width:100%;border-collapse:collapse;font-size:12.5px}
+.hist td,.hist th{padding:4px 6px;border-bottom:1px solid var(--rule);text-align:left}
+.hist th{color:var(--muted);font-weight:600}
+.src{font-size:11.5px;color:var(--muted);margin-top:8px}
+
+/* Actions */
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.acol{background:var(--panel);border:1px solid var(--rule);border-radius:12px;padding:14px 16px;min-width:0}
+.acol h3{font-size:15px;display:flex;align-items:center;gap:8px}
+.acol .count{font-family:var(--mono);font-size:12px;color:var(--muted);margin-left:auto}
+.acol .lede{color:var(--muted);font-size:12.5px;margin:4px 0 10px}
+.alist{display:flex;flex-direction:column;gap:8px}
+.act{border:1px solid var(--rule);border-radius:10px;background:var(--panel2);padding:10px 12px;display:grid;grid-template-columns:auto 1fr;gap:4px 12px}
+.act.task{border-left:4px solid var(--bad)}
+.act.advice{border-left:4px solid var(--run)}
+.act.closed{opacity:.55}
+.act.closed .atitle{text-decoration:line-through}
+.check{width:22px;height:22px;border-radius:6px;border:2px solid var(--muted);background:none;cursor:pointer;display:grid;place-items:center;margin-top:1px;padding:0}
+.check[aria-pressed="true"]{background:var(--ok);border-color:var(--ok)}
+.check[aria-pressed="true"]::after{content:"";width:6px;height:11px;border:solid var(--bg);border-width:0 3px 3px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.check:disabled{cursor:default;opacity:.6}
+.atitle{font-weight:600;font-size:14px}
+.ameta{grid-column:2;display:flex;flex-wrap:wrap;gap:6px 10px;font-size:12px;color:var(--muted)}
+.ameta .tag{border:1px solid var(--rule);border-radius:999px;padding:0 8px;color:var(--fg)}
+.awhy{grid-column:2;font-size:13px;color:var(--fg)}
+.aops{grid-column:2;display:flex;gap:8px;margin-top:2px}
+.aops button{background:none;border:1px solid var(--rule);border-radius:7px;padding:2px 9px;font-size:12px;cursor:pointer;color:var(--muted)}
+.aops button:hover{color:var(--fg);border-color:var(--muted)}
+.showclosed{background:none;border:none;color:var(--muted);font-size:12.5px;cursor:pointer;padding:6px 0 0;text-decoration:underline}
+
+@media (max-width:860px){.hud,.lower,.actions,.pdetail{grid-template-columns:1fr}.stats,.ptiles{grid-template-columns:repeat(2,1fr)}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -204,6 +263,38 @@ button{font:inherit;color:inherit}
       <div class="sub" id="goalSub">Win condition: beat the competitor set on revenue per available night (RGI above 1.10) on every property.</div>
     </div>
     <div class="kpis" id="goalKpis"><span class="lock">Unlocks after the first full run</span></div>
+  </section>
+
+  <section aria-label="Property scoreboard">
+    <div class="sechead">
+      <div><h2>PROPERTY SCOREBOARD</h2><p>ADR and occupancy per property, against last year and the market. Each run adds a point to the trend.</p></div>
+      <label class="sel">Sort <select id="psort">
+        <option value="ref">Property</option>
+        <option value="adr">ADR change vs last year</option>
+        <option value="occgap">Occupancy vs market</option>
+        <option value="trend">Change since tracking began</option>
+      </select></label>
+    </div>
+    <div class="ptiles" id="ptiles"></div>
+    <div class="tablewrap"><table class="props">
+      <thead><tr><th>Property</th><th>ADR last 30 days</th><th>ADR year to date</th><th>Booked next 30 days vs market</th><th>Booked next 60 days</th><th>Trend</th></tr></thead>
+      <tbody id="ptable"></tbody>
+    </table></div>
+  </section>
+
+  <section class="actions" aria-label="Tasks and advice">
+    <div class="acol">
+      <h3><span style="color:var(--bad)">■</span> Must do <span class="count" id="tCount"></span></h3>
+      <p class="lede">Tasks with evidence behind them. Tick when done.</p>
+      <div class="alist" id="tasks"></div>
+      <button class="showclosed" data-toggle="task" id="tToggle" hidden></button>
+    </div>
+    <div class="acol">
+      <h3><span style="color:var(--run)">■</span> Good to do <span class="count" id="aCount"></span></h3>
+      <p class="lede">Advice that should lift ADR or occupancy. Tick when done, or set aside.</p>
+      <div class="alist" id="advice"></div>
+      <button class="showclosed" data-toggle="advice" id="aToggle" hidden></button>
+    </div>
   </section>
 
   <section class="mapbox" aria-label="Agent lines">
@@ -277,7 +368,8 @@ const STATUS = {idle:"In depot", running:"On the line", waiting:"Held at signal"
 const RANKS = ["Trainee","Driver","Senior Driver","Line Captain","Network Legend"];
 const byId = Object.fromEntries(AGENTS.map(a => [a.id, a]));
 
-const state = {agents:{}, run:null, conn:null, score:null, log:[], finds:[], sel:null, feedFilter:"all", sevFilter:"all"};
+const state = {agents:{}, run:null, conn:null, score:null, log:[], finds:[], sel:null, feedFilter:"all", sevFilter:"all",
+  props:{}, actions:[], expanded:null, showClosed:{task:false, advice:false}};
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 const agentState = id => ({status:"idle", step:0, note:"", xp:0, finds:0, gaps:0, ...(state.agents[id] || {})});
@@ -399,7 +491,144 @@ function renderDrawer(){
   $("#closeD").onclick = () => select(null);
 }
 
-function renderAll(){ renderHud(); renderMap(); renderSquad(); renderFeed(); renderFinds(); renderDrawer(); }
+/* ---------- Property scoreboard ---------- */
+const gbp = v => v == null ? "—" : "£" + Math.round(v).toLocaleString("en-GB");
+const pc = v => v == null ? "—" : Math.round(v * 100) + "%";
+const change = (now, then) => (now == null || then == null || then === 0) ? null : now / then - 1;
+function deltaTag(d, label){
+  if (d == null) return `<span class="delta flat">${label ? "no " + label : "—"}</span>`;
+  const cls = d > 0.005 ? "up" : d < -0.005 ? "down" : "flat";
+  const arrow = cls === "up" ? "▲" : cls === "down" ? "▼" : "■";
+  return `<span class="delta ${cls}" title="${label ? "vs " + label : ""}">${arrow} ${Math.abs(Math.round(d * 100))}%</span>`;
+}
+const latest = p => (p.history || [])[(p.history || []).length - 1] || {};
+const first = p => (p.history || [])[0] || {};
+
+function spark(values, color){
+  const v = values.filter(x => x != null);
+  if (v.length < 2) return `<span class="occtxt">${v.length ? "1 run so far" : "—"}</span>`;
+  const w = 96, h = 26, lo = Math.min(...v), hi = Math.max(...v), span = hi - lo || 1;
+  const pts = v.map((x, i) => [(i / (v.length - 1)) * (w - 6) + 3, h - 3 - ((x - lo) / span) * (h - 6)]);
+  const d = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  const last = pts[pts.length - 1];
+  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><path d="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/><circle cx="${last[0]}" cy="${last[1]}" r="3" fill="${color}"/></svg>`;
+}
+
+function lineChart(hist, key, color, fmt){
+  const rows = hist.filter(r => r[key] != null);
+  if (rows.length < 2) return `<div class="occtxt">The trend appears after the second run${rows.length ? ` (now ${fmt(rows[0][key])} on ${esc(rows[0].date)})` : ""}.</div>`;
+  const W = 320, H = 120, L = 44, R = 10, T = 10, B = 24;
+  const vals = rows.map(r => r[key]); let lo = Math.min(...vals), hi = Math.max(...vals);
+  if (lo === hi){ lo -= 1; hi += 1; }
+  const x = i => L + (i / (rows.length - 1)) * (W - L - R), y = v => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+  const d = rows.map((r, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(r[key]).toFixed(1)).join(" ");
+  const area = d + ` L ${x(rows.length - 1).toFixed(1)} ${H - B} L ${L} ${H - B} Z`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(key)} trend">
+    <line x1="${L}" x2="${W - R}" y1="${y(hi)}" y2="${y(hi)}" stroke="var(--rule)"/><line x1="${L}" x2="${W - R}" y1="${y(lo)}" y2="${y(lo)}" stroke="var(--rule)"/>
+    <text x="${L - 6}" y="${y(hi) + 4}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${fmt(hi)}</text>
+    <text x="${L - 6}" y="${y(lo) + 4}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${fmt(lo)}</text>
+    <path d="${area}" fill="${color}" opacity=".12"/><path d="${d}" fill="none" stroke="${color}" stroke-width="2"/>
+    ${rows.map((r, i) => `<circle cx="${x(i)}" cy="${y(r[key])}" r="${i === rows.length - 1 ? 4 : 2.5}" fill="${color}"><title>${esc(r.date)}: ${fmt(r[key])}</title></circle>`).join("")}
+    <text x="${L}" y="${H - 6}" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${esc(rows[0].date)}</text>
+    <text x="${W - R}" y="${H - 6}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${esc(rows[rows.length - 1].date)}</text>
+  </svg>`;
+}
+
+function renderProps(){
+  const list = Object.values(state.props);
+  const tiles = $("#ptiles"), body = $("#ptable");
+  if (!list.length){
+    tiles.innerHTML = "";
+    body.innerHTML = `<tr><td colspan="6" class="empty">No property data yet. The first daily run fills this table from PriceLabs and Smoobu.</td></tr>`;
+    return;
+  }
+  const withLy = list.filter(p => latest(p).adr30 != null && latest(p).adr30_ly != null);
+  const up = withLy.filter(p => latest(p).adr30 > latest(p).adr30_ly).length;
+  const occ = list.filter(p => latest(p).occ_fwd30 != null && latest(p).mkt_fwd30 != null);
+  const ahead = occ.filter(p => latest(p).occ_fwd30 > latest(p).mkt_fwd30).length;
+  const tracked2 = list.filter(p => (p.history || []).length >= 2 && first(p).adr30 && latest(p).adr30);
+  const sinceAvg = tracked2.length ? tracked2.reduce((t, p) => t + change(latest(p).adr30, first(p).adr30), 0) / tracked2.length : null;
+  tiles.innerHTML = `
+    <div class="ptile"><b>${list.length}</b><span>Properties tracked</span></div>
+    <div class="ptile"><b>${withLy.length ? `${up}/${withLy.length}` : "—"}</b><span>ADR up on last year (last 30 days, where last year exists)</span></div>
+    <div class="ptile"><b>${occ.length ? `${ahead}/${occ.length}` : "—"}</b><span>Booked ahead of market, next 30 days</span></div>
+    <div class="ptile"><b>${sinceAvg == null ? "—" : (sinceAvg >= 0 ? "+" : "") + Math.round(sinceAvg * 100) + "%"}</b><span>${sinceAvg == null ? "Average ADR change since tracking began (needs 2 runs)" : "Average ADR change since tracking began"}</span></div>`;
+  const key = $("#psort").value;
+  const score = p => { const l = latest(p);
+    if (key === "adr") return change(l.adr30, l.adr30_ly) ?? -9;
+    if (key === "occgap") return (l.occ_fwd30 ?? -9) - (l.mkt_fwd30 ?? 0);
+    if (key === "trend") return change(l.adr30, first(p).adr30) ?? -9;
+    return 0; };
+  const rows = list.slice().sort((a, b) => key === "ref" ? a.ref.localeCompare(b.ref) : score(b) - score(a));
+  body.innerHTML = rows.map(p => {
+    const l = latest(p), h = p.history || [];
+    const open = state.expanded === p.ref;
+    const bar = (o, m) => o == null ? "—" : `<div class="occbar" title="Ours ${pc(o)} · market ${pc(m)}"><i style="width:${Math.min(100, o * 100)}%"></i>${m != null ? `<u style="left:${Math.min(100, m * 100)}%"></u>` : ""}</div><div class="occtxt">${pc(o)} vs ${pc(m)} market</div>`;
+    const acts = state.actions.filter(a => a.ref === p.ref && a.status === "open");
+    return `<tr class="row" data-prop="${esc(p.ref)}" aria-expanded="${open}">
+        <td class="pname"><b><span class="mono">${esc(p.ref)}</span> ${esc(p.area || "")}</b><small>${esc(p.name || "")}${acts.length ? ` · ${acts.length} open action${acts.length > 1 ? "s" : ""}` : ""}</small></td>
+        <td class="num">${gbp(l.adr30)}${deltaTag(change(l.adr30, l.adr30_ly), "last year")}</td>
+        <td class="num">${gbp(l.adr_ytd)}${deltaTag(change(l.adr_ytd, l.adr_ytd_ly), "last year")}</td>
+        <td>${bar(l.occ_fwd30, l.mkt_fwd30)}</td>
+        <td>${bar(l.occ_fwd60, l.mkt_fwd60)}</td>
+        <td>${spark(h.map(r => r.adr30), "var(--signal)")}</td>
+      </tr>${open ? `<tr class="detailrow"><td colspan="6">
+        <div class="pdetail">
+          <div class="chartbox"><h4>ADR, last 30 days</h4>${lineChart(h, "adr30", "var(--signal)", gbp)}</div>
+          <div class="chartbox"><h4>Booked, next 30 days</h4>${lineChart(h, "occ_fwd30", "var(--run)", pc)}</div>
+        </div>
+        <h4 style="margin:12px 0 6px;font-size:12px;color:var(--muted);letter-spacing:.08em">RUN HISTORY</h4>
+        <div style="overflow-x:auto"><table class="hist"><tr><th>Date</th><th>ADR 30d</th><th>Last year</th><th>ADR YTD</th><th>Booked 30d</th><th>Market 30d</th><th>Booked 60d</th></tr>
+          ${h.slice().reverse().map(r => `<tr><td class="mono">${esc(r.date)}</td><td class="mono">${gbp(r.adr30)}</td><td class="mono">${gbp(r.adr30_ly)}</td><td class="mono">${gbp(r.adr_ytd)}</td><td class="mono">${pc(r.occ_fwd30)}</td><td class="mono">${pc(r.mkt_fwd30)}</td><td class="mono">${pc(r.occ_fwd60)}</td></tr>`).join("")}
+        </table></div>
+        ${acts.length ? `<h4 style="margin:12px 0 6px;font-size:12px;color:var(--muted);letter-spacing:.08em">OPEN ACTIONS</h4>${acts.map(a => `<div style="font-size:13px">• ${a.type === "task" ? "Must do" : "Advice"}: ${esc(a.title)}</div>`).join("")}` : ""}
+        <div class="src">Source: ${esc(l.source || "—")}</div>
+      </td></tr>` : ""}`;
+  }).join("");
+}
+
+/* ---------- Actions ---------- */
+let canWrite = null, actionsDb = null;
+function renderActions(){
+  ["task", "advice"].forEach(type => {
+    const all = state.actions.filter(a => a.type === type);
+    const open = all.filter(a => a.status === "open"), closed = all.filter(a => a.status !== "open");
+    const showClosed = state.showClosed[type];
+    const shown = showClosed ? open.concat(closed) : open;
+    const host = $(type === "task" ? "#tasks" : "#advice");
+    $(type === "task" ? "#tCount" : "#aCount").textContent = all.length ? `${closed.filter(a => a.status === "done").length}/${all.length} done` : "";
+    host.innerHTML = shown.length ? shown.map(a => {
+      const done = a.status === "done", closedCls = a.status !== "open" ? "closed" : "";
+      const ro = canWrite === false || !actionsDb;
+      return `<div class="act ${type} ${closedCls}">
+        <button class="check" data-act="${esc(a.id)}" data-to="${done ? "open" : "done"}" aria-pressed="${done}" ${ro ? "disabled" : ""} aria-label="${done ? "Mark as not done" : "Mark as done"}: ${esc(a.title)}"></button>
+        <div class="atitle">${esc(a.title)}</div>
+        <div class="ameta">${a.ref ? `<span class="tag mono">${esc(a.ref)}</span>` : ""}${a.where ? `<span>Where: ${esc(a.where)}</span>` : ""}${a.impact ? `<span>Effect: ${esc(a.impact)}</span>` : ""}${a.status === "dismissed" ? "<span>Set aside</span>" : ""}</div>
+        ${a.why ? `<div class="awhy">${esc(a.why)}</div>` : ""}
+        <div class="ameta">${a.source ? `Source: ${esc(a.source)}` : ""}</div>
+        ${type === "advice" && a.status === "open" && !ro ? `<div class="aops"><button data-act="${esc(a.id)}" data-to="dismissed">Set aside</button></div>` : ""}
+        ${a.status === "dismissed" && !ro ? `<div class="aops"><button data-act="${esc(a.id)}" data-to="open">Bring back</button></div>` : ""}
+      </div>`;
+    }).join("") : `<div class="empty">${all.length ? "All done here." : type === "task" ? "No tasks yet. The Strategy Captain adds them after each run." : "No advice yet. The Strategy Captain adds it after each run."}</div>`;
+    const tg = $(type === "task" ? "#tToggle" : "#aToggle");
+    tg.hidden = !closed.length;
+    tg.textContent = showClosed ? "Hide finished" : `Show finished (${closed.length})`;
+  });
+}
+
+async function setActionStatus(id, to){
+  if (!actionsDb) return;
+  const a = state.actions.find(x => x.id === id); if (!a || a.status === to) return;
+  try {
+    await actionsDb.doc("actions/" + id).update({status: to, closed_at: to === "open" ? null : new Date().toISOString()});
+    toast(to === "done" ? "Marked as done" : to === "dismissed" ? "Set aside" : "Reopened");
+  } catch (e){
+    if (e && e.code === "invalid_argument"){ canWrite = false; renderActions(); toast("You can view this board but not change it"); }
+    else toast("Could not save. Try again in a moment.");
+  }
+}
+
+function renderAll(){ renderHud(); renderProps(); renderActions(); renderMap(); renderSquad(); renderFeed(); renderFinds(); renderDrawer(); }
 function select(id){ state.sel = id; renderMap(); renderSquad(); renderDrawer(); }
 
 let toastT;
@@ -408,8 +637,12 @@ function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add
 document.addEventListener("click", e => {
   const pick = e.target.closest("[data-id]"); if (pick){ select(state.sel === pick.dataset.id ? null : pick.dataset.id); return; }
   const f = e.target.closest("[data-feed]"); if (f){ state.feedFilter = f.dataset.feed; renderFeed(); return; }
-  const v = e.target.closest("[data-sev]"); if (v){ state.sevFilter = v.dataset.sev; renderFinds(); }
+  const v = e.target.closest("[data-sev]"); if (v){ state.sevFilter = v.dataset.sev; renderFinds(); return; }
+  const act = e.target.closest("[data-act]"); if (act){ setActionStatus(act.dataset.act, act.dataset.to); return; }
+  const tg = e.target.closest("[data-toggle]"); if (tg){ state.showClosed[tg.dataset.toggle] = !state.showClosed[tg.dataset.toggle]; renderActions(); return; }
+  const pr = e.target.closest("[data-prop]"); if (pr){ state.expanded = state.expanded === pr.dataset.prop ? null : pr.dataset.prop; renderProps(); }
 });
+$("#psort").addEventListener("change", renderProps);
 $("#scrim").onclick = () => select(null);
 document.addEventListener("keydown", e => { if (e.key === "Escape" && state.sel) select(null); });
 
@@ -433,5 +666,18 @@ renderAll();
   db.doc("system/scoreboard").onSnapshot(s => { state.score = s.exists ? s.data() : null; renderHud(); }, () => {});
   db.doc("system/log").onSnapshot(s => { state.log = (s.exists && s.data().events) || []; renderFeed(); if (state.sel) renderDrawer(); }, () => {});
   db.doc("system/finds").onSnapshot(s => { state.finds = (s.exists && s.data().items) || []; renderHud(); renderFinds(); if (state.sel) renderDrawer(); }, () => {});
+  db.collection("properties").onSnapshot(snap => {
+    state.props = Object.fromEntries(snap.docs.map(d => [d.id, {ref:d.id, ...d.data()}])); renderProps();
+  }, () => {});
+  actionsDb = db;
+  db.collection("actions").onSnapshot(snap => {
+    const order = {open:0, done:1, dismissed:2}, rank = {critical:0, high:1, medium:2};
+    state.actions = snap.docs.map(d => ({id:d.id, ...d.data()}))
+      .sort((a, b) => (order[a.status] ?? 3) - (order[b.status] ?? 3) || (rank[a.priority] ?? 3) - (rank[b.priority] ?? 3) || String(a.ref || "").localeCompare(String(b.ref || "")));
+    renderActions(); renderProps();
+  }, () => {});
+  const user = await window.claude.use("user");
+  if (user){ try { canWrite = await user.can("data.write"); } catch { canWrite = null; } }
+  renderActions();
 })();
 </script>
