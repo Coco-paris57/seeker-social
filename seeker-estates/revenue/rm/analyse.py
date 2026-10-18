@@ -13,7 +13,11 @@ def run(day=None):
     today = date.fromisoformat(day) if day else date.today()
     snap = snapshot.load(today.isoformat())
     prices, res, market = snap["prices"], snap["reservations"], {m["ref"]: m for m in snap["market"]}
-    listings = {l["ref"]: l for l in snap["listings"] if l["ref"]}
+    # Settings come from the listing that prices each unit (id_map `pricelabs`), never from a duplicate copy
+    import json as _j
+    _map = _j.loads(config.ID_MAP_FILE.read_text()) if config.ID_MAP_FILE.exists() else {}
+    _primary = {str(i) for r, v in _map.items() if not r.startswith("_") for i in v.get("pricelabs", [])}
+    listings = {l["ref"]: l for l in snap["listings"] if l["ref"] and str(l.get("pricelabs_id")) in _primary}
     plk = {k["ref"]: k for k in snap["pl_kpis"] if k["ref"]}
     refs = [p["ref"] for p in config.PROPERTIES]
     missing = {name: "empty" for name, rows in snap.items() if not rows}

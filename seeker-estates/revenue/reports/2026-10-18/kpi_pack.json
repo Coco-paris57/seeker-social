@@ -126,12 +126,12 @@
     "fully_blocked_next_360": false
    },
    "settings": {
-    "pl_min": null,
-    "pl_base": 200.0,
-    "pl_max": null,
-    "recommended_base": null,
-    "sync_on": false,
-    "last_push": ""
+    "pl_min": 120.0,
+    "pl_base": 230.0,
+    "pl_max": 650.0,
+    "recommended_base": 231.0,
+    "sync_on": true,
+    "last_push": "2026-10-18T09:13:27.000Z"
    },
    "rate_leak_next_30": {
     "booked_nights": 28,
@@ -809,12 +809,12 @@
     "fully_blocked_next_360": false
    },
    "settings": {
-    "pl_min": null,
-    "pl_base": 185.0,
-    "pl_max": null,
-    "recommended_base": null,
-    "sync_on": false,
-    "last_push": ""
+    "pl_min": 150.0,
+    "pl_base": 250.0,
+    "pl_max": 1000.0,
+    "recommended_base": 243.0,
+    "sync_on": true,
+    "last_push": "2026-10-18T09:25:55.000Z"
    },
    "rate_leak_next_30": {
     "booked_nights": 12,
@@ -918,12 +918,12 @@
     "fully_blocked_next_360": false
    },
    "settings": {
-    "pl_min": null,
-    "pl_base": 155.0,
-    "pl_max": null,
-    "recommended_base": null,
-    "sync_on": false,
-    "last_push": ""
+    "pl_min": 100.0,
+    "pl_base": 160.0,
+    "pl_max": 550.0,
+    "recommended_base": 162.0,
+    "sync_on": true,
+    "last_push": "2026-10-18T08:20:19.000Z"
    },
    "rate_leak_next_30": {
     "booked_nights": 14,
@@ -1027,12 +1027,12 @@
     "fully_blocked_next_360": false
    },
    "settings": {
-    "pl_min": null,
-    "pl_base": 134.0,
-    "pl_max": null,
-    "recommended_base": null,
-    "sync_on": false,
-    "last_push": ""
+    "pl_min": 85.0,
+    "pl_base": 160.0,
+    "pl_max": 500.0,
+    "recommended_base": 165.0,
+    "sync_on": true,
+    "last_push": "2026-10-18T09:11:58.000Z"
    },
    "rate_leak_next_30": {
     "booked_nights": 29,
@@ -1141,7 +1141,7 @@
     "pl_max": 1200.0,
     "recommended_base": 267.0,
     "sync_on": true,
-    "last_push": "2026-10-18T06:37:15.000Z"
+    "last_push": "2026-10-18T09:11:49.000Z"
    },
    "rate_leak_next_30": {
     "booked_nights": 14,
@@ -1247,9 +1247,9 @@
     "pl_min": 100.0,
     "pl_base": 270.0,
     "pl_max": 2000.0,
-    "recommended_base": 290.0,
+    "recommended_base": 280.0,
     "sync_on": true,
-    "last_push": "2026-10-18T10:02:10.000Z"
+    "last_push": "2026-10-18T09:25:52.000Z"
    },
    "rate_leak_next_30": {
     "booked_nights": 13,
@@ -1352,12 +1352,12 @@
     "fully_blocked_next_360": false
    },
    "settings": {
-    "pl_min": null,
-    "pl_base": null,
-    "pl_max": null,
-    "recommended_base": null,
-    "sync_on": false,
-    "last_push": ""
+    "pl_min": 110.0,
+    "pl_base": 235.0,
+    "pl_max": 2000.0,
+    "recommended_base": 229.0,
+    "sync_on": true,
+    "last_push": "2026-10-18T09:25:53.000Z"
    },
    "rate_leak_next_30": {
     "booked_nights": 1,
