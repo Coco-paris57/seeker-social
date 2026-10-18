@@ -37,9 +37,16 @@ def quality_premium(our_rating, comp_rating, scale=5.0):
 def recommend(our_occ, market_occ, our_percentile, quality=0.0):
     """Return (action, price_move, reason) for one property and horizon."""
     if our_occ is None or market_occ is None:
-        return ("collect-data", 0.0, "missing occupancy or market data")
+        return ("collect-data", None, "missing occupancy or market data")
     lead = our_occ - market_occ
-    pct = our_percentile if our_percentile is not None else 0.5
+    if our_percentile is None:
+        # Demand signal only: without a price position against comps the size of a move is unknown.
+        if lead >= 0.10:
+            return ("raise-signal", None, f"booked {lead:+.0%} vs market; price position unknown until comps are priced")
+        if lead <= -0.05:
+            return ("weak-signal", None, f"booked {lead:+.0%} vs market; price position unknown until comps are priced")
+        return ("hold-signal", None, f"booked {lead:+.0%} vs market; price position unknown until comps are priced")
+    pct = our_percentile
     if lead >= 0.10 and pct < 0.75:
         return ("raise", round(0.10 + max(quality, 0), 3),
                 f"booked {lead:+.0%} vs market but priced at P{pct * 100:.0f}: under-priced")

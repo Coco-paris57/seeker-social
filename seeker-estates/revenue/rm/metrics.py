@@ -39,6 +39,8 @@ def performance(reservations, refs, start, end, blocked=None):
 
 
 def portfolio(perf):
+    """Totals over properties whose figures are known (unknown ones are left out, not zeroed)."""
+    perf = {k: v for k, v in perf.items() if v.get("nights") is not None}
     n = sum(p["nights"] for p in perf.values())
     rev = sum(p["revenue"] for p in perf.values())
     cap = sum(p["capacity"] for p in perf.values())
@@ -80,13 +82,31 @@ def gaps(prices, ref, min_default=2):
     return out
 
 
-def forward_occupancy(prices, ref, today, horizon):
-    """Share of nights already unavailable (booked or blocked) in the next `horizon` days."""
+def forward_occupancy(prices, ref, today, horizon, booked_only=True):
+    """Share of the next `horizon` nights that are booked.
+
+    PriceLabs marks nights Booked, Booked (Check-In) or Blocked. Blocked nights (owner use,
+    maintenance, long lets handled outside the channels) are not demand, so by default only
+    Booked* nights count. booked_only=False returns the share unavailable for any reason.
+    """
     end = today + timedelta(days=horizon)
     rows = [p for p in prices if p["ref"] == ref and today <= _d(p["date"]) < end]
     if not rows:
         return None
+    if booked_only:
+        unlabelled = sum(1 for p in rows if not p.get("available") and not p.get("booking_status"))
+        if unlabelled > len(rows) / 2:  # unavailable without a Booked/Blocked label: can't tell demand from blocks
+            return None
+        return round(sum(1 for p in rows if str(p.get("booking_status", "")).startswith("Booked")) / len(rows), 3)
     return round(sum(1 for p in rows if not p.get("available")) / len(rows), 3)
+
+
+def blocked_share(prices, ref, today, horizon):
+    end = today + timedelta(days=horizon)
+    rows = [p for p in prices if p["ref"] == ref and today <= _d(p["date"]) < end]
+    if not rows:
+        return None
+    return round(sum(1 for p in rows if p.get("booking_status") == "Blocked") / len(rows), 3)
 
 
 def on_the_books(reservations, ref, stay_start, stay_end, as_of):
