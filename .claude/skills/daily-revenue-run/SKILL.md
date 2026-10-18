@@ -1,41 +1,57 @@
 ---
 name: daily-revenue-run
-description: Run Seeker Estates' daily revenue-management cycle - pull PriceLabs and Smoobu, compute KPIs, launch the market, competitor, PriceLabs, channel-parity and occupancy agents in parallel, then the strategy director for a ranked action plan. Use every morning, or when asked to check prices, competitors, occupancy or ADR.
+description: Run Seeker Estates' daily revenue-management cycle - pull PriceLabs (via the PriceLabs connector) and Smoobu, compute KPIs, launch the market, competitor, PriceLabs, channel-parity and occupancy agents in parallel, then the strategy director for a ranked action plan. Use every morning, or when asked to check prices, competitors, occupancy or ADR.
 ---
 
 # Daily revenue run
 
-Working dir for commands: `seeker-estates/revenue`. Date `D` = today (Europe/London).
+Commands run from `seeker-estates/revenue`. `D` = today's date (Europe/London), `RAW` =
+`data/snapshots/D/raw/`. Property ↔ listing mapping: `data/id_map.json` (refs P01–P19).
 
-## 1. Data (stop and report if this fails - never continue on guessed data)
-1. `python3 -m rm.cli check` - both APIs must say OK. If a key is missing, tell Corentin which
-   environment variable (`PRICELABS_API_KEY`, `SMOOBU_API_KEY`) to add, and run only the agents
-   whose inputs exist.
-2. `python3 -m rm.cli daily` - pulls into `data/snapshots/D/`, writes `reports/D/kpi_pack.json`
-   and `kpi_summary.md`.
-3. Note which inputs are empty (`missing` in the pack). Manual inputs that may be dropped in the
-   snapshot folder: `comps.csv`, `channel_checks.csv`, `market.csv` (Market Dashboard export).
+**Read-only rule:** use only PriceLabs `get_*` tools and Smoobu GET calls. Never call
+`update_*`, `delete_*`, `accept_nudge`, `map_listings`, `refresh_listing_pricing` or
+`set_neighborhood_data_source`. Changes are proposed to Corentin, never made.
 
-## 2. Specialists - launch in ONE message so they run in parallel
+## 1. Connections - report each, continue with what works, label what doesn't
+1. **PriceLabs**: call `mcp__PriceLabs__get_me`. If the tools are missing, PriceLabs is not
+   connected in claude.ai (Customize → Connectors): stop and say so.
+2. **Smoobu**: `python3 -m rm.cli check`. It reports bad characters in the secret, the result
+   of a signed test call, and whether each mapped Smoobu id exists. If it fails, continue
+   without Smoobu: the PriceLabs↔Smoobu sync check is reported as NOT CHECKED, never guessed.
+
+## 2. Pull PriceLabs into the snapshot (verbatim JSON, saved with the Write tool)
+Save each tool response exactly as returned - do not edit, summarise or recompute.
+1. `get_listing_data` (question: "daily revenue run: all listings") → `RAW/listing_data.json`.
+2. For every id in the `pricelabs` lists of `id_map.json`: `get_listing_prices` with
+   `date_from` = tomorrow, `date_to` = D + 60 → `RAW/prices_<listing_id>.json`.
+   (60 days keeps responses manageable; extend only when asked.) To save time, give these
+   to 3 general-purpose agents in parallel, one per area batch below, each told the exact
+   file names and the read-only rule.
+3. `get_pms_reservations` for `pms` = `smoobu` and again for `channex`, stay window
+   `start_date` = D − 365, `end_date` = D + 180, `limit` 100, increasing `offset` while
+   `next_page` is true → `RAW/reservations_<pms>_<n>.json`.
+4. `python3 -m rm.cli ingest D`, then (if Smoobu passed) `python3 -m rm.cli smoobu D`, then
+   `python3 -m rm.cli analyse D` → `reports/D/kpi_pack.json` + `kpi_summary.md`.
+
+## 3. Specialists - launch in ONE message so they run in parallel
+Pass each the date D and the paths of the pack and snapshot; each returns its markdown section
+and a `Data gaps:` list.
 - `rm-occupancy-analyst` - all properties.
-- `rm-pricelabs-auditor` - all properties.
-- `rm-channel-parity-auditor` - all properties.
+- `rm-pricelabs-auditor` - all properties, plus the `_unmatched` and `confidence: check` entries
+  of `id_map.json` (duplicate listings, listings with push off, properties missing from PriceLabs).
+- `rm-channel-parity-auditor` - all properties; use `rate_leak_next_30` from the pack.
 - `rm-market-analyst` - next 90 days.
-- `rm-competitor-analyst` - split the 19 properties into 3 batches by area so each agent
-  works a coherent submarket:
+- `rm-competitor-analyst` - three agents, one per batch:
   - East: P01, P04, P07, P09, P12, P15
   - Central/North: P05, P06, P08, P11, P14, P17
   - West + Herts: P02, P03, P10, P13, P16, P18, P19
-Pass each agent the date `D` and the paths of the pack and snapshot. Ask each to return its
-markdown section and its `Data gaps:` list.
 
-## 3. Strategy
+## 4. Strategy
 Launch `rm-strategy-director` with all specialist outputs pasted in. It writes
 `reports/D/daily-report.md`.
 
-## 4. Verify before delivering
-- Spot-check 3 numbers in the report against `kpi_pack.json`; any mismatch -> fix before sending.
-- Every action must cite evidence; remove any that do not.
-- Deliver: the KPI scoreboard + top 5 actions in chat, link to the full report. Nothing is
-  changed in PriceLabs, Smoobu or any OTA without Corentin's explicit approval.
-- Commit `reports/D/` (snapshots stay out of git: they contain guest booking data).
+## 5. Verify before delivering
+- Spot-check 3 numbers in the report against `kpi_pack.json` / `listing_data.json`; fix any mismatch.
+- Remove any action without cited evidence.
+- Deliver the KPI scoreboard + top 5 actions in chat with a link to the full report.
+- Commit `reports/D/` only (snapshots hold guest booking data and stay out of git).

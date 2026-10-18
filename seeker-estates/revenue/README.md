@@ -21,17 +21,16 @@ year (30/90) · 7-day pickup · lead time, length of stay, channel mix · orphan
 MPI / ARI / RGI vs market (RGI > 1 = beating the comp set) · price percentile vs comps ·
 PriceLabs↔Smoobu sync errors · nights pinned at min/max · OTA price vs expected.
 
-## Setup (one-off)
-1. PriceLabs: connect the PriceLabs connector in claude.ai (read access). Optional API key `PRICELABS_API_KEY`.
-   Smoobu: `SMOOBU_API_KEY` + `SMOOBU_API_SECRET` as environment variables (Settings → Advanced → API Keys; HMAC-signed requests).
-2. Network: allow `api.pricelabs.co` and `login.smoobu.com`.
-3. `cd seeker-estates/revenue && python3 -m rm.cli check`, then `python3 -m rm.cli ids` and copy
-   `data/id_map.example.json` to `data/id_map.json` with each ref's PriceLabs and Smoobu ids.
-4. Confirm channel markups/discounts in `rm/config.py` `CHANNELS` against Smoobu's channel
-   manager and each OTA extranet (current values are placeholders and the parity audit says so).
-5. First live pull: check the PriceLabs `neighborhood_data` parser (`snapshot._market_row`)
-   against the real response and adjust field names if needed.
+## Setup (done 18 Oct 2026)
+1. PriceLabs: claude.ai connector (Customize → Connectors), read access only. Data is pulled
+   through the connector by the daily-revenue-run skill, saved as raw JSON, then
+   `python3 -m rm.cli ingest <date>` converts it.
+2. Smoobu: environment variables `SMOOBU_API_KEY` + `SMOOBU_API_SECRET` (Settings → Advanced →
+   API Keys; HMAC-signed requests). `python3 -m rm.cli check` tests them without printing the secret.
+3. Network: `login.smoobu.com`, `docs.smoobu.com`, `support.smoobu.com`.
+4. `data/id_map.json` maps P01–P19 to PriceLabs/Smoobu ids; entries marked `confidence: check`
+   and `_unmatched` need Corentin's confirmation.
+5. Still to confirm: channel markups/discounts in `rm/config.py` `CHANNELS`.
 
 ## Run
-`python3 -m rm.cli daily` for data + KPIs, or ask Claude to run the **daily-revenue-run** skill
-for the full multi-agent analysis. Tests: `python3 -m unittest discover tests`.
+Ask Claude to run the **daily-revenue-run** skill for the full multi-agent analysis. Tests: `python3 -m unittest discover tests`.
