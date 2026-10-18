@@ -22,8 +22,8 @@ MPI / ARI / RGI vs market (RGI > 1 = beating the comp set) · price percentile v
 PriceLabs↔Smoobu sync errors · nights pinned at min/max · OTA price vs expected.
 
 ## Setup (one-off)
-1. Environment variables: `PRICELABS_API_KEY` (PriceLabs → Account Settings → API),
-   `SMOOBU_API_KEY` (Smoobu → Settings → API keys / Developer).
+1. PriceLabs: connect the PriceLabs connector in claude.ai (read access). Optional API key `PRICELABS_API_KEY`.
+   Smoobu: `SMOOBU_API_KEY` + `SMOOBU_API_SECRET` as environment variables (Settings → Advanced → API Keys; HMAC-signed requests).
 2. Network: allow `api.pricelabs.co` and `login.smoobu.com`.
 3. `cd seeker-estates/revenue && python3 -m rm.cli check`, then `python3 -m rm.cli ids` and copy
    `data/id_map.example.json` to `data/id_map.json` with each ref's PriceLabs and Smoobu ids.

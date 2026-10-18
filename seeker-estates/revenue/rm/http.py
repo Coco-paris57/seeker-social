@@ -10,14 +10,19 @@ class ApiError(RuntimeError):
     pass
 
 
-def request(method, url, headers=None, params=None, body=None, retries=3):
-    if params:
+def request(method, url, headers=None, params=None, body=None, retries=3, query=None):
+    """headers may be a dict or a callable returning a dict, re-evaluated on every
+    attempt (signed requests need a fresh nonce per attempt). `query` is a
+    pre-encoded query string, used instead of `params` when the exact bytes matter."""
+    if query:
+        url = f"{url}?{query}"
+    elif params:
         url = f"{url}?{urllib.parse.urlencode(params, doseq=True)}"
     data = json.dumps(body).encode() if body is not None else None
-    hdrs = {"Accept": "application/json", **(headers or {})}
-    if data is not None:
-        hdrs["Content-Type"] = "application/json"
     for attempt in range(retries):
+        hdrs = {"Accept": "application/json", **((headers() if callable(headers) else headers) or {})}
+        if data is not None:
+            hdrs["Content-Type"] = "application/json"
         req = urllib.request.Request(url, data=data, headers=hdrs, method=method)
         try:
             with urllib.request.urlopen(req, timeout=60) as r:

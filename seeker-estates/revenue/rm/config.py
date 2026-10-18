@@ -41,6 +41,7 @@ TARGET_OCCUPANCY = 0.85       # above this on a 30-day window we are likely unde
 
 PRICELABS_API_KEY = os.environ.get("PRICELABS_API_KEY")
 SMOOBU_API_KEY = os.environ.get("SMOOBU_API_KEY")
+SMOOBU_API_SECRET = os.environ.get("SMOOBU_API_SECRET")
 
 # Map our refs to platform ids. Fill once from `python -m rm.cli ids`.
 # {"P01": {"smoobu": 123456, "pricelabs": "123456", "airbnb": "...", "booking": "..."}}

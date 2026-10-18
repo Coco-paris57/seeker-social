@@ -68,3 +68,21 @@ class Positioning(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SmoobuSigning(unittest.TestCase):
+    def test_query_matches_docs_example(self):
+        from rm.smoobu import canonical_query
+        self.assertEqual(canonical_query({"to": "2026-04-10", "from": "2026-04-01"}), "from=2026-04-01&to=2026-04-10")
+        self.assertEqual(canonical_query({"apartments[]": ["2", "1"]}), "apartments%5B%5D=1&apartments%5B%5D=2")
+
+    def test_signature_matches_openssl(self):
+        import base64, hashlib, hmac
+        from rm.smoobu import EMPTY_SHA256, sign
+        canon = ("GET\n/api/reservations\nfrom=2026-04-01&to=2026-04-10\n2026-04-01T12:00:00Z\n"
+                 "6ba7b810-9dad-11d1-80b4-00c04fd430c8\n" + EMPTY_SHA256 + "\nusr_live_abc123")
+        want = base64.b64encode(hmac.new(b"your_api_secret", canon.encode(), hashlib.sha256).digest()).decode()
+        got = sign("your_api_secret", "GET", "/api/reservations", "from=2026-04-01&to=2026-04-10",
+                   "2026-04-01T12:00:00Z", "6ba7b810-9dad-11d1-80b4-00c04fd430c8", EMPTY_SHA256, "usr_live_abc123")
+        self.assertEqual(got, want)
+        self.assertEqual(EMPTY_SHA256, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
