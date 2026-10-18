@@ -32,6 +32,8 @@ def check():
         apts = Smoobu().apartments().get("apartments", [])
     except Exception as e:
         print(f"Smoobu: FAILED {str(e)[-120:]}")
+        print(f"Smoobu: same call signed with openssl + curl exactly as docs.smoobu.com shows: HTTP {_openssl_probe()}")
+        print("  (401 here too = the key/secret pair is not accepted; 200 here = a bug in rm/smoobu.py)")
         return False
     print(f"Smoobu: OK, {len(apts)} apartments")
     names = {str(a["id"]): a["name"] for a in apts}
@@ -39,6 +41,24 @@ def check():
         if not ref.startswith("_") and v.get("smoobu"):
             print(f"  {ref} smoobu {v['smoobu']}: {names.get(str(v['smoobu']), 'NOT FOUND in Smoobu')}")
     return True
+
+
+def _openssl_probe():
+    """Independent HMAC implementation (the docs' shell recipe) to rule out a bug in rm/smoobu.py.
+    Credentials go via the environment, never on the command line; prints only the HTTP code."""
+    import subprocess
+    script = r'''
+TS=$(date -u +%Y-%m-%dT%H:%M:%SZ); NONCE=$(cat /proc/sys/kernel/random/uuid)
+BH=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+SIG=$(printf 'GET\n/api/apartments\n\n%s\n%s\n%s\n%s' "$TS" "$NONCE" "$BH" "$SMOOBU_API_KEY" \
+      | openssl dgst -sha256 -hmac "$SMOOBU_API_SECRET" -binary | base64)
+curl -s -o /dev/null -w '%{http_code}' https://login.smoobu.com/api/apartments \
+  -H "X-API-Key: $SMOOBU_API_KEY" -H "X-Timestamp: $TS" -H "X-Nonce: $NONCE" -H "X-Signature: $SIG"
+'''
+    try:
+        return subprocess.run(["bash", "-c", script], capture_output=True, text=True, timeout=60).stdout.strip()
+    except Exception as e:
+        return f"probe failed ({e})"
 
 
 def main(argv):
