@@ -29,6 +29,17 @@ events and real numbers go in: no placeholders.
 - `system/finds`: `{items: [{agent, severity: critical|high|medium, ref, title, evidence}]}`.
 - `system/scoreboard` (strategy step only, from the KPI pack): `{note, items: [{label, value}]}`
   e.g. portfolio occupancy, ADR, RevPAR, RGI, rating, direct share.
+- `properties/<ref>` (P01–P19 that have data): `{area, name, history: [...]}`. Each run APPENDS one
+  entry `{date, adr30, adr30_ly, adr_ytd, adr_ytd_ly, occ_fwd30, mkt_fwd30, occ_fwd60, mkt_fwd60,
+  source}` (replace the entry if today's date is already there; never rewrite older entries).
+  Values come from `pl_kpis.csv` (PriceLabs) for the unit's priced listing; occupancy as 0–1;
+  missing = null. This is how ADR and occupancy improvement per property is tracked over time.
+- `actions/<id>`: `{type: task|advice, priority: critical|high|medium, ref, status: open|done|dismissed,
+  title, why (with the numbers), where (exact screen/setting), impact, source}`. Task = must do,
+  backed by evidence; advice = good to do. The Strategy Captain writes them after its report.
+  Never change an action Corentin has marked done or set aside; update an open one in place
+  instead of adding a duplicate; mark an open task done only when today's data shows it fixed
+  (say so in `why`).
 - When: a step starts or ends for the Dispatcher; a specialist is launched (`running`, step 0) and
   returns (`done` or `blocked`, last step, note, finds, gaps); each finding and data gap goes to
   the log and finds board.
