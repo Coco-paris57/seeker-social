@@ -96,9 +96,17 @@ def pull_smoobu(days_ahead=180, day=None):
     id_map = json.loads(config.ID_MAP_FILE.read_text())
     by_sm = {str(v["smoobu"]): ref for ref, v in id_map.items()
              if not ref.startswith("_") and v.get("smoobu")}
+    acct = {str(v["smoobu"]): str(v.get("smoobu_account", "1")) for ref, v in id_map.items()
+            if not ref.startswith("_") and v.get("smoobu")}
     start = date.today()
-    rates = Smoobu().rates(list(by_sm), start.isoformat(),
-                           (start + timedelta(days=days_ahead)).isoformat()).get("data", {})
+    rates = {}
+    for a in sorted(set(acct.values())):
+        if a not in config.SMOOBU_ACCOUNTS:
+            print(f"Smoobu account {a}: no credentials, skipped")
+            continue
+        ids = [i for i, x in acct.items() if x == a]
+        rates.update(Smoobu(account=a).rates(ids, start.isoformat(),
+                                             (start + timedelta(days=days_ahead)).isoformat()).get("data", {}))
     sm = {}
     for sid, days in rates.items():
         ref = by_sm.get(str(sid))
@@ -156,7 +164,20 @@ def pull_smoobu_reservations(day=None, back_days=365, ahead_days=180):
             for other in v.get("smoobu_other", []):
                 by_sm[str(other)] = ref
     today = date.fromisoformat(day) if day else date.today()
-    sm, rows, unmapped, page = Smoobu(), [], {}, 1
+    rows, unmapped = [], {}
+    accounts = sorted({str(v.get("smoobu_account", "1")) for r, v in id_map.items()
+                       if not r.startswith("_") and v.get("smoobu")} | {"1"})
+    for a in accounts:
+        if a not in config.SMOOBU_ACCOUNTS:
+            print(f"Smoobu account {a}: no credentials, skipped")
+            continue
+        _pull_reservations_account(Smoobu(account=a), by_sm, today, back_days, ahead_days, rows, unmapped)
+    save("reservations", rows, day)
+    return {"reservations": len(rows), "unmapped_apartments": unmapped}
+
+
+def _pull_reservations_account(sm, by_sm, today, back_days, ahead_days, rows, unmapped):
+    page = 1
     while True:
         r = sm._get("/api/reservations", {
             "from": (today - timedelta(days=back_days)).isoformat(),
@@ -183,5 +204,3 @@ def pull_smoobu_reservations(day=None, back_days=365, ahead_days=180):
         if page >= r.get("page_count", 1):
             break
         page += 1
-    save("reservations", rows, day)
-    return {"reservations": len(rows), "unmapped_apartments": unmapped}

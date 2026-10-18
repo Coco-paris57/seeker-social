@@ -39,6 +39,17 @@ def check():
         return False
     print(f"Smoobu: OK, {len(apts)} apartments")
     names = {str(a["id"]): a["name"] for a in apts}
+    for a in sorted(config.SMOOBU_ACCOUNTS):
+        if a == "1":
+            continue
+        try:
+            more = Smoobu(account=a).apartments().get("apartments", [])
+            print(f"Smoobu account {a}: OK, {len(more)} apartments")
+            for x in more:
+                names[str(x["id"])] = x["name"]
+                print(f"  account {a}: {x['id']}\t{x['name']}")
+        except Exception as e:
+            print(f"Smoobu account {a}: FAILED {str(e)[-120:]}")
     for ref, v in json.loads(config.ID_MAP_FILE.read_text()).items():
         if not ref.startswith("_") and v.get("smoobu"):
             print(f"  {ref} smoobu {v['smoobu']}: {names.get(str(v['smoobu']), 'NOT FOUND in Smoobu')}")
