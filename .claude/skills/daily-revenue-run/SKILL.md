@@ -61,11 +61,14 @@ Save each tool response exactly as returned - do not edit, summarise or recomput
    (60 days keeps responses manageable; extend only when asked.) To save time, give these
    to 3 general-purpose agents in parallel, one per area batch below, each told the exact
    file names and the read-only rule.
-3. `get_pms_reservations` for `pms` = `smoobu` and again for `channex`, stay window
-   `start_date` = D − 365, `end_date` = D + 180, `limit` 100, increasing `offset` while
-   `next_page` is true → `RAW/reservations_<pms>_<n>.json`.
+3. Reservations: `python3 -m rm.cli smoobu-res D` (Smoobu API, every channel, last 365 days
+   to D + 180). Do NOT copy PriceLabs `get_pms_reservations` output by hand: it holds guest
+   records and the copy is blocked. Barking/Bayswater (Channex) have no reservation source yet;
+   report that as a data gap.
 4. `python3 -m rm.cli ingest D`, then (if Smoobu passed) `python3 -m rm.cli smoobu D`, then
    `python3 -m rm.cli analyse D` → `reports/D/kpi_pack.json` + `kpi_summary.md`.
+   Specialists write their sections to `reports/D/sections/<agent>.md` and reply with a JSON
+   block of findings, which the Dispatcher copies to the dashboard.
 
 ## 3. Specialists - launch in ONE message so they run in parallel
 Pass each the date D and the paths of the pack and snapshot; each returns its markdown section

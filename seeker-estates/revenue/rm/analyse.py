@@ -37,7 +37,7 @@ def run(day=None):
         last30 = {r: dict(unknown) for r in refs}
         last365 = {r: dict(unknown) for r in refs}
     sync = audit.pricelabs_vs_smoobu(prices)
-    bnd = audit.bounds(prices, snap["listings"])
+    bnd = audit.bounds(prices, [l for l in snap["listings"] if str(l.get("pricelabs_id")) in _primary])
     parity = audit.channel_parity(prices, snap["channel_checks"])
 
     props = []
