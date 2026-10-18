@@ -20,6 +20,10 @@ _spec.loader.exec_module(_props)
 FIELDS = ("ref", "postcode", "area", "station", "type", "sleeps",
           "pl_min", "pl_max", "pl_base", "venues", "notes")
 PROPERTIES = [dict(zip(FIELDS, p)) for p in _props.PROPS]
+# Corrections confirmed after the info pack.
+for _p in PROPERTIES:
+    if _p["ref"] == "P05":
+        _p["type"] = "4-bed"   # 4 bedrooms, 5 beds incl. sofa bed (Corentin, 18 Oct 2026)
 # Units confirmed after the info pack (kept here so the social-content build is untouched).
 PROPERTIES.append({"ref": "P20", "postcode": "E14 (to confirm)", "area": "Canary Wharf", "station": "Canary Wharf (to confirm)",
                    "type": "2-bed", "sleeps": None, "pl_min": 220, "pl_max": 1800, "pl_base": 350,
@@ -46,6 +50,13 @@ TARGET_OCCUPANCY = 0.85       # above this on a 30-day window we are likely unde
 PRICELABS_API_KEY = os.environ.get("PRICELABS_API_KEY")
 SMOOBU_API_KEY = os.environ.get("SMOOBU_API_KEY")
 SMOOBU_API_SECRET = os.environ.get("SMOOBU_API_SECRET")
+# Further Smoobu accounts: SMOOBU_2_API_KEY / SMOOBU_2_API_SECRET, SMOOBU_3_..., mapped per property
+# with "smoobu_account": "2" in id_map.json (default account "1" = the variables above).
+SMOOBU_ACCOUNTS = {"1": (SMOOBU_API_KEY, SMOOBU_API_SECRET)}
+for _n in range(2, 6):
+    _k, _s = os.environ.get(f"SMOOBU_{_n}_API_KEY"), os.environ.get(f"SMOOBU_{_n}_API_SECRET")
+    if _k and _s:
+        SMOOBU_ACCOUNTS[str(_n)] = (_k, _s)
 
 # Map our refs to platform ids. Fill once from `python -m rm.cli ids`.
 # {"P01": {"smoobu": 123456, "pricelabs": "123456", "airbnb": "...", "booking": "..."}}

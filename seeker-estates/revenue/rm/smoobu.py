@@ -34,11 +34,12 @@ def sign(secret, method, path, query, timestamp, nonce, body_hash, api_key):
 
 
 class Smoobu:
-    def __init__(self, api_key=None, api_secret=None):
-        self.key = api_key or config.SMOOBU_API_KEY
-        self.secret = api_secret or config.SMOOBU_API_SECRET
+    def __init__(self, api_key=None, api_secret=None, account="1"):
+        key, secret = config.SMOOBU_ACCOUNTS.get(str(account), (None, None))
+        self.key = api_key or key
+        self.secret = api_secret or secret
         if not self.key or not self.secret:
-            raise RuntimeError("SMOOBU_API_KEY and SMOOBU_API_SECRET must both be set")
+            raise RuntimeError(f"Smoobu account {account}: API key and secret must both be set")
 
     def _get(self, path, params=None):
         query = canonical_query(params)

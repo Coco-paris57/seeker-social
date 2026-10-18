@@ -1,20 +1,31 @@
 {
-  "_about": "Standing decisions from Corentin. Every agent reads this file and must not raise these as problems. Updated 18 Oct 2026.",
-  "intentional_blocks": {
-    "refs": ["P02", "P03", "P06", "P07"],
-    "note": "Notting Hill, Bayswater, Marylebone and Woolwich calendars are blocked on purpose. Blocked nights are not demand and not lost revenue: exclude them from opportunity and occupancy-gap findings."
-  },
-  "special_setups": {
-    "P14": "Primrose Hill pricing (incl. the £500 minimum) is a deliberate special setup. Do not propose changing its min, base or min-stay; report its numbers only."
-  },
-  "booking_visibility_booster": "Booking.com Visibility Booster is raised on selected dates on purpose, so commission above 15% on those bookings is expected. Only flag commission that is above 15% AND not explained by the booster (ask before assuming).",
-  "length_of_stay_discounts": {
-    "weekly_7_plus_nights": 0.15,
-    "monthly_28_plus_nights": 0.20,
-    "channels": ["airbnb", "booking"],
-    "note": "Same discounts on Airbnb and Booking.com (Airbnb screenshot 18 Oct 2026). A stay of 7-27 nights is expected 15% under the nightly price, 28+ nights 20% under. Only the gap beyond that is a leak."
-  },
-  "linked_listings": {
-    "P13": "Smoobu 3064856 and 3090701 are ONE Shepherd's Bush flat. Their bookings are combined; nights blocked on one because the other is booked are bookings, not blocks."
-  }
+ "_about": "Standing decisions from Corentin. Every agent reads this file and must not raise these as problems. Updated 18 Oct 2026.",
+ "intentional_blocks": {
+  "refs": [
+   "P02",
+   "P03",
+   "P06",
+   "P07"
+  ],
+  "note": "Notting Hill, Bayswater, Marylebone and Woolwich calendars are blocked on purpose. Blocked nights are not demand and not lost revenue: exclude them from opportunity and occupancy-gap findings."
+ },
+ "special_setups": {
+  "P14": "Primrose Hill pricing (incl. the £500 minimum) is a deliberate special setup. Do not propose changing its min, base or min-stay; report its numbers only."
+ },
+ "booking_visibility_booster": "Booking.com Visibility Booster is raised on selected dates on purpose, so commission above 15% on those bookings is expected. Only flag commission that is above 15% AND not explained by the booster (ask before assuming).",
+ "length_of_stay_discounts": {
+  "weekly_7_plus_nights": 0.15,
+  "monthly_28_plus_nights": 0.2,
+  "channels": [
+   "airbnb",
+   "booking"
+  ],
+  "note": "Same discounts on Airbnb and Booking.com (Airbnb screenshot 18 Oct 2026). A stay of 7-27 nights is expected 15% under the nightly price, 28+ nights 20% under. Only the gap beyond that is a leak."
+ },
+ "linked_listings": {
+  "P13": "Smoobu 3064856 and 3090701 are ONE Shepherd's Bush flat. Their bookings are combined; nights blocked on one because the other is booked are bookings, not blocks."
+ },
+ "property_facts": {
+  "P05": "St John's Wood (Abbey Rd): 4 bedrooms, 5 beds including a sofa bed (Corentin, 18 Oct 2026). Benchmark against 4-bed listings, not 5-bed. PriceLabs currently has it as 5 bedrooms."
+ }
 }
