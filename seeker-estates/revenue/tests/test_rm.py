@@ -86,3 +86,37 @@ class SmoobuSigning(unittest.TestCase):
                    "2026-04-01T12:00:00Z", "6ba7b810-9dad-11d1-80b4-00c04fd430c8", EMPTY_SHA256, "usr_live_abc123")
         self.assertEqual(got, want)
         self.assertEqual(EMPTY_SHA256, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+
+
+class Checks(unittest.TestCase):
+    POL = {"length_of_stay_discounts": {"weekly_7_plus_nights": 0.15, "monthly_28_plus_nights": 0.20},
+           "intentional_blocks": {"refs": ["P02"]}}
+
+    def test_los_discount_bands(self):
+        from rm.checks import los_discount
+        self.assertEqual([los_discount(n, self.POL) for n in (3, 7, 27, 28, 90)], [0.0, 0.15, 0.15, 0.20, 0.20])
+
+    def test_linked_listing_bookings_count_as_booked(self):
+        from rm.checks import link_bookings
+        prices = [{"ref": "P13", "date": "2026-11-05", "booking_status": "Blocked", "available": False}]
+        res = [{"ref": "P13", "arrival": "2026-11-04", "departure": "2026-11-08", "status": "confirmed"}]
+        out = link_bookings(prices, res)[0]
+        self.assertTrue(out["booking_status"].startswith("Booked"))
+        self.assertEqual(out["los"], 4)
+
+    def test_leak_after_los(self):
+        from datetime import date
+        from rm.checks import rate_leak_after_los
+        prices = [{"ref": "P10", "date": "2026-10-20", "booked_adr": 106.0, "booked_price": 160.0, "los": 32}]
+        leak = rate_leak_after_los(prices, "P10", date(2026, 10, 18), self.POL)
+        self.assertEqual(leak["avg_expected_after_los"], 128.0)   # 160 x 0.80 monthly
+        self.assertEqual(leak["gap_pct"], -0.172)
+
+    def test_intentional_block_is_info(self):
+        from rm.checks import build
+        p = {"ref": "P02", "settings": {"sync_on": True, "last_push": "2026-10-18T00:00:00Z"}, "_date": "2026-10-18",
+             "sync_issues": [], "in_smoobu": True, "price_nights_next_30": 30, "bounds": None,
+             "blocked_next_30": 0.66, "forward_occ_30": 0.31, "market_occ_30": 0.48, "recommendation": {}}
+        st = {c["name"]: c["status"] for c in build(p, self.POL)}
+        self.assertEqual(st["Calendar open"], "info")
+        self.assertEqual(st["Booked vs market (next 30)"], "info")

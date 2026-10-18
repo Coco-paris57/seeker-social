@@ -13,6 +13,9 @@ def run(day=None):
     today = date.fromisoformat(day) if day else date.today()
     snap = snapshot.load(today.isoformat())
     prices, res, market = snap["prices"], snap["reservations"], {m["ref"]: m for m in snap["market"]}
+    from . import checks as _checks
+    pol = config.policy()
+    prices = _checks.link_bookings(prices, res)  # one unit listed twice: the other listing's bookings are bookings
     # Settings come from the listing that prices each unit (id_map `pricelabs`), never from a duplicate copy
     import json as _j
     _map = _j.loads(config.ID_MAP_FILE.read_text()) if config.ID_MAP_FILE.exists() else {}
@@ -85,9 +88,19 @@ def run(day=None):
             "settings": {k: l.get(k) for k in ("pl_min", "pl_base", "pl_max", "recommended_base", "sync_on",
                                                "last_push")} if l else None,
             "rate_leak_next_30": audit.rate_leak(prices, ref, today, 30),
+            "rate_leak_after_los": _checks.rate_leak_after_los(prices, ref, today, pol, 30),
+            "in_smoobu": ref in res_refs,
+            "price_nights_next_30": sum(1 for x in prices if x["ref"] == ref
+                                        and today <= date.fromisoformat(x["date"]) < today + timedelta(days=30)),
+            "intentional_block": ref in pol.get("intentional_blocks", {}).get("refs", []),
+            "special_setup": pol.get("special_setups", {}).get(ref),
             "recommendation": {"action": action, "price_move": move, "reason": reason},
         })
 
+    for _p in props:
+        _p["_date"] = today.isoformat()
+        _p["checks"] = _checks.build(_p, pol)
+        _p.pop("_date")
     pf = (lambda perf: metrics.portfolio(perf) if res else
           {"nights": None, "revenue": None, "occupancy": None, "adr": None, "revpar": None})
     pack = {"date": today.isoformat(), "portfolio_last30": pf(last30),
@@ -137,6 +150,14 @@ def render(pack):
             "—" if p["sync_issues"] is None else str(len(p["sync_issues"])), _f(b.get("at_min_share"), pct=True),
             f"{p['recommendation']['action']}"
             + (f" {p['recommendation']['price_move']:+.0%}" if p['recommendation']['price_move'] is not None else "") + " |"]))
+    icon = {"ok": "✅", "warn": "⚠️", "bad": "❌", "info": "ℹ️"}
+    lines += ["", "## Property checks", ""]
+    for p in pack["properties"]:
+        if not p.get("checks"):
+            continue
+        lines.append(f"**{p['ref']} {p['area']}**")
+        lines += [f"- {icon.get(c['status'], '')} {c['name']}: {c['detail']}" for c in p["checks"]]
+        lines.append("")
     if pack["missing"]:
         lines += ["", "## Missing data (KPIs depending on it show —)", ""]
         lines += [f"- `{k}.csv`: {v}" for k, v in pack["missing"].items()]

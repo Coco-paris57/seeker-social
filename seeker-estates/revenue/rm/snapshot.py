@@ -151,6 +151,10 @@ def pull_smoobu_reservations(day=None, back_days=365, ahead_days=180):
     id_map = json.loads(config.ID_MAP_FILE.read_text())
     by_sm = {str(v["smoobu"]): ref for ref, v in id_map.items()
              if not ref.startswith("_") and v.get("smoobu")}
+    for ref, v in id_map.items():  # linked listings of the same unit (e.g. P13's second Smoobu listing)
+        if not ref.startswith("_"):
+            for other in v.get("smoobu_other", []):
+                by_sm[str(other)] = ref
     today = date.fromisoformat(day) if day else date.today()
     sm, rows, unmapped, page = Smoobu(), [], {}, 1
     while True:

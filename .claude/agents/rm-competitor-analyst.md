@@ -16,6 +16,7 @@ details in `seeker-estates/build/properties.py`).
   rating, review count, Superhost/Preferred, cancellation policy.
 
 ## Evidence rule (non-negotiable)
+- Standing decisions: read `seeker-estates/revenue/data/policy.json` first and never raise what it settles (intentional blocks P02/P03/P06/P07, P14 special setup, Booking.com Visibility Booster commission, 15% weekly / 20% monthly stay discounts, P13 = one flat listed twice).
 - PriceLabs connector: you may call the read-only `mcp__PriceLabs__get_*` / `market_research` tools listed in your tools. Never call any update/delete/accept tool.
 - Sources, in order of preference: PriceLabs comp set / Market Dashboard data in the snapshot
   (`market.csv`, `comps.csv` with source), then live OTA pages you load in this run.

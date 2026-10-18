@@ -1,18 +1,18 @@
 {
  "date": "2026-10-18",
  "portfolio_last30": {
-  "nights": 243,
-  "revenue": 43069.94,
-  "occupancy": 0.675,
-  "adr": 177.24,
-  "revpar": 119.64
+  "nights": 273,
+  "revenue": 48798.97,
+  "occupancy": 0.7,
+  "adr": 178.75,
+  "revpar": 125.13
  },
  "portfolio_last365": {
-  "nights": 1954,
-  "revenue": 362619.44,
-  "occupancy": 0.446,
-  "adr": 185.58,
-  "revpar": 82.79
+  "nights": 2016,
+  "revenue": 373059.68,
+  "occupancy": 0.425,
+  "adr": 185.05,
+  "revpar": 78.62
  },
  "channel_economics": {
   "per_100_base": {
@@ -139,11 +139,58 @@
     "avg_pricelabs_price": 214.21,
     "gap_pct": -0.269
    },
+   "rate_leak_after_los": {
+    "nights": 28,
+    "avg_booked_adr": 156.49,
+    "avg_expected_after_los": 171.37,
+    "gap_pct": -0.087
+   },
+   "in_smoobu": true,
+   "price_nights_next_30": 29,
+   "intentional_block": false,
+   "special_setup": null,
    "recommendation": {
     "action": "raise-signal",
     "price_move": null,
     "reason": "booked +66% vs market; price position unknown until comps are priced"
-   }
+   },
+   "checks": [
+    {
+     "name": "Prices pushed today",
+     "status": "ok",
+     "detail": "Push on, last push 2026-10-18T09:13:27.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "ok",
+     "detail": "No open night differs by more than \u00a32"
+    },
+    {
+     "name": "Not stuck at minimum price",
+     "status": "ok",
+     "detail": "0% of open nights at the \u00a3120 minimum"
+    },
+    {
+     "name": "Calendar open",
+     "status": "ok",
+     "detail": "No blocked nights in the next 30"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "ok",
+     "detail": "100% booked vs 34% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "warn",
+     "detail": "\u00a3156 paid vs \u00a3171 expected on 28 nights (-9%; expected uses today's PriceLabs price, which may have risen since the booking)"
+    },
+    {
+     "name": "Price signal",
+     "status": "ok",
+     "detail": "booked +66% vs market; price position unknown until comps are priced"
+    }
+   ]
   },
   {
    "ref": "P02",
@@ -242,11 +289,53 @@
     "avg_pricelabs_price": 145.88,
     "gap_pct": -0.399
    },
+   "rate_leak_after_los": {
+    "nights": 8,
+    "avg_booked_adr": 87.62,
+    "avg_expected_after_los": 133.01,
+    "gap_pct": -0.341
+   },
+   "in_smoobu": true,
+   "price_nights_next_30": 29,
+   "intentional_block": true,
+   "special_setup": null,
    "recommendation": {
     "action": "weak-signal",
     "price_move": null,
     "reason": "booked -17% vs market; price position unknown until comps are priced"
-   }
+   },
+   "checks": [
+    {
+     "name": "Prices pushed today",
+     "status": "ok",
+     "detail": "Push on, last push 2026-10-18T00:23:49.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "ok",
+     "detail": "No open night differs by more than \u00a32"
+    },
+    {
+     "name": "Calendar open",
+     "status": "info",
+     "detail": "66% of next 30 nights closed on purpose"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "info",
+     "detail": "31% booked vs 48% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "bad",
+     "detail": "\u00a388 paid vs \u00a3133 expected on 8 nights (-34%; expected uses today's PriceLabs price, which may have risen since the booking)"
+    },
+    {
+     "name": "Price signal",
+     "status": "info",
+     "detail": "booked -17% vs market; price position unknown until comps are priced"
+    }
+   ]
   },
   {
    "ref": "P03",
@@ -317,11 +406,48 @@
     "last_push": "2026-10-18T03:27:31.000Z"
    },
    "rate_leak_next_30": null,
+   "rate_leak_after_los": null,
+   "in_smoobu": false,
+   "price_nights_next_30": 29,
+   "intentional_block": true,
+   "special_setup": null,
    "recommendation": {
     "action": "collect-data",
     "price_move": null,
     "reason": "missing occupancy or market data"
-   }
+   },
+   "checks": [
+    {
+     "name": "Prices pushed today",
+     "status": "ok",
+     "detail": "Push on, last push 2026-10-18T03:27:31.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "info",
+     "detail": "Not checked (not priced through Smoobu)"
+    },
+    {
+     "name": "Calendar open",
+     "status": "info",
+     "detail": "100% of next 30 nights closed on purpose"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "info",
+     "detail": "Unknown"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "info",
+     "detail": "No booked nights with known stay length in the next 30"
+    },
+    {
+     "name": "Price signal",
+     "status": "info",
+     "detail": "missing occupancy or market data"
+    }
+   ]
   },
   {
    "ref": "P04",
@@ -403,11 +529,53 @@
     "avg_pricelabs_price": 163.27,
     "gap_pct": -0.226
    },
+   "rate_leak_after_los": null,
+   "in_smoobu": false,
+   "price_nights_next_30": 29,
+   "intentional_block": false,
+   "special_setup": null,
    "recommendation": {
     "action": "raise-signal",
     "price_move": null,
     "reason": "booked +20% vs market; price position unknown until comps are priced"
-   }
+   },
+   "checks": [
+    {
+     "name": "Prices pushed today",
+     "status": "ok",
+     "detail": "Push on, last push 2026-10-18T18:17:43.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "info",
+     "detail": "Not checked (not priced through Smoobu)"
+    },
+    {
+     "name": "Not stuck at minimum price",
+     "status": "ok",
+     "detail": "0% of open nights at the \u00a390 minimum"
+    },
+    {
+     "name": "Calendar open",
+     "status": "ok",
+     "detail": "No blocked nights in the next 30"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "ok",
+     "detail": "48% booked vs 28% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "info",
+     "detail": "No booked nights with known stay length in the next 30"
+    },
+    {
+     "name": "Price signal",
+     "status": "ok",
+     "detail": "booked +20% vs market; price position unknown until comps are priced"
+    }
+   ]
   },
   {
    "ref": "P05",
@@ -510,11 +678,58 @@
     "avg_pricelabs_price": 364.35,
     "gap_pct": 0.066
    },
+   "rate_leak_after_los": {
+    "nights": 17,
+    "avg_booked_adr": 388.25,
+    "avg_expected_after_los": 364.35,
+    "gap_pct": 0.066
+   },
+   "in_smoobu": true,
+   "price_nights_next_30": 29,
+   "intentional_block": false,
+   "special_setup": null,
    "recommendation": {
     "action": "raise-signal",
     "price_move": null,
     "reason": "booked +37% vs market; price position unknown until comps are priced"
-   }
+   },
+   "checks": [
+    {
+     "name": "Prices pushed today",
+     "status": "ok",
+     "detail": "Push on, last push 2026-10-18T09:25:55.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "ok",
+     "detail": "No open night differs by more than \u00a32"
+    },
+    {
+     "name": "Not stuck at minimum price",
+     "status": "ok",
+     "detail": "0% of open nights at the \u00a3150 minimum"
+    },
+    {
+     "name": "Calendar open",
+     "status": "warn",
+     "detail": "3% of next 30 nights blocked (reason unknown)"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "ok",
+     "detail": "69% booked vs 32% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "ok",
+     "detail": "\u00a3388 paid vs \u00a3364 expected on 17 nights (+7%; expected uses today's PriceLabs price, which may have risen since the booking)"
+    },
+    {
+     "name": "Price signal",
+     "status": "ok",
+     "detail": "booked +37% vs market; price position unknown until comps are priced"
+    }
+   ]
   },
   {
    "ref": "P06",
@@ -618,11 +833,58 @@
     "avg_pricelabs_price": 310.0,
     "gap_pct": -0.409
    },
+   "rate_leak_after_los": {
+    "nights": 12,
+    "avg_booked_adr": 183.34,
+    "avg_expected_after_los": 271.2,
+    "gap_pct": -0.324
+   },
+   "in_smoobu": true,
+   "price_nights_next_30": 29,
+   "intentional_block": true,
+   "special_setup": null,
    "recommendation": {
     "action": "hold-signal",
     "price_move": null,
     "reason": "booked +5% vs market; price position unknown until comps are priced"
-   }
+   },
+   "checks": [
+    {
+     "name": "Prices pushed today",
+     "status": "ok",
+     "detail": "Push on, last push 2026-10-18T09:25:57.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "ok",
+     "detail": "No open night differs by more than \u00a32"
+    },
+    {
+     "name": "Not stuck at minimum price",
+     "status": "ok",
+     "detail": "0% of open nights at the \u00a3200 minimum"
+    },
+    {
+     "name": "Calendar open",
+     "status": "info",
+     "detail": "31% of next 30 nights closed on purpose"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "ok",
+     "detail": "48% booked vs 43% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "bad",
+     "detail": "\u00a3183 paid vs \u00a3271 expected on 12 nights (-32%; expected uses today's PriceLabs price, which may have risen since the booking)"
+    },
+    {
+     "name": "Price signal",
+     "status": "info",
+     "detail": "booked +5% vs market; price position unknown until comps are priced"
+    }
+   ]
   },
   {
    "ref": "P07",
@@ -714,11 +976,48 @@
     "last_push": "2026-10-18T06:43:06.000Z"
    },
    "rate_leak_next_30": null,
+   "rate_leak_after_los": null,
+   "in_smoobu": true,
+   "price_nights_next_30": 29,
+   "intentional_block": true,
+   "special_setup": null,
    "recommendation": {
     "action": "weak-signal",
     "price_move": null,
     "reason": "booked -26% vs market; price position unknown until comps are priced"
-   }
+   },
+   "checks": [
+    {
+     "name": "Prices pushed today",
+     "status": "ok",
+     "detail": "Push on, last push 2026-10-18T06:43:06.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "ok",
+     "detail": "No open night differs by more than \u00a32"
+    },
+    {
+     "name": "Calendar open",
+     "status": "info",
+     "detail": "100% of next 30 nights closed on purpose"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "info",
+     "detail": "0% booked vs 26% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "info",
+     "detail": "No booked nights with known stay length in the next 30"
+    },
+    {
+     "name": "Price signal",
+     "status": "info",
+     "detail": "booked -26% vs market; price position unknown until comps are priced"
+    }
+   ]
   },
   {
    "ref": "P08",
@@ -822,11 +1121,58 @@
     "avg_pricelabs_price": 203.83,
     "gap_pct": -0.287
    },
+   "rate_leak_after_los": {
+    "nights": 12,
+    "avg_booked_adr": 145.4,
+    "avg_expected_after_los": 186.35,
+    "gap_pct": -0.22
+   },
+   "in_smoobu": true,
+   "price_nights_next_30": 29,
+   "intentional_block": false,
+   "special_setup": null,
    "recommendation": {
     "action": "weak-signal",
     "price_move": null,
     "reason": "booked -5% vs market; price position unknown until comps are priced"
-   }
+   },
+   "checks": [
+    {
+     "name": "Prices pushed today",
+     "status": "ok",
+     "detail": "Push on, last push 2026-10-18T09:25:55.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "ok",
+     "detail": "No open night differs by more than \u00a32"
+    },
+    {
+     "name": "Not stuck at minimum price",
+     "status": "ok",
+     "detail": "0% of open nights at the \u00a3150 minimum"
+    },
+    {
+     "name": "Calendar open",
+     "status": "ok",
+     "detail": "No blocked nights in the next 30"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "warn",
+     "detail": "45% booked vs 50% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "bad",
+     "detail": "\u00a3145 paid vs \u00a3186 expected on 12 nights (-22%; expected uses today's PriceLabs price, which may have risen since the booking)"
+    },
+    {
+     "name": "Price signal",
+     "status": "ok",
+     "detail": "booked -5% vs market; price position unknown until comps are priced"
+    }
+   ]
   },
   {
    "ref": "P09",
@@ -931,11 +1277,58 @@
     "avg_pricelabs_price": 148.5,
     "gap_pct": -0.314
    },
+   "rate_leak_after_los": {
+    "nights": 14,
+    "avg_booked_adr": 101.92,
+    "avg_expected_after_los": 128.08,
+    "gap_pct": -0.204
+   },
+   "in_smoobu": true,
+   "price_nights_next_30": 29,
+   "intentional_block": false,
+   "special_setup": null,
    "recommendation": {
     "action": "raise-signal",
     "price_move": null,
     "reason": "booked +21% vs market; price position unknown until comps are priced"
-   }
+   },
+   "checks": [
+    {
+     "name": "Prices pushed today",
+     "status": "ok",
+     "detail": "Push on, last push 2026-10-18T08:20:19.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "ok",
+     "detail": "No open night differs by more than \u00a32"
+    },
+    {
+     "name": "Not stuck at minimum price",
+     "status": "ok",
+     "detail": "0% of open nights at the \u00a3100 minimum"
+    },
+    {
+     "name": "Calendar open",
+     "status": "ok",
+     "detail": "No blocked nights in the next 30"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "ok",
+     "detail": "59% booked vs 38% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "bad",
+     "detail": "\u00a3102 paid vs \u00a3128 expected on 14 nights (-20%; expected uses today's PriceLabs price, which may have risen since the booking)"
+    },
+    {
+     "name": "Price signal",
+     "status": "ok",
+     "detail": "booked +21% vs market; price position unknown until comps are priced"
+    }
+   ]
   },
   {
    "ref": "P10",
@@ -1040,11 +1433,58 @@
     "avg_pricelabs_price": 159.79,
     "gap_pct": -0.337
    },
+   "rate_leak_after_los": {
+    "nights": 29,
+    "avg_booked_adr": 105.96,
+    "avg_expected_after_los": 127.83,
+    "gap_pct": -0.171
+   },
+   "in_smoobu": true,
+   "price_nights_next_30": 29,
+   "intentional_block": false,
+   "special_setup": null,
    "recommendation": {
     "action": "raise-signal",
     "price_move": null,
     "reason": "booked +68% vs market; price position unknown until comps are priced"
-   }
+   },
+   "checks": [
+    {
+     "name": "Prices pushed today",
+     "status": "ok",
+     "detail": "Push on, last push 2026-10-18T09:11:58.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "ok",
+     "detail": "No open night differs by more than \u00a32"
+    },
+    {
+     "name": "Not stuck at minimum price",
+     "status": "ok",
+     "detail": "0% of open nights at the \u00a385 minimum"
+    },
+    {
+     "name": "Calendar open",
+     "status": "ok",
+     "detail": "No blocked nights in the next 30"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "ok",
+     "detail": "100% booked vs 32% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "bad",
+     "detail": "\u00a3106 paid vs \u00a3128 expected on 29 nights (-17%; expected uses today's PriceLabs price, which may have risen since the booking)"
+    },
+    {
+     "name": "Price signal",
+     "status": "ok",
+     "detail": "booked +68% vs market; price position unknown until comps are priced"
+    }
+   ]
   },
   {
    "ref": "P11",
@@ -1149,11 +1589,58 @@
     "avg_pricelabs_price": 206.43,
     "gap_pct": -0.299
    },
+   "rate_leak_after_los": {
+    "nights": 14,
+    "avg_booked_adr": 144.78,
+    "avg_expected_after_los": 179.78,
+    "gap_pct": -0.195
+   },
+   "in_smoobu": true,
+   "price_nights_next_30": 29,
+   "intentional_block": false,
+   "special_setup": null,
    "recommendation": {
     "action": "raise-signal",
     "price_move": null,
     "reason": "booked +12% vs market; price position unknown until comps are priced"
-   }
+   },
+   "checks": [
+    {
+     "name": "Prices pushed today",
+     "status": "ok",
+     "detail": "Push on, last push 2026-10-18T09:11:49.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "ok",
+     "detail": "No open night differs by more than \u00a32"
+    },
+    {
+     "name": "Not stuck at minimum price",
+     "status": "ok",
+     "detail": "0% of open nights at the \u00a3120 minimum"
+    },
+    {
+     "name": "Calendar open",
+     "status": "ok",
+     "detail": "No blocked nights in the next 30"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "ok",
+     "detail": "59% booked vs 47% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "bad",
+     "detail": "\u00a3145 paid vs \u00a3180 expected on 14 nights (-20%; expected uses today's PriceLabs price, which may have risen since the booking)"
+    },
+    {
+     "name": "Price signal",
+     "status": "ok",
+     "detail": "booked +12% vs market; price position unknown until comps are priced"
+    }
+   ]
   },
   {
    "ref": "P12",
@@ -1257,41 +1744,88 @@
     "avg_pricelabs_price": 222.62,
     "gap_pct": -0.225
    },
+   "rate_leak_after_los": {
+    "nights": 13,
+    "avg_booked_adr": 172.57,
+    "avg_expected_after_los": 201.56,
+    "gap_pct": -0.144
+   },
+   "in_smoobu": true,
+   "price_nights_next_30": 29,
+   "intentional_block": false,
+   "special_setup": null,
    "recommendation": {
     "action": "raise-signal",
     "price_move": null,
     "reason": "booked +18% vs market; price position unknown until comps are priced"
-   }
+   },
+   "checks": [
+    {
+     "name": "Prices pushed today",
+     "status": "ok",
+     "detail": "Push on, last push 2026-10-18T09:25:52.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "ok",
+     "detail": "No open night differs by more than \u00a32"
+    },
+    {
+     "name": "Not stuck at minimum price",
+     "status": "ok",
+     "detail": "0% of open nights at the \u00a3100 minimum"
+    },
+    {
+     "name": "Calendar open",
+     "status": "ok",
+     "detail": "No blocked nights in the next 30"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "ok",
+     "detail": "59% booked vs 41% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "warn",
+     "detail": "\u00a3173 paid vs \u00a3202 expected on 13 nights (-14%; expected uses today's PriceLabs price, which may have risen since the booking)"
+    },
+    {
+     "name": "Price signal",
+     "status": "ok",
+     "detail": "booked +18% vs market; price position unknown until comps are priced"
+    }
+   ]
   },
   {
    "ref": "P13",
    "area": "Shepherd's Bush",
    "type": "2-bed",
    "last30": {
-    "nights": 7,
-    "revenue": 995.98,
+    "nights": 29,
+    "revenue": 4870.61,
     "capacity": 30,
-    "occupancy": 0.233,
-    "adr": 142.28,
-    "revpar": 33.2
+    "occupancy": 0.967,
+    "adr": 167.95,
+    "revpar": 162.35
    },
    "last365": {
-    "nights": 220,
-    "revenue": 34827.11,
+    "nights": 274,
+    "revenue": 43412.95,
     "capacity": 365,
-    "occupancy": 0.603,
-    "adr": 158.31,
-    "revpar": 95.42
+    "occupancy": 0.751,
+    "adr": 158.44,
+    "revpar": 118.94
    },
    "indices_30": {
-    "mpi": 0.16,
+    "mpi": 1.4,
     "ari": null,
     "rgi": null
    },
-   "blocked_next_30": 0.379,
+   "blocked_next_30": 0.0,
    "pricelabs_occ_next_30_incl_blocks": 0.47,
-   "forward_occ_30": 0.069,
-   "forward_occ_60": 0.169,
+   "forward_occ_30": 0.586,
+   "forward_occ_60": 0.424,
    "market_occ_30": 0.42,
    "market_occ_60": 0.35,
    "market_percentiles": {
@@ -1300,43 +1834,44 @@
     "p75": null,
     "p90": null
    },
-   "avg_open_price_next30": 191.5,
+   "avg_open_price_next30": 187.08,
    "price_percentile": null,
    "comps": null,
    "pace_30": {
-    "otb_nights": 2,
-    "otb_revenue": 353.43,
+    "otb_nights": 18,
+    "otb_revenue": 2769.4,
     "stly_nights": 0,
     "stly_revenue": 0,
-    "nights_delta": 2,
+    "nights_delta": 18,
     "revenue_delta_pct": null
    },
    "pace_90": {
-    "otb_nights": 10,
-    "otb_revenue": 1767.07,
+    "otb_nights": 26,
+    "otb_revenue": 4183.04,
     "stly_nights": 0,
     "stly_revenue": 0,
-    "nights_delta": 10,
+    "nights_delta": 26,
     "revenue_delta_pct": null
    },
    "pickup_7d": {
-    "bookings": 2,
-    "nights": 8,
-    "revenue": 1413.64
+    "bookings": 4,
+    "nights": 16,
+    "revenue": 2522.98
    },
    "booking_profile": {
-    "bookings": 67,
+    "bookings": 82,
     "median_lead_days": 21,
     "median_los": 3,
     "channel_revenue_share": {
-     "Booking.com": 0.68,
-     "Airbnb": 0.32
+     "Booking.com": 0.523,
+     "Airbnb": 0.468,
+     "Agoda": 0.009
     }
    },
    "gaps": [],
    "sync_issues": [],
    "bounds": {
-    "open_nights": 38,
+    "open_nights": 34,
     "at_min_share": 0.0,
     "at_max_share": 0.0,
     "min": 110.0,
@@ -1365,11 +1900,58 @@
     "avg_pricelabs_price": 176.0,
     "gap_pct": 0.004
    },
+   "rate_leak_after_los": {
+    "nights": 1,
+    "avg_booked_adr": 176.71,
+    "avg_expected_after_los": 176.0,
+    "gap_pct": 0.004
+   },
+   "in_smoobu": true,
+   "price_nights_next_30": 29,
+   "intentional_block": false,
+   "special_setup": null,
    "recommendation": {
-    "action": "weak-signal",
+    "action": "raise-signal",
     "price_move": null,
-    "reason": "booked -35% vs market; price position unknown until comps are priced"
-   }
+    "reason": "booked +17% vs market; price position unknown until comps are priced"
+   },
+   "checks": [
+    {
+     "name": "Prices pushed today",
+     "status": "ok",
+     "detail": "Push on, last push 2026-10-18T09:25:53.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "ok",
+     "detail": "No open night differs by more than \u00a32"
+    },
+    {
+     "name": "Not stuck at minimum price",
+     "status": "ok",
+     "detail": "0% of open nights at the \u00a3110 minimum"
+    },
+    {
+     "name": "Calendar open",
+     "status": "ok",
+     "detail": "No blocked nights in the next 30"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "ok",
+     "detail": "59% booked vs 42% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "ok",
+     "detail": "\u00a3177 paid vs \u00a3176 expected on 1 nights (+0%; expected uses today's PriceLabs price, which may have risen since the booking)"
+    },
+    {
+     "name": "Price signal",
+     "status": "ok",
+     "detail": "booked +17% vs market; price position unknown until comps are priced"
+    }
+   ]
   },
   {
    "ref": "P14",
@@ -1467,11 +2049,53 @@
     "last_push": "2026-10-18T07:11:00.000Z"
    },
    "rate_leak_next_30": null,
+   "rate_leak_after_los": null,
+   "in_smoobu": true,
+   "price_nights_next_30": 29,
+   "intentional_block": false,
+   "special_setup": "Primrose Hill pricing (incl. the \u00a3500 minimum) is a deliberate special setup. Do not propose changing its min, base or min-stay; report its numbers only.",
    "recommendation": {
     "action": "weak-signal",
     "price_move": null,
     "reason": "booked -42% vs market; price position unknown until comps are priced"
-   }
+   },
+   "checks": [
+    {
+     "name": "Prices pushed today",
+     "status": "ok",
+     "detail": "Push on, last push 2026-10-18T07:11:00.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "ok",
+     "detail": "No open night differs by more than \u00a32"
+    },
+    {
+     "name": "Not stuck at minimum price",
+     "status": "info",
+     "detail": "68% of open nights at the \u00a3500 minimum (special setup)"
+    },
+    {
+     "name": "Calendar open",
+     "status": "ok",
+     "detail": "No blocked nights in the next 30"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "info",
+     "detail": "0% booked vs 42% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "info",
+     "detail": "No booked nights with known stay length in the next 30"
+    },
+    {
+     "name": "Price signal",
+     "status": "info",
+     "detail": "booked -42% vs market; price position unknown until comps are priced"
+    }
+   ]
   },
   {
    "ref": "P15",
@@ -1528,11 +2152,23 @@
    "pricelabs": null,
    "settings": null,
    "rate_leak_next_30": null,
+   "rate_leak_after_los": null,
+   "in_smoobu": false,
+   "price_nights_next_30": 0,
+   "intentional_block": false,
+   "special_setup": null,
    "recommendation": {
     "action": "collect-data",
     "price_move": null,
     "reason": "missing occupancy or market data"
-   }
+   },
+   "checks": [
+    {
+     "name": "In PriceLabs",
+     "status": "bad",
+     "detail": "No priced PriceLabs listing mapped"
+    }
+   ]
   },
   {
    "ref": "P16",
@@ -1589,11 +2225,23 @@
    "pricelabs": null,
    "settings": null,
    "rate_leak_next_30": null,
+   "rate_leak_after_los": null,
+   "in_smoobu": false,
+   "price_nights_next_30": 0,
+   "intentional_block": false,
+   "special_setup": null,
    "recommendation": {
     "action": "collect-data",
     "price_move": null,
     "reason": "missing occupancy or market data"
-   }
+   },
+   "checks": [
+    {
+     "name": "In PriceLabs",
+     "status": "bad",
+     "detail": "No priced PriceLabs listing mapped"
+    }
+   ]
   },
   {
    "ref": "P17",
@@ -1650,11 +2298,23 @@
    "pricelabs": null,
    "settings": null,
    "rate_leak_next_30": null,
+   "rate_leak_after_los": null,
+   "in_smoobu": false,
+   "price_nights_next_30": 0,
+   "intentional_block": false,
+   "special_setup": null,
    "recommendation": {
     "action": "collect-data",
     "price_move": null,
     "reason": "missing occupancy or market data"
-   }
+   },
+   "checks": [
+    {
+     "name": "In PriceLabs",
+     "status": "bad",
+     "detail": "No priced PriceLabs listing mapped"
+    }
+   ]
   },
   {
    "ref": "P18",
@@ -1711,11 +2371,23 @@
    "pricelabs": null,
    "settings": null,
    "rate_leak_next_30": null,
+   "rate_leak_after_los": null,
+   "in_smoobu": false,
+   "price_nights_next_30": 0,
+   "intentional_block": false,
+   "special_setup": null,
    "recommendation": {
     "action": "collect-data",
     "price_move": null,
     "reason": "missing occupancy or market data"
-   }
+   },
+   "checks": [
+    {
+     "name": "In PriceLabs",
+     "status": "bad",
+     "detail": "No priced PriceLabs listing mapped"
+    }
+   ]
   },
   {
    "ref": "P19",
@@ -1772,11 +2444,156 @@
    "pricelabs": null,
    "settings": null,
    "rate_leak_next_30": null,
+   "rate_leak_after_los": null,
+   "in_smoobu": false,
+   "price_nights_next_30": 0,
+   "intentional_block": false,
+   "special_setup": null,
    "recommendation": {
     "action": "collect-data",
     "price_move": null,
     "reason": "missing occupancy or market data"
-   }
+   },
+   "checks": [
+    {
+     "name": "In PriceLabs",
+     "status": "bad",
+     "detail": "No priced PriceLabs listing mapped"
+    }
+   ]
+  },
+  {
+   "ref": "P20",
+   "area": "Canary Wharf",
+   "type": "2-bed",
+   "last30": {
+    "nights": 8,
+    "revenue": 1854.4,
+    "capacity": 30,
+    "occupancy": 0.267,
+    "adr": 231.8,
+    "revpar": 61.81
+   },
+   "last365": {
+    "nights": 8,
+    "revenue": 1854.4,
+    "capacity": 365,
+    "occupancy": 0.022,
+    "adr": 231.8,
+    "revpar": 5.08
+   },
+   "indices_30": {
+    "mpi": null,
+    "ari": null,
+    "rgi": null
+   },
+   "blocked_next_30": null,
+   "pricelabs_occ_next_30_incl_blocks": 0.1,
+   "forward_occ_30": null,
+   "forward_occ_60": null,
+   "market_occ_30": 0.35,
+   "market_occ_60": 0.27,
+   "market_percentiles": {
+    "p25": null,
+    "p50": null,
+    "p75": null,
+    "p90": null
+   },
+   "avg_open_price_next30": null,
+   "price_percentile": null,
+   "comps": null,
+   "pace_30": {
+    "otb_nights": 3,
+    "otb_revenue": 537.84,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 3,
+    "revenue_delta_pct": null
+   },
+   "pace_90": {
+    "otb_nights": 3,
+    "otb_revenue": 537.84,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 3,
+    "revenue_delta_pct": null
+   },
+   "pickup_7d": {
+    "bookings": 1,
+    "nights": 3,
+    "revenue": 537.84
+   },
+   "booking_profile": {
+    "bookings": 2,
+    "median_lead_days": 5,
+    "median_los": 8,
+    "channel_revenue_share": {
+     "Airbnb": 1.0
+    }
+   },
+   "gaps": [],
+   "sync_issues": [],
+   "bounds": null,
+   "parity_flags": [],
+   "pricelabs": {
+    "adr_past_30": 232.0,
+    "stly_adr_past_30": null,
+    "booking_pickup_past_30": 11.0,
+    "adr_ytd": 232.0,
+    "stly_adr_ytd": null,
+    "fully_blocked_next_360": false
+   },
+   "settings": {
+    "pl_min": 220.0,
+    "pl_base": 350.0,
+    "pl_max": 1800.0,
+    "recommended_base": null,
+    "sync_on": true,
+    "last_push": "2026-10-18T09:25:57.000Z"
+   },
+   "rate_leak_next_30": null,
+   "rate_leak_after_los": null,
+   "in_smoobu": true,
+   "price_nights_next_30": 0,
+   "intentional_block": false,
+   "special_setup": null,
+   "recommendation": {
+    "action": "collect-data",
+    "price_move": null,
+    "reason": "missing occupancy or market data"
+   },
+   "checks": [
+    {
+     "name": "Prices pushed today",
+     "status": "ok",
+     "detail": "Push on, last push 2026-10-18T09:25:57.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "info",
+     "detail": "Not checked (no PriceLabs prices pulled for this unit yet)"
+    },
+    {
+     "name": "Calendar open",
+     "status": "info",
+     "detail": "10% of next 30 nights unavailable (booked or blocked; no night-level detail yet)"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "info",
+     "detail": "Unknown"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "info",
+     "detail": "No booked nights with known stay length in the next 30"
+    },
+    {
+     "name": "Price signal",
+     "status": "info",
+     "detail": "missing occupancy or market data"
+    }
+   ]
   }
  ],
  "missing": {

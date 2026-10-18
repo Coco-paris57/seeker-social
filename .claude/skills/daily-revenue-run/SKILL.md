@@ -8,6 +8,10 @@ description: Run Seeker Estates' daily revenue-management cycle - pull PriceLabs
 Commands run from `seeker-estates/revenue`. `D` = today's date (Europe/London), `RAW` =
 `data/snapshots/D/raw/`. Property ↔ listing mapping: `data/id_map.json` (refs P01–P19).
 
+**Standing decisions:** `data/policy.json` holds Corentin's answers (intentional blocks, special
+setups, Visibility Booster, stay discounts, linked listings). Pass it to every agent; never
+re-raise what it settles. Properties are P01–P20 (P20 = Waterford Court).
+
 **Read-only rule:** use only PriceLabs `get_*` tools and Smoobu GET calls. Never call
 `update_*`, `delete_*`, `accept_nudge`, `map_listings`, `refresh_listing_pricing` or
 `set_neighborhood_data_source`. Changes are proposed to Corentin, never made.
@@ -69,6 +73,13 @@ Save each tool response exactly as returned - do not edit, summarise or recomput
    `python3 -m rm.cli analyse D` → `reports/D/kpi_pack.json` + `kpi_summary.md`.
    Specialists write their sections to `reports/D/sections/<agent>.md` and reply with a JSON
    block of findings, which the Dispatcher copies to the dashboard.
+5. Per-property check: the pack holds `checks` for every property (pushed today, PriceLabs =
+   Smoobu, not stuck at minimum, calendar open, booked vs market, paid rate vs price after the
+   15%/20% stay discounts, price signal); `kpi_summary.md` lists them per property. Publish
+   them: ArtifactData `list` collection `properties` with `out_dir` = scratchpad/dbprops, then
+   `python3 -m rm.cli dash-props D <scratchpad>/propsout <scratchpad>/dbprops`, then one
+   `batch` of `set` writes with `file_path` per property (pin each existing doc's version).
+   This also appends today's ADR/occupancy point to each property's trend.
 
 ## 3. Specialists - launch in ONE message so they run in parallel
 Pass each the date D and the paths of the pack and snapshot; each returns its markdown section

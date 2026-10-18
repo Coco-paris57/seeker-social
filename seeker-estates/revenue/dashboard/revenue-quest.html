@@ -200,6 +200,18 @@ table.props{width:100%;border-collapse:collapse;min-width:900px;font-size:13.5px
 .hist td,.hist th{padding:4px 6px;border-bottom:1px solid var(--rule);text-align:left}
 .hist th{color:var(--muted);font-weight:600}
 .src{font-size:11.5px;color:var(--muted);margin-top:8px}
+.health{display:flex;gap:6px;font-family:var(--mono);font-size:12px;white-space:nowrap}
+.health span{padding:1px 7px;border-radius:999px;border:1px solid var(--rule)}
+.health .h-bad{color:var(--bad);border-color:rgba(255,91,107,.45)}
+.health .h-warn{color:var(--warn);border-color:rgba(255,174,43,.4)}
+.health .h-ok{color:var(--ok);border-color:rgba(61,220,151,.4)}
+.tagline{display:inline-block;font-size:11px;color:var(--muted);border:1px dashed var(--rule);border-radius:999px;padding:0 7px;margin-left:6px}
+.checklist{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.checklist li{display:grid;grid-template-columns:22px 1fr;gap:8px;font-size:13px;align-items:start}
+.checklist .ci{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--bg);margin-top:1px}
+.ci.ok{background:var(--ok)}.ci.warn{background:var(--warn)}.ci.bad{background:var(--bad)}.ci.info{background:var(--muted)}
+.checklist b{font-weight:600}
+.checklist small{display:block;color:var(--muted)}
 
 /* Actions */
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
@@ -277,7 +289,7 @@ table.props{width:100%;border-collapse:collapse;min-width:900px;font-size:13.5px
     </div>
     <div class="ptiles" id="ptiles"></div>
     <div class="tablewrap"><table class="props">
-      <thead><tr><th>Property</th><th>ADR last 30 days</th><th>ADR year to date</th><th>Booked next 30 days vs market</th><th>Booked next 60 days</th><th>Trend</th></tr></thead>
+      <thead><tr><th>Property</th><th>Health check</th><th>ADR last 30 days</th><th>ADR year to date</th><th>Booked next 30 days vs market</th><th>Booked next 60 days</th><th>Trend</th></tr></thead>
       <tbody id="ptable"></tbody>
     </table></div>
   </section>
@@ -539,7 +551,7 @@ function renderProps(){
   const tiles = $("#ptiles"), body = $("#ptable");
   if (!list.length){
     tiles.innerHTML = "";
-    body.innerHTML = `<tr><td colspan="6" class="empty">No property data yet. The first daily run fills this table from PriceLabs and Smoobu.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="7" class="empty">No property data yet. The first daily run fills this table from PriceLabs and Smoobu.</td></tr>`;
     return;
   }
   const withLy = list.filter(p => latest(p).adr30 != null && latest(p).adr30_ly != null);
@@ -565,14 +577,19 @@ function renderProps(){
     const open = state.expanded === p.ref;
     const bar = (o, m) => o == null ? "—" : `<div class="occbar" title="Ours ${pc(o)} · market ${pc(m)}"><i style="width:${Math.min(100, o * 100)}%"></i>${m != null ? `<u style="left:${Math.min(100, m * 100)}%"></u>` : ""}</div><div class="occtxt">${pc(o)} vs ${pc(m)} market</div>`;
     const acts = state.actions.filter(a => a.ref === p.ref && a.status === "open");
+    const ck = p.checks || [], cnt = s => ck.filter(c => c.status === s).length;
+    const health = ck.length ? `<div class="health" title="Open the row for the full check">${cnt("bad") ? `<span class="h-bad">✖ ${cnt("bad")}</span>` : ""}${cnt("warn") ? `<span class="h-warn">! ${cnt("warn")}</span>` : ""}<span class="h-ok">✓ ${cnt("ok")}</span></div>` : `<span class="occtxt">—</span>`;
     return `<tr class="row" data-prop="${esc(p.ref)}" aria-expanded="${open}">
-        <td class="pname"><b><span class="mono">${esc(p.ref)}</span> ${esc(p.area || "")}</b><small>${esc(p.name || "")}${acts.length ? ` · ${acts.length} open action${acts.length > 1 ? "s" : ""}` : ""}</small></td>
+        <td class="pname"><b><span class="mono">${esc(p.ref)}</span> ${esc(p.area || "")}${p.tag ? `<span class="tagline">${esc(p.tag)}</span>` : ""}</b><small>${esc(p.name || "")}${acts.length ? ` · ${acts.length} open action${acts.length > 1 ? "s" : ""}` : ""}</small></td>
+        <td>${health}</td>
         <td class="num">${gbp(l.adr30)}${deltaTag(change(l.adr30, l.adr30_ly), "last year")}</td>
         <td class="num">${gbp(l.adr_ytd)}${deltaTag(change(l.adr_ytd, l.adr_ytd_ly), "last year")}</td>
         <td>${bar(l.occ_fwd30, l.mkt_fwd30)}</td>
         <td>${bar(l.occ_fwd60, l.mkt_fwd60)}</td>
         <td>${spark(h.map(r => r.adr30), "var(--signal)")}</td>
-      </tr>${open ? `<tr class="detailrow"><td colspan="6">
+      </tr>${open ? `<tr class="detailrow"><td colspan="7">
+        ${ck.length ? `<h4 style="margin:0 0 8px;font-size:12px;color:var(--muted);letter-spacing:.08em">HEALTH CHECK · ${esc(p.checks_date || l.date || "")}</h4>
+        <ul class="checklist" style="margin-bottom:14px">${ck.map(c => `<li><span class="ci ${esc(c.status)}">${c.status === "ok" ? "✓" : c.status === "bad" ? "✖" : c.status === "warn" ? "!" : "i"}</span><div><b>${esc(c.name)}</b><small>${esc(c.detail)}</small></div></li>`).join("")}</ul>` : ""}
         <div class="pdetail">
           <div class="chartbox"><h4>ADR, last 30 days</h4>${lineChart(h, "adr30", "var(--signal)", gbp)}</div>
           <div class="chartbox"><h4>Booked, next 30 days</h4>${lineChart(h, "occ_fwd30", "var(--run)", pc)}</div>

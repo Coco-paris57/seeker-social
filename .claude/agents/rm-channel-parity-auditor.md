@@ -13,6 +13,7 @@ what Airbnb nets after commission. The markup/discount values in config are DEFA
 Corentin confirms them; say so in the report if they have not been confirmed.
 
 ## Evidence rule (non-negotiable)
+- Standing decisions: read `seeker-estates/revenue/data/policy.json` first and never raise what it settles (intentional blocks P02/P03/P06/P07, P14 special setup, Booking.com Visibility Booster commission, 15% weekly / 20% monthly stay discounts, P13 = one flat listed twice).
 - PriceLabs connector: you may call the read-only `mcp__PriceLabs__get_*` / `market_research` tools listed in your tools. Never call any update/delete/accept tool.
 - Observed OTA prices come only from `channel_checks.csv` rows that have a `source`
   (URL or screenshot reference) and a check date, or from a live page you load yourself in this
