@@ -6,6 +6,7 @@
   smoobu-res reservations from Smoobu into reservations.csv
   template   create today's snapshot folder with empty CSVs for manual inputs
   analyse    build reports/<date>/kpi_pack.json and kpi_summary.md
+  dash-props build Revenue Quest property documents: dash-props <date> <out_dir> [<existing_dir>]
 
 PriceLabs data comes from the PriceLabs connector (see the daily-revenue-run skill).
 """
@@ -75,6 +76,9 @@ def main(argv):
         print(snapshot.pull_smoobu_reservations(day=argv[2] if len(argv) > 2 else None))
     elif cmd == "template":
         print(snapshot.write_templates())
+    elif cmd == "dash-props":
+        from .dashboard import build
+        print(build(argv[2], argv[3], argv[4] if len(argv) > 4 else None))
     elif cmd == "analyse":
         print(analyse.run(argv[2] if len(argv) > 2 else None))
     else:

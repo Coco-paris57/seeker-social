@@ -20,6 +20,10 @@ _spec.loader.exec_module(_props)
 FIELDS = ("ref", "postcode", "area", "station", "type", "sleeps",
           "pl_min", "pl_max", "pl_base", "venues", "notes")
 PROPERTIES = [dict(zip(FIELDS, p)) for p in _props.PROPS]
+# Units confirmed after the info pack (kept here so the social-content build is untouched).
+PROPERTIES.append({"ref": "P20", "postcode": "E14 (to confirm)", "area": "Canary Wharf", "station": "Canary Wharf (to confirm)",
+                   "type": "2-bed", "sleeps": None, "pl_min": 220, "pl_max": 1800, "pl_base": 350,
+                   "venues": "ExCeL · O2", "notes": "Waterford Court; confirmed by Corentin 18 Oct 2026"})
 PORTFOLIO_FACTS = _props.FACTS
 BY_REF = {p["ref"]: p for p in PROPERTIES}
 
@@ -28,7 +32,7 @@ BY_REF = {p["ref"]: p for p in PROPERTIES}
 # discount: promotion the guest sees on the OTA (Genius, mobile, early bird...).
 # Confirm every value in Smoobu > Channel Manager and on each OTA extranet.
 CHANNELS = {
-    "airbnb":  {"markup": 0.00, "discount": 0.00, "commission": 0.155},  # host-only fee model
+    "airbnb":  {"markup": 0.00, "discount": 0.00, "commission": 0.155},  # 15.5% of base + cleaning (observed)
     "booking": {"markup": 0.15, "discount": 0.10, "commission": 0.15},   # e.g. Genius 10%
     "vrbo":    {"markup": 0.08, "discount": 0.00, "commission": 0.08},
     "direct":  {"markup": 0.00, "discount": 0.10, "commission": 0.00},   # 10% direct discount
@@ -46,3 +50,9 @@ SMOOBU_API_SECRET = os.environ.get("SMOOBU_API_SECRET")
 # Map our refs to platform ids. Fill once from `python -m rm.cli ids`.
 # {"P01": {"smoobu": 123456, "pricelabs": "123456", "airbnb": "...", "booking": "..."}}
 ID_MAP_FILE = DATA / "id_map.json"
+POLICY_FILE = DATA / "policy.json"
+
+
+def policy():
+    import json
+    return json.loads(POLICY_FILE.read_text()) if POLICY_FILE.exists() else {}

@@ -20,7 +20,8 @@
   ],
   "smoobu": 2999946,
   "confidence": "high",
-  "note": "Notting Hill W10; 60/175 match"
+  "note": "Notting Hill W10; 60/175 match",
+  "intentional_block": true
  },
  "P03": {
   "pricelabs": [
@@ -29,7 +30,8 @@
   "pricelabs_other": [],
   "smoobu": null,
   "confidence": "check",
-  "note": "Bayswater 3-bed: not in Smoobu (checked 18 Oct 2026); priced through Channex; base 323 matches pack"
+  "note": "Bayswater 3-bed: not in Smoobu (checked 18 Oct 2026); priced through Channex; base 323 matches pack",
+  "intentional_block": true
  },
  "P04": {
   "pricelabs": [
@@ -59,7 +61,8 @@
   "pricelabs_other": [],
   "smoobu": 3288517,
   "confidence": "high",
-  "note": "Marylebone; 200/340 match"
+  "note": "Marylebone; 200/340 match",
+  "intentional_block": true
  },
  "P07": {
   "pricelabs": [
@@ -68,7 +71,8 @@
   "pricelabs_other": [],
   "smoobu": 3288427,
   "confidence": "high",
-  "note": "'Modern 1 bed Flat | Quiet Retreat' at Woolwich coordinates; 165/226 match"
+  "note": "'Modern 1 bed Flat | Quiet Retreat' at Woolwich coordinates; 165/226 match",
+  "intentional_block": true
  },
  "P08": {
   "pricelabs": [
@@ -136,8 +140,11 @@
    "_units_0001_125c15c5-0846-4b92-a967-1b54ff6089a5"
   ],
   "smoobu": 3064856,
-  "confidence": "check",
-  "note": "Shepherd's Bush: TWO Smoobu listings (3064856, 3090701) at identical coordinates, both pushing 110/235; Smoobu lists both as separate apartments (3064856 'Top-Floor 2Bed with Private Terrace in W12', 3090701 'Bright 2BR w/Terrace in W12')"
+  "confidence": "high",
+  "note": "Shepherd's Bush: ONE flat listed twice in Smoobu (3064856 priced, 3090701 linked; confirmed by Corentin 18 Oct 2026). Bookings combined; Vrbo copies are duplicates",
+  "smoobu_other": [
+   3090701
+  ]
  },
  "P14": {
   "pricelabs": [
@@ -146,7 +153,8 @@
   "pricelabs_other": [],
   "smoobu": 3267077,
   "confidence": "high",
-  "note": "Primrose Hill; PriceLabs min 500 base 525 vs pack 400/475"
+  "note": "Primrose Hill; PriceLabs min 500 base 525 vs pack 400/475",
+  "special_setup": true
  },
  "P15": {
   "pricelabs": [],
@@ -185,11 +193,19 @@
  },
  "_unmatched": {
   "pricelabs": [
-   "3547481",
    "_units_0001_a7f5a076-f6c7-4352-b4e8-cd9e58665c55",
    "_units_0001_4a980bb7-a141-4d59-b94d-66b5124bdd35",
    "_units_0001_380ddc1a-8218-4d54-a9fa-1eaf04d59b8e"
   ],
-  "note": "Waterford Court (2-bed, E14 Isle of Dogs coords, 220/350, pushing) is not in the info pack. Three Vrbo listings at Marylebone coordinates (incl. 'Old School Grandma London Experience'), push off. Smoobu apartment 3547481 'Waterford Court' and 3090701 (second W12 listing) are in Smoobu but not in the info pack."
+  "note": "Three Vrbo listings at Marylebone coordinates (incl. 'Old School Grandma London Experience'), push off."
+ },
+ "P20": {
+  "pricelabs": [
+   "3547481"
+  ],
+  "pricelabs_other": [],
+  "smoobu": 3547481,
+  "confidence": "high",
+  "note": "Waterford Court, 2-bed flat in Canary Wharf (confirmed by Corentin 18 Oct 2026); PriceLabs min 220 base 350 max 1800"
  }
 }
