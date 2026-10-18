@@ -14,6 +14,7 @@ Missing inputs show as `—` and are listed, never filled in.
 | Daily run (coordinates the agents) | `/.claude/skills/daily-revenue-run/SKILL.md` |
 | Daily snapshots (guest data, not committed) | `data/snapshots/YYYY-MM-DD/*.csv` |
 | Reports (committed) | `reports/YYYY-MM-DD/` |
+| Live dashboard ("Revenue Quest") | https://claude.ai/artifact/9nekRcg2MguSMR2d3mHSpd · source `dashboard/revenue-quest.html` |
 
 ## KPIs
 Occupancy, ADR, RevPAR (last 30/365 nights) · forward occupancy 30/60 · pace vs same time last

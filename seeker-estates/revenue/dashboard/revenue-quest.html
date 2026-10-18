@@ -1,0 +1,437 @@
+<title>Seeker Revenue Quest</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a night tube map. Each agent is a line, its tasks are stations, a train marks progress.
+   HUD on top, map, squad cards, then the radio feed and the finds board side by side. */
+:root{
+  --bg:#0c1224; --panel:#141c35; --panel2:#1b2546; --rule:#2a3561; --fg:#eaedf8; --muted:#8e98bf;
+  --signal:#ffc83a; --ok:#3ddc97; --warn:#ffae2b; --bad:#ff5b6b; --run:#5cc8ff;
+  --display:"Bungee","Arial Black",Impact,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px;
+  background-image:radial-gradient(circle at 1px 1px,rgba(142,152,191,.10) 1px,transparent 0);background-size:22px 22px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:.02em;margin:0;text-wrap:balance}
+h2{font-size:15px;color:var(--muted);letter-spacing:.08em}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+
+/* HUD */
+.hud{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:stretch}
+.brand{display:flex;gap:14px;align-items:center}
+.roundel{width:54px;height:54px;flex:none;position:relative}
+.roundel i{position:absolute;inset:6px;border-radius:50%;border:8px solid var(--bad)}
+.roundel b{position:absolute;left:0;right:0;top:50%;height:13px;margin-top:-6.5px;background:var(--run);display:grid;place-items:center;
+  font:9px/1 var(--display);color:var(--bg);letter-spacing:.06em}
+.brand h1{font-size:clamp(22px,4vw,34px);line-height:1.05}
+.brand p{margin:2px 0 0;color:var(--muted)}
+.runbox{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.runtop{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.runtop .mono{color:var(--muted);font-size:13px}
+.phase{font-family:var(--display);font-size:16px;color:var(--signal)}
+.meter{height:12px;border-radius:6px;background:var(--panel2);overflow:hidden;border:1px solid var(--rule)}
+.meter > span{display:block;height:100%;background:repeating-linear-gradient(135deg,var(--signal) 0 8px,#ffd76e 8px 16px);transition:width .6s ease}
+.lights{display:flex;gap:14px;flex-wrap:wrap;font-size:13px}
+.light{display:flex;align-items:center;gap:6px;color:var(--muted)}
+.light::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--muted);box-shadow:0 0 0 3px rgba(142,152,191,.12)}
+.light.ok::before{background:var(--ok);box-shadow:0 0 10px var(--ok)}
+.light.bad::before{background:var(--bad);box-shadow:0 0 10px var(--bad)}
+.light.part::before{background:var(--warn);box-shadow:0 0 10px var(--warn)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:10px 12px}
+.stat b{display:block;font-family:var(--display);font-size:22px;font-weight:400}
+.stat span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+
+/* Goal */
+.goal{display:flex;gap:16px;align-items:center;background:linear-gradient(90deg,rgba(255,200,58,.10),transparent 70%),var(--panel);
+  border:1px solid var(--rule);border-radius:10px;padding:14px 16px;flex-wrap:wrap}
+.goal h3{font-size:16px}
+.goal .sub{color:var(--muted);font-size:13px}
+.goal .kpis{display:flex;gap:18px;flex-wrap:wrap;margin-left:auto}
+.kpi{min-width:84px}
+.kpi b{display:block;font-family:var(--mono);font-size:18px}
+.kpi span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.lock{font-family:var(--mono);font-size:12px;color:var(--muted);border:1px dashed var(--rule);border-radius:999px;padding:3px 10px}
+
+/* Map */
+.mapbox{background:var(--panel);border:1px solid var(--rule);border-radius:12px;padding:14px 0 6px}
+.maphead{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:0 16px 8px;flex-wrap:wrap}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:5px}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.mapscroll{overflow-x:auto;padding:0 16px 8px}
+.line{display:grid;grid-template-columns:190px 1fr;align-items:center;gap:12px;min-width:820px;padding:6px 8px;border-radius:8px;cursor:pointer;border:1px solid transparent;background:none;width:100%;text-align:left}
+.line:hover,.line.sel{background:var(--panel2);border-color:var(--rule)}
+.lname{display:flex;flex-direction:column;line-height:1.2}
+.lname b{font-weight:700;font-size:14px}
+.lname small{color:var(--muted);font-size:12px}
+.track{position:relative;height:38px}
+.rail{position:absolute;left:8px;right:8px;top:17px;height:5px;border-radius:3px;opacity:.28;background:var(--c)}
+.rail.done{opacity:1}
+.railfill{position:absolute;left:8px;top:17px;height:5px;border-radius:3px;background:var(--c);transition:width .7s ease}
+.st{position:absolute;top:12px;width:15px;height:15px;margin-left:-7.5px;border-radius:50%;background:var(--panel);border:3px solid var(--c);opacity:.55}
+.st.past{background:var(--c);opacity:1}
+.st.now{opacity:1;background:var(--bg);box-shadow:0 0 0 4px rgba(255,255,255,.08)}
+.st span{position:absolute;top:18px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:10.5px;color:var(--muted)}
+.st.now span{color:var(--fg);font-weight:600}
+.train{position:absolute;top:4px;width:30px;height:15px;margin-left:-15px;border-radius:5px 9px 9px 5px;background:var(--fg);transition:left .7s ease;
+  box-shadow:0 0 0 2px var(--bg)}
+.train::after{content:"";position:absolute;right:4px;top:4px;width:6px;height:5px;border-radius:2px;background:var(--bg)}
+.line.running .train{animation:bob 1.2s ease-in-out infinite;background:var(--run)}
+.line.blocked .train{background:var(--bad)}
+.line.done .train{background:var(--ok)}
+.line.waiting .train{background:var(--warn)}
+.line.idle .train{opacity:.35}
+@keyframes bob{50%{transform:translateY(-2px)}}
+
+/* Squad */
+.squad{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--rule);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;cursor:pointer;text-align:left;position:relative;overflow:hidden}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c)}
+.card:hover,.card.sel{border-color:var(--c)}
+.ctop{display:flex;gap:12px;align-items:center}
+.badge{width:46px;height:46px;flex:none;position:relative}
+.badge i{position:absolute;inset:4px;border-radius:50%;border:6px solid var(--c)}
+.badge b{position:absolute;left:-2px;right:-2px;top:50%;height:13px;margin-top:-6.5px;background:var(--fg);color:var(--bg);display:grid;place-items:center;font:9px/1 var(--display);letter-spacing:.04em}
+.who{min-width:0}
+.who b{display:block;font-size:15px}
+.who small{color:var(--muted)}
+.lvl{margin-left:auto;text-align:right;font-family:var(--display);font-size:20px;line-height:1}
+.lvl small{display:block;font-family:var(--body);font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.xp{height:7px;border-radius:4px;background:var(--panel2);overflow:hidden}
+.xp span{display:block;height:100%;background:var(--c)}
+.xprow{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;border:1px solid var(--rule);color:var(--muted);width:fit-content}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.pill.running{color:var(--run);border-color:rgba(92,200,255,.4)}
+.pill.done{color:var(--ok);border-color:rgba(61,220,151,.4)}
+.pill.blocked{color:var(--bad);border-color:rgba(255,91,107,.45)}
+.pill.waiting{color:var(--warn);border-color:rgba(255,174,43,.4)}
+.note{font-size:13px;color:var(--fg);min-height:2.6em}
+.note.empty{color:var(--muted)}
+.loot{display:flex;gap:12px;font-size:12px;color:var(--muted)}
+.loot b{color:var(--fg);font-family:var(--mono)}
+
+/* Feed + finds */
+.lower{display:grid;grid-template-columns:1.1fr 1fr;gap:16px;align-items:start}
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:12px;padding:14px 16px;min-width:0}
+.panel h2{margin-bottom:10px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.chip{border:1px solid var(--rule);background:var(--panel2);border-radius:999px;padding:3px 10px;font-size:12px;cursor:pointer}
+.chip.on{background:var(--signal);color:var(--bg);border-color:var(--signal);font-weight:700}
+.feed{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;max-height:420px;overflow:auto}
+.feed li{display:grid;grid-template-columns:52px 12px 1fr;gap:8px;align-items:start;padding:6px 4px;border-radius:6px;font-size:13.5px}
+.feed li:hover{background:var(--panel2)}
+.feed time{font-family:var(--mono);font-size:12px;color:var(--muted);padding-top:1px}
+.feed .k{width:10px;height:10px;border-radius:50%;margin-top:5px;background:var(--c)}
+.feed .who2{font-weight:700;margin-right:6px}
+.feed .kind{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:6px}
+.finds{display:flex;flex-direction:column;gap:8px;max-height:460px;overflow:auto}
+.find{border:1px solid var(--rule);border-radius:9px;padding:9px 11px;display:grid;grid-template-columns:auto 1fr;gap:4px 10px;background:var(--panel2)}
+.gem{width:12px;height:12px;transform:rotate(45deg);margin-top:5px;border-radius:2px;background:var(--muted)}
+.gem.critical{background:var(--bad);box-shadow:0 0 8px var(--bad)}
+.gem.high{background:var(--warn)}
+.gem.medium{background:var(--run)}
+.find b{font-size:13.5px}
+.find small{grid-column:2;color:var(--muted);font-size:12px}
+.empty{color:var(--muted);font-size:13.5px;padding:8px 2px}
+.empty code{font-family:var(--mono);color:var(--fg);background:var(--panel2);padding:1px 6px;border-radius:4px}
+
+/* Drawer */
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--panel);border-left:1px solid var(--rule);z-index:20;
+  transform:translateX(100%);transition:transform .25s ease;display:flex;flex-direction:column;
+  padding:calc(18px + env(safe-area-inset-top,0px)) max(18px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) 18px;overflow:auto}
+.drawer.open{transform:none;box-shadow:-20px 0 60px rgba(0,0,0,.45)}
+.dhead{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+.close{margin-left:auto;background:var(--panel2);border:1px solid var(--rule);border-radius:8px;padding:4px 10px;cursor:pointer}
+.brief{color:var(--muted);font-size:13.5px;margin:0 0 12px}
+.stations{list-style:none;margin:0 0 16px;padding:0;position:relative}
+.stations li{display:flex;gap:10px;align-items:flex-start;padding:5px 0;font-size:13.5px;position:relative}
+.stations li::before{content:"";width:14px;height:14px;border-radius:50%;flex:none;border:3px solid var(--c);background:var(--panel);margin-top:2px}
+.stations li.past::before{background:var(--c)}
+.stations li.now{font-weight:700}
+.stations li.now::before{box-shadow:0 0 0 4px rgba(255,255,255,.1)}
+.stations li:not(:last-child)::after{content:"";position:absolute;left:5.5px;top:19px;bottom:-7px;width:3px;background:var(--c);opacity:.35}
+.dsec{font-family:var(--display);font-size:13px;color:var(--muted);letter-spacing:.08em;margin:14px 0 8px}
+.scrim{position:fixed;inset:0;background:rgba(5,8,18,.5);z-index:15;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.open{opacity:1;pointer-events:auto}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translate(-50%,140%);background:var(--signal);color:var(--bg);
+  font-weight:700;padding:8px 14px;border-radius:999px;z-index:30;transition:transform .3s ease;max-width:calc(100% - 32px)}
+.toast.show{transform:translate(-50%,0)}
+
+@media (max-width:860px){.hud,.lower{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="hud">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="brand">
+        <div class="roundel" aria-hidden="true"><i></i><b>SEEKER</b></div>
+        <div>
+          <h1>Revenue Quest</h1>
+          <p>Live tracker for the Seeker Estates revenue squad. Tap a line or a card to see what that agent is doing.</p>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><b id="sArrived" class="mono">0/9</b><span>Agents arrived</span></div>
+        <div class="stat"><b id="sFinds" class="mono">0</b><span>Finds today</span></div>
+        <div class="stat"><b id="sGaps" class="mono">0</b><span>Missing data</span></div>
+        <div class="stat"><b id="sXp" class="mono">0</b><span>Squad XP</span></div>
+      </div>
+    </div>
+    <div class="runbox" aria-live="polite">
+      <div class="runtop"><span class="phase" id="phase">In the depot</span><span class="mono" id="runDate">No run yet</span></div>
+      <div class="meter" aria-label="Run progress"><span id="runFill" style="width:0%"></span></div>
+      <div id="runSummary" style="font-size:13.5px;color:var(--muted)">Waiting for the first daily run.</div>
+      <div class="lights" id="lights">
+        <span class="light">PriceLabs</span><span class="light">Smoobu</span><span class="light">OTA websites</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="goal" aria-label="Main quest">
+    <div>
+      <h3>Main quest: Number 1 in London</h3>
+      <div class="sub" id="goalSub">Win condition: beat the competitor set on revenue per available night (RGI above 1.10) on every property.</div>
+    </div>
+    <div class="kpis" id="goalKpis"><span class="lock">Unlocks after the first full run</span></div>
+  </section>
+
+  <section class="mapbox" aria-label="Agent lines">
+    <div class="maphead">
+      <h2>NETWORK MAP</h2>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--muted)"></i>In depot</span>
+        <span><i class="dot" style="background:var(--run)"></i>On the line</span>
+        <span><i class="dot" style="background:var(--warn)"></i>Held at signal</span>
+        <span><i class="dot" style="background:var(--bad)"></i>Signal failure</span>
+        <span><i class="dot" style="background:var(--ok)"></i>Arrived</span>
+      </div>
+    </div>
+    <div class="mapscroll"><div id="map"></div></div>
+  </section>
+
+  <section aria-label="Squad">
+    <h2 style="margin-bottom:10px">THE SQUAD</h2>
+    <div class="squad" id="squad"></div>
+  </section>
+
+  <section class="lower">
+    <div class="panel">
+      <h2>RADIO</h2>
+      <div class="chips" id="chips"></div>
+      <ul class="feed" id="feed"></ul>
+    </div>
+    <div class="panel">
+      <h2>FINDS BOARD</h2>
+      <div class="chips" id="sevChips"></div>
+      <div class="finds" id="finds"></div>
+    </div>
+  </section>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true" aria-label="Agent details"></aside>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const AGENTS = [
+  {id:"dispatcher", name:"The Dispatcher", cls:"Conductor", code:"DSP", c:"#ffc83a",
+   brief:"Runs the daily cycle: checks connections, pulls PriceLabs and Smoobu, builds the KPI pack, sends the squad out and checks the final report.",
+   stations:["Connect","Pull PriceLabs","Ingest","Smoobu rates","KPI pack","Launch squad","Verify","Report"]},
+  {id:"occupancy", name:"Occupancy Scout", cls:"Performance analyst", code:"OCC", c:"#e8485d",
+   brief:"Measures our own performance per property: occupancy, ADR, RevPAR, pace vs last year, pickup, booking window and empty gaps.",
+   stations:["Read pack","Performance","Pace vs LY","Pickup","Gaps","Classify","Report"]},
+  {id:"pricelabs", name:"PriceLabs Engineer", cls:"Pricing auditor", code:"PLB", c:"#27b3a3",
+   brief:"Checks PriceLabs is producing and pushing the right prices: sync to Smoobu, stale pushes, floors and caps, settings, duplicates and overrides.",
+   stations:["Sync","Push check","Floor/cap","Base vs market","Settings","Hygiene","Overrides","Min stay"]},
+  {id:"channel", name:"Channel Inspector", cls:"Parity auditor", code:"CHN", c:"#9b6dff",
+   brief:"Checks each channel charges what it should: Airbnb, Booking.com, Vrbo and direct. Looks for stacked discounts and leaks between set price and paid rate.",
+   stations:["Load checks","Expected vs shown","Discount stack","Direct cheapest","Net per channel","Report"]},
+  {id:"market", name:"Market Navigator", cls:"Demand analyst", code:"MKT", c:"#4f8cff",
+   brief:"Reads London demand for the next 90 days: market occupancy by area and verified events, and spots dates we are under-pricing.",
+   stations:["Submarkets","Events 90d","Priced in?","Missed peaks","Report"]},
+  {id:"comp-east", name:"Rival Hunter East", cls:"Competitor analyst", code:"E", c:"#ff8a3d",
+   brief:"Builds and prices like-for-like competitors for P01, P04, P07, P09, P12, P15.",
+   stations:["Comp set","Price comps","Rank us","Quality gap","Position","Report"]},
+  {id:"comp-central", name:"Rival Hunter Central", cls:"Competitor analyst", code:"C", c:"#f25c9b",
+   brief:"Builds and prices like-for-like competitors for P05, P06, P08, P11, P14, P17.",
+   stations:["Comp set","Price comps","Rank us","Quality gap","Position","Report"]},
+  {id:"comp-west", name:"Rival Hunter West", cls:"Competitor analyst", code:"W", c:"#7bd389",
+   brief:"Builds and prices like-for-like competitors for P02, P03, P10, P13, P16, P18, P19.",
+   stations:["Comp set","Price comps","Rank us","Quality gap","Position","Report"]},
+  {id:"strategy", name:"Strategy Captain", cls:"Revenue strategist", code:"CPT", c:"#eaedf8",
+   brief:"Turns every report into a ranked action plan to raise ADR at equal or higher occupancy, and keeps the scoreboard for the main quest.",
+   stations:["Collect","Rank actions","Size impact","Growth plays","Scoreboard","Write report"]},
+];
+const STATUS = {idle:"In depot", running:"On the line", waiting:"Held at signal", blocked:"Signal failure", done:"Arrived"};
+const RANKS = ["Trainee","Driver","Senior Driver","Line Captain","Network Legend"];
+const byId = Object.fromEntries(AGENTS.map(a => [a.id, a]));
+
+const state = {agents:{}, run:null, conn:null, score:null, log:[], finds:[], sel:null, feedFilter:"all", sevFilter:"all"};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+const agentState = id => ({status:"idle", step:0, note:"", xp:0, finds:0, gaps:0, ...(state.agents[id] || {})});
+const level = xp => 1 + Math.floor((xp || 0) / 250);
+const rank = xp => RANKS[Math.min(RANKS.length - 1, level(xp) - 1)];
+const hhmm = ts => { try { return new Date(ts).toLocaleTimeString("en-GB", {hour:"2-digit", minute:"2-digit", timeZone:"Europe/London"}); } catch { return "--:--"; } };
+const stationPos = (i, n) => n <= 1 ? 50 : 3 + (94 * i) / (n - 1);
+
+function renderMap(){
+  $("#map").innerHTML = AGENTS.map(a => {
+    const s = agentState(a.id), n = a.stations.length;
+    const step = Math.max(0, Math.min(n - 1, s.step || 0));
+    const reached = s.status === "done" ? n - 1 : step;
+    const stations = a.stations.map((name, i) => {
+      const cls = s.status === "done" || i < reached ? "past" : (i === reached && s.status !== "idle" ? "now" : "");
+      return `<div class="st ${cls}" style="left:${stationPos(i, n)}%"><span>${esc(name)}</span></div>`;
+    }).join("");
+    return `<button class="line ${s.status} ${state.sel === a.id ? "sel" : ""}" style="--c:${a.c}" data-id="${a.id}" aria-label="${esc(a.name)}: ${STATUS[s.status] || s.status}">
+      <div class="lname"><b>${esc(a.name)}</b><small>${STATUS[s.status] || esc(s.status)}${s.status !== "idle" ? " · " + esc(a.stations[step]) : ""}</small></div>
+      <div class="track"><div class="rail"></div>
+        <div class="railfill" style="width:calc(${stationPos(reached, n) - 3}% - 0px)"></div>
+        ${stations}
+        <div class="train" style="left:${stationPos(reached, n)}%"></div>
+      </div></button>`;
+  }).join("");
+}
+
+function renderSquad(){
+  $("#squad").innerHTML = AGENTS.map(a => {
+    const s = agentState(a.id), into = (s.xp || 0) % 250;
+    return `<button class="card ${state.sel === a.id ? "sel" : ""}" style="--c:${a.c}" data-id="${a.id}">
+      <div class="ctop">
+        <div class="badge" aria-hidden="true"><i></i><b>${esc(a.code)}</b></div>
+        <div class="who"><b>${esc(a.name)}</b><small>${esc(a.cls)}</small></div>
+        <div class="lvl">${level(s.xp)}<small>Level</small></div>
+      </div>
+      <span class="pill ${s.status}">${STATUS[s.status] || esc(s.status)}</span>
+      <div class="note ${s.note ? "" : "empty"}">${s.note ? esc(s.note) : "Waiting for orders."}</div>
+      <div><div class="xp"><span style="width:${(into / 250) * 100}%"></span></div>
+        <div class="xprow"><span>${rank(s.xp)}</span><span class="mono">${into}/250 XP</span></div></div>
+      <div class="loot"><span>Finds <b>${s.finds || 0}</b></span><span>Missing data <b>${s.gaps || 0}</b></span></div>
+    </button>`;
+  }).join("");
+}
+
+function renderHud(){
+  const list = AGENTS.map(a => agentState(a.id));
+  const arrived = list.filter(s => s.status === "done").length;
+  $("#sArrived").textContent = `${arrived}/${AGENTS.length}`;
+  $("#sFinds").textContent = state.finds.length;
+  $("#sGaps").textContent = list.reduce((t, s) => t + (s.gaps || 0), 0);
+  $("#sXp").textContent = list.reduce((t, s) => t + (s.xp || 0), 0);
+  const r = state.run;
+  if (r){
+    $("#phase").textContent = r.phase || "On the line";
+    $("#runDate").textContent = r.date ? `Run ${r.date}` : "";
+    $("#runSummary").textContent = r.summary || "";
+    const pct = typeof r.progress === "number" ? r.progress : Math.round((arrived / AGENTS.length) * 100);
+    $("#runFill").style.width = Math.max(0, Math.min(100, pct)) + "%";
+  }
+  const c = state.conn || {};
+  const light = (key, label) => {
+    const v = c[key] || {};
+    const cls = v.status === "ok" ? "ok" : v.status === "down" ? "bad" : v.status === "partial" || v.status === "blocked" ? "part" : "";
+    return `<span class="light ${cls}" title="${esc(v.detail || "Not checked yet")}">${label}${v.detail ? ` <span class="mono" style="color:var(--fg)">· ${esc(v.short || "")}</span>` : ""}</span>`;
+  };
+  $("#lights").innerHTML = light("pricelabs", "PriceLabs") + light("smoobu", "Smoobu") + light("ota", "OTA websites");
+  const sc = state.score;
+  if (sc && sc.items && sc.items.length){
+    $("#goalKpis").innerHTML = sc.items.map(k => `<div class="kpi"><b>${esc(k.value)}</b><span>${esc(k.label)}</span></div>`).join("");
+    if (sc.note) $("#goalSub").textContent = sc.note;
+  }
+}
+
+function renderFeed(){
+  const chips = [["all","All"], ...AGENTS.map(a => [a.id, a.name])];
+  $("#chips").innerHTML = chips.map(([id, label]) => `<button class="chip ${state.feedFilter === id ? "on" : ""}" data-feed="${id}">${esc(label)}</button>`).join("");
+  const rows = state.log.filter(e => state.feedFilter === "all" || e.agent === state.feedFilter).slice().reverse();
+  $("#feed").innerHTML = rows.length ? rows.map(e => {
+    const a = byId[e.agent] || {name:e.agent || "System", c:"#8e98bf"};
+    return `<li style="--c:${a.c}"><time>${hhmm(e.ts)}</time><i class="k"></i><div><span class="who2">${esc(a.name)}</span>${esc(e.text)}${e.kind ? `<span class="kind">${esc(e.kind)}</span>` : ""}</div></li>`;
+  }).join("") : `<li><div></div><div></div><div class="empty">Quiet on the radio. Ask Claude <code>Run the daily-revenue-run skill</code> to send the squad out.</div></li>`;
+}
+
+function renderFinds(){
+  const sevs = [["all","All"],["critical","Critical"],["high","High"],["medium","Medium"]];
+  $("#sevChips").innerHTML = sevs.map(([id, label]) => `<button class="chip ${state.sevFilter === id ? "on" : ""}" data-sev="${id}">${label}</button>`).join("");
+  const rows = state.finds.filter(f => state.sevFilter === "all" || f.severity === state.sevFilter);
+  $("#finds").innerHTML = rows.length ? rows.map(f => {
+    const a = byId[f.agent] || {name:f.agent};
+    return `<div class="find"><i class="gem ${esc(f.severity)}"></i><b>${f.ref ? `<span class="mono">${esc(f.ref)}</span> · ` : ""}${esc(f.title)}</b>
+      <small>${esc(a.name)}${f.evidence ? " · " + esc(f.evidence) : ""}</small></div>`;
+  }).join("") : `<div class="empty">No finds yet. Each agent drops what it uncovers here, with the evidence behind it.</div>`;
+}
+
+function renderDrawer(){
+  const d = $("#drawer"), id = state.sel;
+  const open = !!id;
+  d.classList.toggle("open", open); $("#scrim").classList.toggle("open", open);
+  d.setAttribute("aria-hidden", open ? "false" : "true");
+  if (!open) return;
+  const a = byId[id], s = agentState(id), n = a.stations.length;
+  const reached = s.status === "done" ? n : Math.max(0, Math.min(n - 1, s.step || 0));
+  const log = state.log.filter(e => e.agent === id).slice(-12).reverse();
+  const finds = state.finds.filter(f => f.agent === id);
+  d.style.setProperty("--c", a.c);
+  d.innerHTML = `<div class="dhead"><div class="badge" style="--c:${a.c}" aria-hidden="true"><i></i><b>${esc(a.code)}</b></div>
+      <div class="who"><b>${esc(a.name)}</b><small>${esc(a.cls)} · Level ${level(s.xp)} ${rank(s.xp)}</small></div>
+      <button class="close" id="closeD">Close</button></div>
+    <span class="pill ${s.status}">${STATUS[s.status] || esc(s.status)}</span>
+    <p class="brief" style="margin-top:10px">${esc(a.brief)}</p>
+    ${s.note ? `<div class="dsec">NOW</div><div style="font-size:14px">${esc(s.note)}</div>` : ""}
+    <div class="dsec">ROUTE</div>
+    <ol class="stations">${a.stations.map((st, i) => `<li class="${i < reached ? "past" : (i === reached && s.status !== "idle" ? "now" : "")}">${esc(st)}</li>`).join("")}</ol>
+    <div class="dsec">FINDS (${finds.length})</div>
+    ${finds.length ? `<div class="finds">${finds.map(f => `<div class="find"><i class="gem ${esc(f.severity)}"></i><b>${f.ref ? `<span class="mono">${esc(f.ref)}</span> · ` : ""}${esc(f.title)}</b><small>${esc(f.evidence || "")}</small></div>`).join("")}</div>` : `<div class="empty">Nothing found yet.</div>`}
+    <div class="dsec">RADIO</div>
+    ${log.length ? `<ul class="feed">${log.map(e => `<li style="--c:${a.c}"><time>${hhmm(e.ts)}</time><i class="k"></i><div>${esc(e.text)}</div></li>`).join("")}</ul>` : `<div class="empty">No messages from this agent yet.</div>`}`;
+  $("#closeD").onclick = () => select(null);
+}
+
+function renderAll(){ renderHud(); renderMap(); renderSquad(); renderFeed(); renderFinds(); renderDrawer(); }
+function select(id){ state.sel = id; renderMap(); renderSquad(); renderDrawer(); }
+
+let toastT;
+function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2600); }
+
+document.addEventListener("click", e => {
+  const pick = e.target.closest("[data-id]"); if (pick){ select(state.sel === pick.dataset.id ? null : pick.dataset.id); return; }
+  const f = e.target.closest("[data-feed]"); if (f){ state.feedFilter = f.dataset.feed; renderFeed(); return; }
+  const v = e.target.closest("[data-sev]"); if (v){ state.sevFilter = v.dataset.sev; renderFinds(); }
+});
+$("#scrim").onclick = () => select(null);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && state.sel) select(null); });
+
+renderAll();
+
+(async () => {
+  const db = await (window.claude?.use ? window.claude.use("db") : null);
+  if (!db){ $("#runSummary").textContent = "Live updates are unavailable in this view. Open the page signed in to claude.ai."; return; }
+  const prev = {};
+  db.collection("agents").onSnapshot(snap => {
+    snap.docs.forEach(d => {
+      const next = d.data(), old = prev[d.id];
+      if (old && old.status !== "done" && next.status === "done") toast(`${byId[d.id]?.name || d.id} arrived`);
+      if (old && (next.xp || 0) > (old.xp || 0) && level(next.xp) > level(old.xp)) toast(`${byId[d.id]?.name || d.id} reached level ${level(next.xp)}`);
+      prev[d.id] = next; state.agents[d.id] = next;
+    });
+    renderAll();
+  }, () => {});
+  db.doc("system/run").onSnapshot(s => { state.run = s.exists ? s.data() : null; renderHud(); }, () => {});
+  db.doc("system/connections").onSnapshot(s => { state.conn = s.exists ? s.data() : null; renderHud(); }, () => {});
+  db.doc("system/scoreboard").onSnapshot(s => { state.score = s.exists ? s.data() : null; renderHud(); }, () => {});
+  db.doc("system/log").onSnapshot(s => { state.log = (s.exists && s.data().events) || []; renderFeed(); if (state.sel) renderDrawer(); }, () => {});
+  db.doc("system/finds").onSnapshot(s => { state.finds = (s.exists && s.data().items) || []; renderHud(); renderFinds(); if (state.sel) renderDrawer(); }, () => {});
+})();
+</script>
