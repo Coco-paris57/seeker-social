@@ -64,8 +64,11 @@ def build(p, pol):
     if not s:
         add("In PriceLabs", "bad", "No priced PriceLabs listing mapped")
         return out
-    stale = (s.get("last_push") or "")[:10] < p.get("_date", "")
-    add("Prices pushed today", "ok" if s.get("sync_on") and not stale else "bad",
+    # The run starts early, before PriceLabs' daily push: a push dated the previous day is fresh.
+    from datetime import date as _d
+    lp = (s.get("last_push") or "")[:10]
+    stale = not lp or (_d.fromisoformat(p["_date"]) - _d.fromisoformat(lp)).days > 1
+    add("Prices pushed in the last day", "ok" if s.get("sync_on") and not stale else "bad",
         f"Push {'on' if s.get('sync_on') else 'OFF'}, last push {s.get('last_push') or 'never'}")
     sync = p.get("sync_issues")
     if not p.get("price_nights_next_30"):
@@ -93,7 +96,12 @@ def build(p, pol):
         add("Calendar open", "warn", f"{blocked:.0%} of next 30 nights blocked (reason unknown)")
     else:
         add("Calendar open", "ok", "No blocked nights in the next 30")
-    if fwd is None or mkt is None:
+    ex = p.get("forward_occ_30_ex_blocks")
+    if blocked_ok and blocked and ex is not None and mkt is not None:
+        gap = ex - mkt
+        add("Booked vs market (next 30)", "ok" if gap >= -0.05 else "warn" if gap >= -0.2 else "bad",
+            f"{ex:.0%} of the nights left open are booked vs {mkt:.0%} market (blocked nights excluded)")
+    elif fwd is None or mkt is None:
         add("Booked vs market (next 30)", "info", "Unknown")
     else:
         gap = fwd - mkt

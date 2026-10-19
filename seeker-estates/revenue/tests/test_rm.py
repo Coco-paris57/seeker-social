@@ -120,3 +120,7 @@ class Checks(unittest.TestCase):
         st = {c["name"]: c["status"] for c in build(p, self.POL)}
         self.assertEqual(st["Calendar open"], "info")
         self.assertEqual(st["Booked vs market (next 30)"], "info")
+        p["forward_occ_30_ex_blocks"] = 0.91
+        st = {c["name"]: c["status"] for c in build(p, self.POL)}
+        self.assertEqual(st["Booked vs market (next 30)"], "ok")
+        self.assertEqual(st["Prices pushed in the last day"], "ok")

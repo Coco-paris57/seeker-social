@@ -62,16 +62,17 @@
     "rgi": null
    },
    "blocked_next_30": 0.0,
+   "forward_occ_30_ex_blocks": null,
    "pricelabs_occ_next_30_incl_blocks": 1.0,
    "forward_occ_30": 1.0,
    "forward_occ_60": 0.695,
    "market_occ_30": 0.33,
    "market_occ_60": 0.25,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 220.0,
+    "p50": 266.0,
+    "p75": 332.0,
+    "p90": 419.0
    },
    "avg_open_price_next30": null,
    "price_percentile": null,
@@ -156,8 +157,8 @@
    },
    "checks": [
     {
-     "name": "Prices pushed today",
-     "status": "bad",
+     "name": "Prices pushed in the last day",
+     "status": "ok",
      "detail": "Push on, last push 2026-10-18T20:40:16.000Z"
     },
     {
@@ -218,6 +219,7 @@
     "rgi": null
    },
    "blocked_next_30": 0.69,
+   "forward_occ_30_ex_blocks": 0.89,
    "pricelabs_occ_next_30_incl_blocks": 0.97,
    "forward_occ_30": 0.276,
    "forward_occ_60": 0.136,
@@ -306,7 +308,7 @@
    },
    "checks": [
     {
-     "name": "Prices pushed today",
+     "name": "Prices pushed in the last day",
      "status": "ok",
      "detail": "Push on, last push 2026-10-19T00:23:30.000Z"
     },
@@ -322,8 +324,8 @@
     },
     {
      "name": "Booked vs market (next 30)",
-     "status": "info",
-     "detail": "28% booked vs 46% market"
+     "status": "ok",
+     "detail": "89% of the nights left open are booked vs 46% market (blocked nights excluded)"
     },
     {
      "name": "Paid rate vs price (after 15%/20% stay discounts)",
@@ -363,6 +365,7 @@
     "rgi": null
    },
    "blocked_next_30": 0.0,
+   "forward_occ_30_ex_blocks": null,
    "pricelabs_occ_next_30_incl_blocks": 1.0,
    "forward_occ_30": null,
    "forward_occ_60": null,
@@ -418,7 +421,7 @@
    },
    "checks": [
     {
-     "name": "Prices pushed today",
+     "name": "Prices pushed in the last day",
      "status": "ok",
      "detail": "Push on, last push 2026-10-19T02:46:31.000Z"
     },
@@ -475,19 +478,20 @@
     "rgi": null
    },
    "blocked_next_30": 0.0,
+   "forward_occ_30_ex_blocks": null,
    "pricelabs_occ_next_30_incl_blocks": 0.5,
    "forward_occ_30": 0.483,
    "forward_occ_60": 0.407,
    "market_occ_30": 0.28,
    "market_occ_60": 0.21,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 127.0,
+    "p50": 159.0,
+    "p75": 214.0,
+    "p90": 301.0
    },
    "avg_open_price_next30": 178.57,
-   "price_percentile": null,
+   "price_percentile": 0.5,
    "comps": null,
    "pace_30": {
     "revenue_delta_pct": null
@@ -535,14 +539,14 @@
    "intentional_block": false,
    "special_setup": null,
    "recommendation": {
-    "action": "raise-signal",
-    "price_move": null,
-    "reason": "booked +20% vs market; price position unknown until comps are priced"
+    "action": "raise",
+    "price_move": 0.1,
+    "reason": "booked +20% vs market but priced at P50: under-priced"
    },
    "checks": [
     {
-     "name": "Prices pushed today",
-     "status": "bad",
+     "name": "Prices pushed in the last day",
+     "status": "ok",
      "detail": "Push on, last push 2026-10-18T18:17:43.000Z"
     },
     {
@@ -573,7 +577,7 @@
     {
      "name": "Price signal",
      "status": "ok",
-     "detail": "booked +20% vs market; price position unknown until comps are priced"
+     "detail": "booked +20% vs market but priced at P50: under-priced"
     }
    ]
   },
@@ -603,19 +607,20 @@
     "rgi": null
    },
    "blocked_next_30": 0.034,
+   "forward_occ_30_ex_blocks": 0.678,
    "pricelabs_occ_next_30_incl_blocks": 0.73,
    "forward_occ_30": 0.655,
    "forward_occ_60": 0.644,
    "market_occ_30": 0.33,
    "market_occ_60": 0.33,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 463.0,
+    "p50": 589.0,
+    "p75": 711.0,
+    "p90": 1139.0
    },
    "avg_open_price_next30": 498.0,
-   "price_percentile": null,
+   "price_percentile": 0.25,
    "comps": null,
    "pace_30": {
     "otb_nights": 20,
@@ -689,14 +694,14 @@
    "intentional_block": false,
    "special_setup": null,
    "recommendation": {
-    "action": "raise-signal",
-    "price_move": null,
-    "reason": "booked +32% vs market; price position unknown until comps are priced"
+    "action": "raise",
+    "price_move": 0.1,
+    "reason": "booked +32% vs market but priced at P25: under-priced"
    },
    "checks": [
     {
-     "name": "Prices pushed today",
-     "status": "bad",
+     "name": "Prices pushed in the last day",
+     "status": "ok",
      "detail": "Push on, last push 2026-10-18T21:10:14.000Z"
     },
     {
@@ -727,7 +732,7 @@
     {
      "name": "Price signal",
      "status": "ok",
-     "detail": "booked +32% vs market; price position unknown until comps are priced"
+     "detail": "booked +32% vs market but priced at P25: under-priced"
     }
    ]
   },
@@ -757,19 +762,20 @@
     "rgi": null
    },
    "blocked_next_30": 0.345,
+   "forward_occ_30_ex_blocks": 0.737,
    "pricelabs_occ_next_30_incl_blocks": 0.77,
    "forward_occ_30": 0.483,
    "forward_occ_60": 0.237,
    "market_occ_30": 0.43,
    "market_occ_60": 0.4,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 309.0,
+    "p50": 404.0,
+    "p75": 508.0,
+    "p90": 616.0
    },
    "avg_open_price_next30": 317.8,
-   "price_percentile": null,
+   "price_percentile": 0.25,
    "comps": null,
    "pace_30": {
     "otb_nights": 14,
@@ -844,14 +850,14 @@
    "intentional_block": true,
    "special_setup": null,
    "recommendation": {
-    "action": "hold-signal",
-    "price_move": null,
-    "reason": "booked +5% vs market; price position unknown until comps are priced"
+    "action": "raise",
+    "price_move": 0.05,
+    "reason": "in line with market but priced below what quality supports (P25)"
    },
    "checks": [
     {
-     "name": "Prices pushed today",
-     "status": "bad",
+     "name": "Prices pushed in the last day",
+     "status": "ok",
      "detail": "Push on, last push 2026-10-18T20:40:58.000Z"
     },
     {
@@ -872,7 +878,7 @@
     {
      "name": "Booked vs market (next 30)",
      "status": "ok",
-     "detail": "48% booked vs 43% market"
+     "detail": "74% of the nights left open are booked vs 43% market (blocked nights excluded)"
     },
     {
      "name": "Paid rate vs price (after 15%/20% stay discounts)",
@@ -882,7 +888,7 @@
     {
      "name": "Price signal",
      "status": "info",
-     "detail": "booked +5% vs market; price position unknown until comps are priced"
+     "detail": "in line with market but priced below what quality supports (P25)"
     }
    ]
   },
@@ -912,16 +918,17 @@
     "rgi": null
    },
    "blocked_next_30": 1.0,
+   "forward_occ_30_ex_blocks": null,
    "pricelabs_occ_next_30_incl_blocks": 1.0,
    "forward_occ_30": 0.0,
    "forward_occ_60": 0.0,
    "market_occ_30": 0.26,
    "market_occ_60": 0.19,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 98.0,
+    "p50": 116.0,
+    "p75": 144.0,
+    "p90": 186.0
    },
    "avg_open_price_next30": null,
    "price_percentile": null,
@@ -988,8 +995,8 @@
    },
    "checks": [
     {
-     "name": "Prices pushed today",
-     "status": "bad",
+     "name": "Prices pushed in the last day",
+     "status": "ok",
      "detail": "Push on, last push 2026-10-18T06:43:06.000Z"
     },
     {
@@ -1045,19 +1052,20 @@
     "rgi": null
    },
    "blocked_next_30": 0.0,
+   "forward_occ_30_ex_blocks": null,
    "pricelabs_occ_next_30_incl_blocks": 0.47,
    "forward_occ_30": 0.414,
    "forward_occ_60": 0.203,
    "market_occ_30": 0.5,
    "market_occ_60": 0.43,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 176.0,
+    "p50": 217.0,
+    "p75": 260.0,
+    "p90": 321.0
    },
    "avg_open_price_next30": 209.06,
-   "price_percentile": null,
+   "price_percentile": 0.25,
    "comps": null,
    "pace_30": {
     "otb_nights": 13,
@@ -1132,14 +1140,14 @@
    "intentional_block": false,
    "special_setup": null,
    "recommendation": {
-    "action": "weak-signal",
-    "price_move": null,
-    "reason": "booked -9% vs market; price position unknown until comps are priced"
+    "action": "fix-listing",
+    "price_move": 0.0,
+    "reason": "behind market -9% while already at P25: conversion/visibility problem, not price"
    },
    "checks": [
     {
-     "name": "Prices pushed today",
-     "status": "bad",
+     "name": "Prices pushed in the last day",
+     "status": "ok",
      "detail": "Push on, last push 2026-10-18T09:25:55.000Z"
     },
     {
@@ -1170,7 +1178,7 @@
     {
      "name": "Price signal",
      "status": "ok",
-     "detail": "booked -9% vs market; price position unknown until comps are priced"
+     "detail": "behind market -9% while already at P25: conversion/visibility problem, not price"
     }
    ]
   },
@@ -1200,19 +1208,20 @@
     "rgi": null
    },
    "blocked_next_30": 0.0,
+   "forward_occ_30_ex_blocks": null,
    "pricelabs_occ_next_30_incl_blocks": 0.6,
    "forward_occ_30": 0.586,
    "forward_occ_60": 0.441,
    "market_occ_30": 0.38,
    "market_occ_60": 0.3,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 110.0,
+    "p50": 134.0,
+    "p75": 165.0,
+    "p90": 206.0
    },
    "avg_open_price_next30": 168.08,
-   "price_percentile": null,
+   "price_percentile": 0.75,
    "comps": null,
    "pace_30": {
     "otb_nights": 18,
@@ -1288,14 +1297,14 @@
    "intentional_block": false,
    "special_setup": null,
    "recommendation": {
-    "action": "raise-signal",
-    "price_move": null,
-    "reason": "booked +21% vs market; price position unknown until comps are priced"
+    "action": "raise",
+    "price_move": 0.05,
+    "reason": "booked +21% vs market at P75: test a further step up"
    },
    "checks": [
     {
-     "name": "Prices pushed today",
-     "status": "bad",
+     "name": "Prices pushed in the last day",
+     "status": "ok",
      "detail": "Push on, last push 2026-10-18T20:38:12.000Z"
     },
     {
@@ -1326,7 +1335,7 @@
     {
      "name": "Price signal",
      "status": "ok",
-     "detail": "booked +21% vs market; price position unknown until comps are priced"
+     "detail": "booked +21% vs market at P75: test a further step up"
     }
    ]
   },
@@ -1356,16 +1365,17 @@
     "rgi": null
    },
    "blocked_next_30": 0.0,
+   "forward_occ_30_ex_blocks": null,
    "pricelabs_occ_next_30_incl_blocks": 1.0,
    "forward_occ_30": 1.0,
    "forward_occ_60": 0.508,
    "market_occ_30": 0.32,
    "market_occ_60": 0.25,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 110.0,
+    "p50": 125.0,
+    "p75": 149.0,
+    "p90": 184.0
    },
    "avg_open_price_next30": null,
    "price_percentile": null,
@@ -1450,8 +1460,8 @@
    },
    "checks": [
     {
-     "name": "Prices pushed today",
-     "status": "bad",
+     "name": "Prices pushed in the last day",
+     "status": "ok",
      "detail": "Push on, last push 2026-10-18T09:11:58.000Z"
     },
     {
@@ -1512,19 +1522,20 @@
     "rgi": null
    },
    "blocked_next_30": 0.0,
+   "forward_occ_30_ex_blocks": null,
    "pricelabs_occ_next_30_incl_blocks": 0.6,
    "forward_occ_30": 0.621,
    "forward_occ_60": 0.678,
    "market_occ_30": 0.46,
    "market_occ_60": 0.39,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 233.0,
+    "p50": 290.0,
+    "p75": 340.0,
+    "p90": 391.0
    },
    "avg_open_price_next30": 224.36,
-   "price_percentile": null,
+   "price_percentile": 0.0,
    "comps": null,
    "pace_30": {
     "otb_nights": 18,
@@ -1600,14 +1611,14 @@
    "intentional_block": false,
    "special_setup": null,
    "recommendation": {
-    "action": "raise-signal",
-    "price_move": null,
-    "reason": "booked +16% vs market; price position unknown until comps are priced"
+    "action": "raise",
+    "price_move": 0.1,
+    "reason": "booked +16% vs market but priced at P0: under-priced"
    },
    "checks": [
     {
-     "name": "Prices pushed today",
-     "status": "bad",
+     "name": "Prices pushed in the last day",
+     "status": "ok",
      "detail": "Push on, last push 2026-10-18T20:43:56.000Z"
     },
     {
@@ -1638,7 +1649,7 @@
     {
      "name": "Price signal",
      "status": "ok",
-     "detail": "booked +16% vs market; price position unknown until comps are priced"
+     "detail": "booked +16% vs market but priced at P0: under-priced"
     }
    ]
   },
@@ -1668,19 +1679,20 @@
     "rgi": null
    },
    "blocked_next_30": 0.0,
+   "forward_occ_30_ex_blocks": null,
    "pricelabs_occ_next_30_incl_blocks": 0.6,
    "forward_occ_30": 0.552,
    "forward_occ_60": 0.458,
    "market_occ_30": 0.4,
    "market_occ_60": 0.33,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 167.0,
+    "p50": 204.0,
+    "p75": 242.0,
+    "p90": 293.0
    },
    "avg_open_price_next30": 240.62,
-   "price_percentile": null,
+   "price_percentile": 0.5,
    "comps": null,
    "pace_30": {
     "otb_nights": 17,
@@ -1755,14 +1767,14 @@
    "intentional_block": false,
    "special_setup": null,
    "recommendation": {
-    "action": "raise-signal",
-    "price_move": null,
-    "reason": "booked +15% vs market; price position unknown until comps are priced"
+    "action": "raise",
+    "price_move": 0.1,
+    "reason": "booked +15% vs market but priced at P50: under-priced"
    },
    "checks": [
     {
-     "name": "Prices pushed today",
-     "status": "bad",
+     "name": "Prices pushed in the last day",
+     "status": "ok",
      "detail": "Push on, last push 2026-10-18T20:40:26.000Z"
     },
     {
@@ -1793,7 +1805,7 @@
     {
      "name": "Price signal",
      "status": "ok",
-     "detail": "booked +15% vs market; price position unknown until comps are priced"
+     "detail": "booked +15% vs market but priced at P50: under-priced"
     }
    ]
   },
@@ -1823,19 +1835,20 @@
     "rgi": null
    },
    "blocked_next_30": 0.0,
+   "forward_occ_30_ex_blocks": null,
    "pricelabs_occ_next_30_incl_blocks": 0.47,
    "forward_occ_30": 0.552,
    "forward_occ_60": 0.407,
    "market_occ_30": 0.42,
    "market_occ_60": 0.35,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 185.0,
+    "p50": 223.0,
+    "p75": 284.0,
+    "p90": 352.0
    },
    "avg_open_price_next30": 187.38,
-   "price_percentile": null,
+   "price_percentile": 0.25,
    "comps": null,
    "pace_30": {
     "otb_nights": 17,
@@ -1911,14 +1924,14 @@
    "intentional_block": false,
    "special_setup": null,
    "recommendation": {
-    "action": "raise-signal",
-    "price_move": null,
-    "reason": "booked +13% vs market; price position unknown until comps are priced"
+    "action": "raise",
+    "price_move": 0.1,
+    "reason": "booked +13% vs market but priced at P25: under-priced"
    },
    "checks": [
     {
-     "name": "Prices pushed today",
-     "status": "bad",
+     "name": "Prices pushed in the last day",
+     "status": "ok",
      "detail": "Push on, last push 2026-10-18T09:25:53.000Z"
     },
     {
@@ -1949,7 +1962,7 @@
     {
      "name": "Price signal",
      "status": "ok",
-     "detail": "booked +13% vs market; price position unknown until comps are priced"
+     "detail": "booked +13% vs market but priced at P25: under-priced"
     }
    ]
   },
@@ -1979,19 +1992,20 @@
     "rgi": null
    },
    "blocked_next_30": 0.0,
+   "forward_occ_30_ex_blocks": null,
    "pricelabs_occ_next_30_incl_blocks": 0.0,
    "forward_occ_30": 0.0,
    "forward_occ_60": 0.0,
    "market_occ_30": 0.42,
    "market_occ_60": 0.38,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 145.0,
+    "p50": 191.0,
+    "p75": 233.0,
+    "p90": 292.0
    },
    "avg_open_price_next30": 500.0,
-   "price_percentile": null,
+   "price_percentile": 1.0,
    "comps": null,
    "pace_30": {
     "otb_nights": 0,
@@ -2055,14 +2069,14 @@
    "intentional_block": false,
    "special_setup": "Primrose Hill pricing (incl. the \u00a3500 minimum) is a deliberate special setup. Do not propose changing its min, base or min-stay; report its numbers only.",
    "recommendation": {
-    "action": "weak-signal",
-    "price_move": null,
-    "reason": "booked -42% vs market; price position unknown until comps are priced"
+    "action": "lower",
+    "price_move": -0.07,
+    "reason": "behind market -42% at P100: priced above demand"
    },
    "checks": [
     {
-     "name": "Prices pushed today",
-     "status": "bad",
+     "name": "Prices pushed in the last day",
+     "status": "ok",
      "detail": "Push on, last push 2026-10-18T07:11:00.000Z"
     },
     {
@@ -2093,7 +2107,7 @@
     {
      "name": "Price signal",
      "status": "info",
-     "detail": "booked -42% vs market; price position unknown until comps are priced"
+     "detail": "behind market -42% at P100: priced above demand"
     }
    ]
   },
@@ -2123,6 +2137,7 @@
     "rgi": null
    },
    "blocked_next_30": null,
+   "forward_occ_30_ex_blocks": null,
    "pricelabs_occ_next_30_incl_blocks": null,
    "forward_occ_30": null,
    "forward_occ_60": null,
@@ -2196,6 +2211,7 @@
     "rgi": null
    },
    "blocked_next_30": null,
+   "forward_occ_30_ex_blocks": null,
    "pricelabs_occ_next_30_incl_blocks": null,
    "forward_occ_30": null,
    "forward_occ_60": null,
@@ -2269,6 +2285,7 @@
     "rgi": null
    },
    "blocked_next_30": null,
+   "forward_occ_30_ex_blocks": null,
    "pricelabs_occ_next_30_incl_blocks": null,
    "forward_occ_30": null,
    "forward_occ_60": null,
@@ -2342,6 +2359,7 @@
     "rgi": null
    },
    "blocked_next_30": null,
+   "forward_occ_30_ex_blocks": null,
    "pricelabs_occ_next_30_incl_blocks": null,
    "forward_occ_30": null,
    "forward_occ_60": null,
@@ -2415,6 +2433,7 @@
     "rgi": null
    },
    "blocked_next_30": null,
+   "forward_occ_30_ex_blocks": null,
    "pricelabs_occ_next_30_incl_blocks": null,
    "forward_occ_30": null,
    "forward_occ_60": null,
@@ -2488,19 +2507,20 @@
     "rgi": null
    },
    "blocked_next_30": 0.0,
+   "forward_occ_30_ex_blocks": null,
    "pricelabs_occ_next_30_incl_blocks": 0.1,
    "forward_occ_30": 0.103,
    "forward_occ_60": 0.051,
    "market_occ_30": 0.35,
    "market_occ_60": 0.27,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 216.0,
+    "p50": 254.0,
+    "p75": 319.0,
+    "p90": 401.0
    },
    "avg_open_price_next30": 254.62,
-   "price_percentile": null,
+   "price_percentile": 0.5,
    "comps": null,
    "pace_30": {
     "otb_nights": 3,
@@ -2574,14 +2594,14 @@
    "intentional_block": false,
    "special_setup": null,
    "recommendation": {
-    "action": "weak-signal",
-    "price_move": null,
-    "reason": "booked -25% vs market; price position unknown until comps are priced"
+    "action": "fix-listing",
+    "price_move": 0.0,
+    "reason": "behind market -25% while already at P50: conversion/visibility problem, not price"
    },
    "checks": [
     {
-     "name": "Prices pushed today",
-     "status": "bad",
+     "name": "Prices pushed in the last day",
+     "status": "ok",
      "detail": "Push on, last push 2026-10-18T09:25:57.000Z"
     },
     {
@@ -2612,13 +2632,12 @@
     {
      "name": "Price signal",
      "status": "ok",
-     "detail": "booked -25% vs market; price position unknown until comps are priced"
+     "detail": "behind market -25% while already at P50: conversion/visibility problem, not price"
     }
    ]
   }
  ],
  "missing": {
-  "market": "empty",
   "comps": "empty",
   "channel_checks": "empty"
  },
