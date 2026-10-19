@@ -54,6 +54,7 @@ def run(day=None):
         fwd30 = metrics.forward_occupancy(prices, ref, today, 30)
         fwd60 = metrics.forward_occupancy(prices, ref, today, 60)
         blocked30 = metrics.blocked_share(prices, ref, today, 30)
+        fwd30_ex = (round(fwd30 / (1 - blocked30), 3) if fwd30 is not None and blocked30 and blocked30 < 1 else None)
         next30 = [p for p in prices if p["ref"] == ref and p.get("available")
                   and today <= date.fromisoformat(p["date"]) < today + timedelta(days=30)]
         our_price = (round(sum(p.get("smoobu_price") or p.get("pricelabs_price") or 0 for p in next30)
@@ -71,6 +72,7 @@ def run(day=None):
             "indices_30": metrics.market_indices(fwd30, last30[ref]["adr"],
                                                  mk.get("market_occ_30"), mk.get("market_adr_30")),
             "blocked_next_30": blocked30,
+            "forward_occ_30_ex_blocks": fwd30_ex,
             "pricelabs_occ_next_30_incl_blocks": pk.get("occupancy_next_30"),
             "forward_occ_30": fwd30, "forward_occ_60": fwd60,
             "market_occ_30": mk.get("market_occ_30"), "market_occ_60": mk.get("market_occ_60"),
