@@ -1,5 +1,5 @@
 {
- "_about": "Standing decisions from Corentin. Every agent reads this file and must not raise these as problems. Updated 18 Oct 2026.",
+ "_about": "Standing decisions from Corentin. Every agent reads this file and must not raise these as problems. Updated 20 Oct 2026.",
  "intentional_blocks": {
   "refs": [
    "P02",
@@ -27,5 +27,28 @@
  },
  "property_facts": {
   "P05": "St John's Wood (Abbey Rd): 4 bedrooms, 5 beds including a sofa bed (Corentin, 18 Oct 2026). PriceLabs shows 4 bedrooms since 19 Oct 2026; benchmark against 4-bed listings."
- }
+ },
+ "channel_pricing": {
+  "booking_markup": 0.2,
+  "booking_markup_note": "Smoobu adds +20% to the PriceLabs price on Booking.com (confirmed by Corentin 20 Oct 2026). Expected Booking price = 1.2 x PriceLabs, before stay discounts.",
+  "booking_stacked_promotions": "Corentin confirms Booking.com promotions stack on top of each other (20 Oct 2026). A Booking paid rate below 1.2 x price after stay discounts is explained by these promotions: report its size, do not call it unexplained.",
+  "airbnb_discount": "Corentin confirms an Airbnb discount is active beyond the 15%/20% stay discounts (20 Oct 2026); type and % not yet given. The Airbnb paid-vs-price gap is explained by it: keep measuring its size, do not call it unexplained."
+ },
+ "separate_payments": {
+  "P20": "Waterford Court Airbnb stay extended from 18 to 22 Oct 2026: the extra nights were paid separately (Corentin, 20 Oct 2026), so the Smoobu reservation total does not include them. Do not flag; P20 last-30 ADR is understated for 18-22 Oct."
+ },
+ "price_changes": [
+  {
+   "date": "2026-10-18",
+   "what": "Base rises P01 253, P05 500, P06 357, P09 176, P11 286, P12 284 plus overrides; review 26 Oct"
+  },
+  {
+   "date": "2026-10-20",
+   "what": "P05 base 500 -> 550 (verified in PriceLabs, pushed 09:27Z)"
+  },
+  {
+   "date": "2026-10-20",
+   "what": "P13 +10% on 31 Oct-3 Nov, 8-12 Nov, 17-18 Nov on both 3064856 and 3090701 (verified)"
+  }
+ ]
 }
