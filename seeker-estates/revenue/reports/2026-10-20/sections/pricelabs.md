@@ -60,13 +60,30 @@ Policy respected:
      - 30 Nov: £583 → £454
      - 14 Dec: £539 → £441
      - 15 Dec: £545 → £442
-   - **Why is UNKNOWN.** No setting was logged after 18 Oct 20:43Z, and every P05 date override was last updated on or before 2026-10-18. The bedroom count changing from 5 to 4 around 19 Oct (live `no_of_bedrooms` = 4) happened at the same time, but there is no evidence that it caused this.
+   - **Cause: part established, the rest UNKNOWN** (follow-up requested by the coordinator). Evidence:
+     - **Where the drop is:** PriceLabs' own `uncustomized_price` fell. This is the algorithm's price before customizations and date overrides (`raw/prices_3166592.json` 19 Oct vs 20 Oct; live `get_listing_prices` matches today's file). On the same 21 open nights it fell **−9.4%**, against −11.2% for the final price. Examples:
+       - 28 Oct: £548 → £458 (final £452 → £386)
+       - 16 Nov: £558 → £457 (final £513 → £406)
+       - 30 Nov: £624 → £517 (final £583 → £454)
+       - 17 Nov: final £533 → £451, −15.4%
+
+       So about 85% of the fall comes from the algorithm's price before customizations, not from an override.
+     - **When:** the new prices come from PriceLabs' recalculation at **2026-10-19 09:38:44Z** (`last_refreshed_at`). The previous one was 2026-10-18 21:10:13Z, straight after the base rise.
+     - **Ruled out by evidence:**
+       - Base is still £500 (live).
+       - There are no user logs after 2026-10-18 20:43:46Z (listing, group and account).
+       - Every P05 date override was last updated on or before 2026-10-18 20:34Z (live).
+       - Customizations (live, including switched-off ones): seasonality is off ("recommended"); day-of-week is off; demand factor is "Moderately Aggressive"; occupancy-based adjustment is on with the default profile; last-minute is 25% flat within 15 days; far-out premium is +30% after 120 days; booking-recency factor is off (the default applies). The tool does not give change dates, so "unchanged" rests only on the empty logs.
+     - **Bedroom change is not shown to be the cause:** `no_of_bedrooms` was 5 in the 18 Oct snapshot, but it was **already 4 at the 18 Oct 21:10Z refresh**, and that refresh produced the *higher* prices. The recommended base is **£467 in all three snapshots** (5-bed on 18 Oct, 4-bed on 19 and 20 Oct). So the change did not move PriceLabs' base recommendation.
+     - **What remains open:** whether the 19 Oct 09:38Z run re-benchmarked P05 against a different comp set or seasonality curve (for example after the 5→4 bedroom change) cannot be seen. The read-only tools give no factor breakdown per date. Today's DS neighbourhood file (`raw/neighbourhood_P05.json`) shows "4 BR" with a 3–5 bedroom range and best category "3 BR" (median £386), but there is no 19 Oct P05 neighbourhood file to compare with.
+     - The fall is in what is live: Smoobu shows the new prices (`smoobu_price` comes from the Smoobu rates API, `rm/snapshot.py`). The `user_price` field in the PriceLabs response still shows the old values (£452 on 28 Oct, etc.); its meaning is not documented, so it is not used here.
+     - The coordinator's −13.4% and my −11.2% are measured on different sets of nights.
    - **Against the 4-bed market** (live, 90 listings: P25 £473, P50 £590, P75 £713, P90 £1143):
      - Base £500 is **−15% vs P50** and **−30% vs P75**. Recommended base is £467.
      - 20 Oct–18 Nov: P05 averages **£439 vs the date-matched P50 of £543**. It is below P50 on all 9 open nights.
      - 19 Nov–19 Dec: it averages £529 vs P50 £643 (above P50 on 2 of 13 nights).
    - Occupancy for the next 30 days is 70% vs a 33% market (live).
-   - **Check:** PriceLabs → 3166592 → price breakdown on 16 Nov and 30 Nov, to see which factor cut the price. Then check the Base Price against the 4-bed P50 of £590.
+   - **Check:** PriceLabs → 3166592 → Calendar → price breakdown on 28 Oct, 16 Nov and 30 Nov (the market/seasonality and demand factors behind the £548→£458-type drop in the algorithm's price), and the comp set / bedroom range the listing now uses. Then check the Base Price against the 4-bed P50 of £590.
 3. **P20 Waterford Court (Smoobu 3547481): still well above its market. The only new nights are an extension of the existing stay. Prices for 25 Oct–3 Nov rose about 15% overnight with no logged change.**
    - **Settings (live):** min £220 / base £350 / max £1800. Recommended base is "Unavailable". Last push 2026-10-19 09:18:34Z; sync is on.
    - **Occupancy (live):** 86% for the next 7 days, **20% for the next 30 days vs a 34% market**, and 10% for the next 60 days vs 27%. Yesterday's 30-day figure was 10%. The pack's `forward_occ_30` is 0.138.
@@ -183,6 +200,6 @@ Data gaps:
 3. The Booking.com rate in Smoobu (stated as PriceLabs ×1.2) is not in `prices.csv`, and the ×1.2 markup is not written in `data/policy.json` (only `kpi_pack.json` `channel_economics` uses 120 per 100). The Booking.com price parity is therefore UNKNOWN.
 4. P03 and P04 (Channex) have no Smoobu or OTA rate in `prices.csv`.
 5. Prices for the linked P13 listing 3090701 are not in the snapshot.
-6. The causes of the 19→20 Oct price falls on P05 (−11.2%) and P06 (−8.1%) and the rise on P20 25 Oct–3 Nov (+15–18%) are UNKNOWN. The read-only tools expose no per-date price breakdown.
+6. The factor-level causes of the 19→20 Oct price falls on P05 (−11.2%, of which −9.4% is in the algorithm's price before customizations; see item 2) and P06 (−8.1%, all of it in the algorithm's price before customizations) and the rise on P20 25 Oct–3 Nov (+15–18%) are UNKNOWN. The read-only tools expose no per-date price breakdown.
 7. The source of the P14 and P20 4-night weekends is UNKNOWN: minimum-stay profiles and orphan-day settings are not returned by `get_customizations`.
 8. P15–P19 have no PriceLabs listing (`id_map.json`). P20's recommended base is "Unavailable".
