@@ -154,3 +154,14 @@ Airbnb listing: "6 guests · 2 bedrooms · 3 beds · 1 bathroom", 4.63 from 8 re
 The gap has two sources: Booking.com is above PriceLabs (×1.2 markup, ~£169 of charges, only 8% off), and Airbnb is below it (8–11 Nov: PriceLabs for 3090701 is about £690 for the room alone, yet the Airbnb total including cleaning is £596, with no discount shown to the guest). An invisible reduction on Airbnb (for example a negative Airbnb price adjustment in Smoobu) would explain both this and the ~23% Airbnb paid-vs-price gap.
 
 Next: the price breakdown on each side for 8–11 Nov (Booking.com: the (i) next to £851; Airbnb: click the £596 total), and Smoobu → Channel Manager → Airbnb price adjustment.
+
+### Second Airbnb listing (Smoobu 3064856, the one connected to Booking.com), 4 guests
+| Stay | Airbnb 3064856 | Airbnb 3090701 | Booking.com flexible | PriceLabs room price (3064856) |
+|---|---|---|---|---|
+| 31 Oct – 2 Nov (2 n) | £378 | £404 | £490 | £390 |
+| 8 – 11 Nov (3 n) | £582 | £596 | £851 | £633 |
+| 17 – 20 Nov (3 n) | £603 | £640 | £841 | £625 |
+
+The Airbnb total **including cleaning** is at or below the PriceLabs price for the room alone, with no discount shown to the guest on 8–11 and 17–20 Nov. Airbnb is therefore selling about 20–25% under PriceLabs through a reduction guests cannot see (matching the ~23% Airbnb paid-vs-price gap found since 1 Oct), while Booking.com sells about 20% over it plus charges. For the same flat and dates the Booking.com flexible total is 30–46% higher than the cheaper Airbnb listing.
+
+Also confirmed: 3064856 is the cheaper of the two Airbnb listings, yet it converts worst (0.79%), so price is not why it under-converts on Airbnb.

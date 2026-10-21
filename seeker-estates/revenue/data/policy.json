@@ -111,7 +111,7 @@
   "P13": {
    "twin_listings": "The two Airbnb listings must keep slightly different photos and prices or Airbnb blocks them as duplicates. Propose narrowing the price gap, never making them identical.",
    "ids": "Likely mapping, to confirm with Corentin: Airbnb 'Shepherd's Bush 1' (2.26% overall conversion) = Smoobu 3090701 'Bright 2BR w/Terrace in W12 Near Westfield & Tube' (8 Airbnb bookings 23 Jul-21 Oct); 'Shepherd's Bush 2' (0.48%) = 3064856 'Top-Floor 2Bed with Private Terrace in W12' (4 bookings).",
-   "airbnb_vs_booking_21oct": "Airbnb 3090701, 4 guests: 31 Oct-2 Nov £404 (was £450); 8-11 Nov £596; 17-20 Nov £640. Booking.com flexible for the same: £490 / £851 / £841. Booking.com is 21-43% dearer for the identical flat."
+   "airbnb_vs_booking_21oct": "Airbnb 3090701, 4 guests: 31 Oct-2 Nov £404 (was £450); 8-11 Nov £596; 17-20 Nov £640. Booking.com flexible for the same: £490 / £851 / £841. Booking.com is 21-43% dearer for the identical flat. Airbnb 3064856, 4 guests: £378 / £582 / £603 for the same stays (at or below the PriceLabs room price even including cleaning)."
   },
   "P11": {
    "channels": [
