@@ -33,7 +33,15 @@
   "booking_markup_note": "Smoobu adds +20% to the PriceLabs price on Booking.com (confirmed by Corentin 20 Oct 2026). Expected Booking price = 1.2 x PriceLabs, before stay discounts.",
   "booking_stacked_promotions": "Corentin confirms Booking.com promotions stack on top of each other (20 Oct 2026). A Booking paid rate below 1.2 x price after stay discounts is explained by these promotions: report its size, do not call it unexplained.",
   "airbnb_discount": "Was: manual Airbnb promotions on selected dates giving 15-20% off (Corentin, 21 Oct 2026). All removed 21 Oct 2026. From bookings made after 21 Oct, Airbnb paid-vs-price should be close to PriceLabs minus the 15%/20% stay discounts; flag any remaining gap as unexplained.",
-  "booking_markup_scope": "The Smoobu +20% Booking.com markup is global (all apartments); it cannot be set per flat (Corentin, 21 Oct 2026). Per-flat levers are Booking.com promotions (per property) and PriceLabs prices."
+  "booking_markup_scope": "The Smoobu +20% Booking.com markup is global (all apartments); it cannot be set per flat (Corentin, 21 Oct 2026). Per-flat levers are Booking.com promotions (per property) and PriceLabs prices.",
+  "airbnb_smoobu_settings_21oct": {
+   "source": "Corentin screenshots 21 Oct 2026 (Smoobu Airbnb settings, Shepherd's Bush listings)",
+   "price_adjustment": "0% (Smoobu price settings for Airbnb)",
+   "pricing_rules_listing_A": "LOS 5+ nights -8%, 7+ -15%, 28+ -20%; Last-minute -15% within 28 days; Early bird -12% at 60+ days",
+   "pricing_rules_listing_B": "LOS 5+ nights -10%, 7+ -15%, 28+ -25%; Last-minute -15% within 28 days; Early bird -15% at 60+ days",
+   "fees": "Cleaning £150 per booking; guests included 1; price per extra guest £0",
+   "finding": "These Smoobu 'Default pricing rules' are pushed to Airbnb and stack on top of PriceLabs prices, which already include PriceLabs' own last-minute and far-out logic. They explain the systematic Airbnb gap (~0.76-0.80x PriceLabs) that removing date promotions did not change."
+  }
  },
  "separate_payments": {
   "P20": "Waterford Court Airbnb stay extended from 18 to 22 Oct 2026: the extra nights were paid separately (Corentin, 20 Oct 2026), so the Smoobu reservation total does not include them. Do not flag; P20 last-30 ADR is understated for 18-22 Oct."
@@ -177,7 +185,7 @@
    "since": "2026-10-21",
    "until": "2026-11-04",
    "why": "Manual Airbnb promotions (15-20%) removed 21 Oct. Check Airbnb booking volume vs the prior 14 days and paid vs PriceLabs on bookings made after 21 Oct.",
-   "finding_21oct": "Airbnb Shepherd's Bush 3064856, 8-11 Nov, 4 guests: £632 total after the change = £482 room + £150 cleaning vs PriceLabs £633, still ~24% under PriceLabs. The reduction is systematic (~0.76-0.80x on every date checked), so it is not only the date promotions: check Smoobu → Channel Manager → Airbnb price settings."
+   "finding_21oct": "Airbnb Shepherd's Bush 3064856, 8-11 Nov, 4 guests: £632 total after the change = £482 room + £150 cleaning vs PriceLabs £633, still ~24% under PriceLabs. The reduction is systematic (~0.76-0.80x on every date checked), so it is not only the date promotions: check Smoobu → Channel Manager → Airbnb price settings. Source found: Smoobu Airbnb default pricing rules (last-minute -15% within 28 days, early bird -12/-15% at 60+ days, 5-night -8/-10%)."
   }
  }
 }
