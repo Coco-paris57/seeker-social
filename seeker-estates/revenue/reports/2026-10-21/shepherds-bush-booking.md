@@ -79,11 +79,14 @@ In the same Trend view, click the "Property page visits" and "Bookings made" rad
 Every visibility and discount lever is already on, the page and reviews are good, and the flat is available more than its peers, yet Booking.com produced 0–2 bookings a month since August. More discounts are not the answer:
 1. **Guests now pay about half the PriceLabs price on Booking.com.** Booking.com guests here book late (median 7.5 days), so a typical guest gets Last Minute 15% + Genius 10–20% + Mobile 10% + Domestic 10%. Paid ADR fell to ~£120 (Oct) against a PriceLabs price around £223 for open nights and peers at ~£186. Even after the +20% markup, Booking.com is now the cheapest channel for this flat (Airbnb paid ~£160).
 2. **The new deals added since August (Last Minute 26 Aug, Early Booker 26 Sep, Domestic and EEA 2 Oct) produced 2 bookings between them.** Bookings did not respond to deeper discounts, so they only cut the rate on bookings that would have come anyway.
-3. **Black Friday 30% from 19 Nov runs to 30 Apr 2027** and can combine with Genius, so some guests could pay under half price for five months.
+3. **Black Friday 30% does not stack** with Genius or any other promotion; Booking.com shows the largest single discount (Corentin, 21 Oct, from the extranet note). It is bookable only 19 Nov–2 Dec. At 1.2 × PriceLabs × 0.70 it nets about 0.84 × the PriceLabs price, which is more than guests pay today under the stacked deals (about 0.54 ×).
 4. What remains unexplained is the drop between search and booking. That needs the monthly page-visit and bookings trend and the 30-day funnel.
 
 ### Recommended changes (Booking.com extranet, this property)
-- Switch off Domestic and EEA country rates, Early Booker and the Black Friday Deal.
+- Switch off Domestic and EEA country rates and Early Booker. Keep the Black Friday Deal: it does not stack, it runs for two booking weeks only, and it gives a deal badge.
 - Keep Mobile 10% (it produced 42 bookings) and Last Minute 15% only if Genius is cut back to Level 1 (10%): untick Genius Level 2 & 3 and Level 3.
 - Keep the Visibility Booster (it costs nothing unless a booking comes).
 - Check the cleaning fee and total shown at checkout for a 3-night stay.
+
+
+Correction (21 Oct): Black Friday does not stack with Genius or other promotions (largest discount shown). Which of the other promotions combine is per Booking.com's rules for each deal; the about-half-price figure comes from what guests actually paid (Smoobu basePrice), not from assumed stacking rules.
