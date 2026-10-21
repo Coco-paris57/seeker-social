@@ -69,10 +69,10 @@
    "market_occ_30": 0.33,
    "market_occ_60": 0.25,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 223.0,
+    "p50": 270.0,
+    "p75": 335.0,
+    "p90": 415.0
    },
    "avg_open_price_next30": null,
    "price_percentile": null,
@@ -474,13 +474,13 @@
    "market_occ_30": 0.27,
    "market_occ_60": 0.21,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 127.0,
+    "p50": 165.0,
+    "p75": 219.0,
+    "p90": 303.0
    },
    "avg_open_price_next30": 145.64,
-   "price_percentile": null,
+   "price_percentile": 0.25,
    "comps": null,
    "pace_30": {
     "revenue_delta_pct": null
@@ -489,18 +489,11 @@
     "revenue_delta_pct": null
    },
    "pickup_7d": {
-    "bookings": 5,
-    "nights": 32,
-    "revenue": 4904.74
+    "bookings": 0,
+    "nights": 0,
+    "revenue": 0
    },
-   "booking_profile": {
-    "bookings": 5,
-    "median_lead_days": 36,
-    "median_los": 6,
-    "channel_revenue_share": {
-     "Booking.com": 1.0
-    }
-   },
+   "booking_profile": {},
    "gaps": [],
    "sync_issues": [
     {
@@ -647,9 +640,9 @@
    "intentional_block": false,
    "special_setup": null,
    "recommendation": {
-    "action": "raise-signal",
-    "price_move": null,
-    "reason": "booked +21% vs market; price position unknown until comps are priced"
+    "action": "raise",
+    "price_move": 0.1,
+    "reason": "booked +21% vs market but priced at P25: under-priced"
    },
    "checks": [
     {
@@ -685,7 +678,7 @@
     {
      "name": "Price signal",
      "status": "ok",
-     "detail": "booked +21% vs market; price position unknown until comps are priced"
+     "detail": "booked +21% vs market but priced at P25: under-priced"
     }
    ]
   },
@@ -722,13 +715,13 @@
    "market_occ_30": 0.37,
    "market_occ_60": 0.35,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 483.0,
+    "p50": 591.0,
+    "p75": 713.0,
+    "p90": 1146.0
    },
    "avg_open_price_next30": 483.44,
-   "price_percentile": null,
+   "price_percentile": 0.25,
    "comps": null,
    "pace_30": {
     "otb_nights": 20,
@@ -802,9 +795,9 @@
    "intentional_block": false,
    "special_setup": null,
    "recommendation": {
-    "action": "raise-signal",
-    "price_move": null,
-    "reason": "booked +29% vs market; price position unknown until comps are priced"
+    "action": "raise",
+    "price_move": 0.1,
+    "reason": "booked +29% vs market but priced at P25: under-priced"
    },
    "checks": [
     {
@@ -840,7 +833,7 @@
     {
      "name": "Price signal",
      "status": "ok",
-     "detail": "booked +29% vs market; price position unknown until comps are priced"
+     "detail": "booked +29% vs market but priced at P25: under-priced"
     }
    ]
   },
@@ -877,13 +870,13 @@
    "market_occ_30": 0.42,
    "market_occ_60": 0.4,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 318.0,
+    "p50": 415.0,
+    "p75": 542.0,
+    "p90": 677.0
    },
    "avg_open_price_next30": 273.0,
-   "price_percentile": null,
+   "price_percentile": 0.0,
    "comps": null,
    "pace_30": {
     "otb_nights": 14,
@@ -958,9 +951,9 @@
    "intentional_block": true,
    "special_setup": null,
    "recommendation": {
-    "action": "hold-signal",
-    "price_move": null,
-    "reason": "booked +6% vs market; price position unknown until comps are priced"
+    "action": "raise",
+    "price_move": 0.05,
+    "reason": "in line with market but priced below what quality supports (P0)"
    },
    "checks": [
     {
@@ -996,7 +989,7 @@
     {
      "name": "Price signal",
      "status": "info",
-     "detail": "booked +6% vs market; price position unknown until comps are priced"
+     "detail": "in line with market but priced below what quality supports (P0)"
     }
    ]
   },
@@ -1167,13 +1160,13 @@
    "market_occ_30": 0.48,
    "market_occ_60": 0.43,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 184.0,
+    "p50": 224.0,
+    "p75": 275.0,
+    "p90": 336.0
    },
    "avg_open_price_next30": 200.46,
-   "price_percentile": null,
+   "price_percentile": 0.25,
    "comps": null,
    "pace_30": {
     "otb_nights": 11,
@@ -1248,9 +1241,9 @@
    "intentional_block": false,
    "special_setup": null,
    "recommendation": {
-    "action": "weak-signal",
-    "price_move": null,
-    "reason": "booked -14% vs market; price position unknown until comps are priced"
+    "action": "fix-listing",
+    "price_move": 0.0,
+    "reason": "behind market -14% while already at P25: conversion/visibility problem, not price"
    },
    "checks": [
     {
@@ -1286,7 +1279,7 @@
     {
      "name": "Price signal",
      "status": "ok",
-     "detail": "booked -14% vs market; price position unknown until comps are priced"
+     "detail": "behind market -14% while already at P25: conversion/visibility problem, not price"
     }
    ]
   },
@@ -1323,13 +1316,13 @@
    "market_occ_30": 0.38,
    "market_occ_60": 0.3,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 116.0,
+    "p50": 141.0,
+    "p75": 169.0,
+    "p90": 216.0
    },
    "avg_open_price_next30": 157.64,
-   "price_percentile": null,
+   "price_percentile": 0.5,
    "comps": null,
    "pace_30": {
     "otb_nights": 18,
@@ -1405,9 +1398,9 @@
    "intentional_block": false,
    "special_setup": null,
    "recommendation": {
-    "action": "raise-signal",
-    "price_move": null,
-    "reason": "booked +21% vs market; price position unknown until comps are priced"
+    "action": "raise",
+    "price_move": 0.1,
+    "reason": "booked +21% vs market but priced at P50: under-priced"
    },
    "checks": [
     {
@@ -1443,7 +1436,7 @@
     {
      "name": "Price signal",
      "status": "ok",
-     "detail": "booked +21% vs market; price position unknown until comps are priced"
+     "detail": "booked +21% vs market but priced at P50: under-priced"
     }
    ]
   },
@@ -1480,10 +1473,10 @@
    "market_occ_30": 0.31,
    "market_occ_60": 0.24,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 113.0,
+    "p50": 130.0,
+    "p75": 158.0,
+    "p90": 192.0
    },
    "avg_open_price_next30": null,
    "price_percentile": null,
@@ -1626,13 +1619,13 @@
    "market_occ_30": 0.45,
    "market_occ_60": 0.38,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 241.0,
+    "p50": 301.0,
+    "p75": 351.0,
+    "p90": 410.0
    },
    "avg_open_price_next30": 232.64,
-   "price_percentile": null,
+   "price_percentile": 0.0,
    "comps": null,
    "pace_30": {
     "otb_nights": 19,
@@ -1708,9 +1701,9 @@
    "intentional_block": false,
    "special_setup": null,
    "recommendation": {
-    "action": "raise-signal",
-    "price_move": null,
-    "reason": "booked +17% vs market; price position unknown until comps are priced"
+    "action": "raise",
+    "price_move": 0.1,
+    "reason": "booked +17% vs market but priced at P0: under-priced"
    },
    "checks": [
     {
@@ -1746,7 +1739,7 @@
     {
      "name": "Price signal",
      "status": "ok",
-     "detail": "booked +17% vs market; price position unknown until comps are priced"
+     "detail": "booked +17% vs market but priced at P0: under-priced"
     }
    ]
   },
@@ -1783,13 +1776,13 @@
    "market_occ_30": 0.39,
    "market_occ_60": 0.33,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 176.0,
+    "p50": 211.0,
+    "p75": 250.0,
+    "p90": 292.0
    },
    "avg_open_price_next30": 236.5,
-   "price_percentile": null,
+   "price_percentile": 0.5,
    "comps": null,
    "pace_30": {
     "otb_nights": 17,
@@ -1864,9 +1857,9 @@
    "intentional_block": false,
    "special_setup": null,
    "recommendation": {
-    "action": "raise-signal",
-    "price_move": null,
-    "reason": "booked +20% vs market; price position unknown until comps are priced"
+    "action": "raise",
+    "price_move": 0.1,
+    "reason": "booked +20% vs market but priced at P50: under-priced"
    },
    "checks": [
     {
@@ -1902,7 +1895,7 @@
     {
      "name": "Price signal",
      "status": "ok",
-     "detail": "booked +20% vs market; price position unknown until comps are priced"
+     "detail": "booked +20% vs market but priced at P50: under-priced"
     }
    ]
   },
@@ -1939,13 +1932,13 @@
    "market_occ_30": 0.41,
    "market_occ_60": 0.35,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 201.0,
+    "p50": 240.0,
+    "p75": 301.0,
+    "p90": 372.0
    },
    "avg_open_price_next30": 200.2,
-   "price_percentile": null,
+   "price_percentile": 0.0,
    "comps": null,
    "pace_30": {
     "otb_nights": 15,
@@ -2021,9 +2014,9 @@
    "intentional_block": false,
    "special_setup": null,
    "recommendation": {
-    "action": "hold-signal",
-    "price_move": null,
-    "reason": "booked +7% vs market; price position unknown until comps are priced"
+    "action": "raise",
+    "price_move": 0.05,
+    "reason": "in line with market but priced below what quality supports (P0)"
    },
    "checks": [
     {
@@ -2059,7 +2052,7 @@
     {
      "name": "Price signal",
      "status": "ok",
-     "detail": "booked +7% vs market; price position unknown until comps are priced"
+     "detail": "in line with market but priced below what quality supports (P0)"
     }
    ]
   },
@@ -2096,13 +2089,13 @@
    "market_occ_30": 0.41,
    "market_occ_60": 0.37,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 146.0,
+    "p50": 202.0,
+    "p75": 249.0,
+    "p90": 299.0
    },
    "avg_open_price_next30": 500.0,
-   "price_percentile": null,
+   "price_percentile": 1.0,
    "comps": null,
    "pace_30": {
     "otb_nights": 0,
@@ -2166,9 +2159,9 @@
    "intentional_block": false,
    "special_setup": "Primrose Hill pricing (incl. the \u00a3500 minimum) is a deliberate special setup. Do not propose changing its min, base or min-stay; report its numbers only.",
    "recommendation": {
-    "action": "weak-signal",
-    "price_move": null,
-    "reason": "booked -41% vs market; price position unknown until comps are priced"
+    "action": "lower",
+    "price_move": -0.07,
+    "reason": "behind market -41% at P100: priced above demand"
    },
    "checks": [
     {
@@ -2204,7 +2197,7 @@
     {
      "name": "Price signal",
      "status": "info",
-     "detail": "booked -41% vs market; price position unknown until comps are priced"
+     "detail": "behind market -41% at P100: priced above demand"
     }
    ]
   },
@@ -2611,13 +2604,13 @@
    "market_occ_30": 0.34,
    "market_occ_60": 0.26,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 220.0,
+    "p50": 260.0,
+    "p75": 321.0,
+    "p90": 401.0
    },
    "avg_open_price_next30": 267.81,
-   "price_percentile": null,
+   "price_percentile": 0.5,
    "comps": null,
    "pace_30": {
     "otb_nights": 4,
@@ -2691,9 +2684,9 @@
    "intentional_block": false,
    "special_setup": null,
    "recommendation": {
-    "action": "weak-signal",
-    "price_move": null,
-    "reason": "booked -24% vs market; price position unknown until comps are priced"
+    "action": "fix-listing",
+    "price_move": 0.0,
+    "reason": "behind market -24% while already at P50: conversion/visibility problem, not price"
    },
    "checks": [
     {
@@ -2729,13 +2722,12 @@
     {
      "name": "Price signal",
      "status": "ok",
-     "detail": "booked -24% vs market; price position unknown until comps are priced"
+     "detail": "behind market -24% while already at P50: conversion/visibility problem, not price"
     }
    ]
   }
  ],
  "missing": {
-  "market": "empty",
   "comps": "empty",
   "channel_checks": "empty"
  },

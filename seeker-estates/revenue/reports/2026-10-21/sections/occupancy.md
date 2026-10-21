@@ -1,6 +1,6 @@
 ## Occupancy & performance
 
-**Portfolio, last 30 nights (21 Sep–20 Oct 2026), 13 units mapped to Smoobu (P01, P02, P05–P14, P20): occupancy 70.0%, ADR £172.56, RevPAR £120.79, revenue £47,109.79 (273 nights).** Last 365 nights (21 Oct 2025–20 Oct 2026): occupancy 43.0%, ADR £184.56, RevPAR £79.43, revenue £376,873.25 (2,042 nights). Forward, Booked nights only: 46.6% of the next 30 (189 of 406 nights, 22 Oct–19 Nov, 14 units with a calendar, P03 left out) and 33.2% of the next 60 (274 of 826 nights, 22 Oct–19 Dec). 7-day pickup (bookings made 15–21 Oct, P04 left out): 11 bookings, 78 nights, £15,831.52.
+**Portfolio, last 30 nights (21 Sep–20 Oct 2026), 13 units mapped to Smoobu (P01, P02, P05–P14, P20): occupancy 70.0%, ADR £172.56, RevPAR £120.79, revenue £47,109.79 (273 nights).** Last 365 nights (21 Oct 2025–20 Oct 2026): occupancy 43.0%, ADR £184.56, RevPAR £79.43, revenue £376,873.25 (2,042 nights). Forward, Booked nights only: 46.6% of the next 30 (189 of 406 nights, 22 Oct–19 Nov, 14 units with a calendar, P03 left out) and 33.2% of the next 60 (274 of 826 nights, 22 Oct–19 Dec). With the 19 Oct Smoobu "Blocked channel" nights on P01, P08, P09 and P10 taken out of capacity (7 nights in the next 30, 108 in the next 60), these become 47.4% (189 of 399) and 38.2% (274 of 718). 7-day pickup (bookings made 15–21 Oct, P04 left out): 11 bookings, 78 nights, £15,831.52.
 Sources: `reports/2026-10-21/kpi_pack.json` (`portfolio_last30`/`portfolio_last365` and per-property fields). The forward and pickup totals add up the pack's per-property figures. Revenue is the Smoobu reservation total before cleaning and commission. P04 (in Smoobu since 20 Oct) has no history, and P03 and P15–P19 have no reservation data, so all of them are left out of the past-window totals rather than counted as zero.
 
 ### What changed since 20 Oct (20 Oct pack/snapshot vs 21 Oct)
@@ -12,7 +12,14 @@ Sources: `reports/2026-10-21/kpi_pack.json` (`portfolio_last30`/`portfolio_last3
   - P10: 19 Nov–19 Dec (31 nights), plus 20 Dec. Open nights in the next 60 went from 30 to 0.
   - On P01, P08 and P10 the block starts the night after the last Booked night. P09 also has the separate 25 Oct night. Each block runs to the end of the file, except P01's, which stops at its 18–21 Dec booking.
   - PriceLabs `occupancy_next_60` (counts blocks) jumped: P01 0.70→1.00, P08 0.22→0.78, P09 0.45→0.82, P10 0.52→1.00 (pl_kpis.csv).
-  - The PriceLabs activity log for 19–21 Oct (`get_user_logs`) has no entry for these four listings. The reason is not in the data. Booked-only forward occupancy is not affected.
+  - **Source of the blocks (coordinator note, verified from the Smoobu API, dates only).** They were created in Smoobu on 19 Oct at 17:33–17:36Z as "Blocked channel":
+    - P08: 14 Nov 2026 → 30 Jun 2028.
+    - P10: 19 Nov 2026 → 31 Aug 2028.
+    - P09: 27 Nov 2026 → 23 Apr 2027.
+    - P01: 30 Nov–18 Dec 2026, and 21 Dec 2026 → 30 Sep 2028.
+  - They were created after the 19 Oct snapshot and are not in the 20 Oct prices pull, so they first appear in today's calendar.
+  - Two points do not match the note: P09's Blocked 25 Oct is not among these blocks, and P01's 18 Dec shows as Booked in prices.csv (the 18–21 Dec booking starts that night).
+  - None of these blocks is in policy.json, and the PriceLabs activity log for 19–21 Oct (`get_user_logs`) has no entry for these listings. **The reason is unknown and waiting on Corentin. It is an open question.** Blocked nights are not counted as lost demand. Booked-only forward occupancy is not affected; occupancy with the blocks taken out of capacity is shown below.
 - **P04 Barking is now in Smoobu** (apartment 3562176, `smoobu_since` 2026-10-20). It has 6 rows, all Booking.com and all created 20 Oct: 5 confirmed (22–25 Oct, 26 Oct–1 Nov, 25 Nov–2 Dec, 3–6 Dec, 20 Dec–2 Jan; 32 nights, £4,904.74) and 1 cancelled (2–7 Nov, 5 nights, £682.02). These are imported future stays, so P04's last-30/365, pace and pickup are UNKNOWN, not zero. See the P04 note below.
 - **P13 (listing 3064856), 1 Dec went from unavailable (min stay 3) to open (min stay 1).** The PriceLabs log shows a 1 Dec date override with min stay 1 added at 09:30Z on 20 Oct on 3064856, 3090701 and the Vrbo copy. 1 Dec is now a single open night between a 28 Nov–1 Dec stay and a stay arriving 2 Dec.
 - **Windows moved one day.** Last 30 is now 21 Sep–20 Oct. prices.csv starts 22 Oct, so forward 30 is 22 Oct–19 Nov (29 nights) and forward 60 is 22 Oct–19 Dec (59 nights). Pickup 7d is now bookings made 15–21 Oct.
@@ -67,9 +74,9 @@ Windows and sources:
 | P05 | St John's Wood (4-bed) | 76.7% | £368.84 | £282.78 | 65.5% (3.4%; 37%) | UNKNOWN: no STLY; OTB 20 n / £7,939.57 | 1 / 7 / £4,527.95 | Unclassifiable (60–85%, no STLY) |
 | P06 | Marylebone | 70.0% | £212.65 | £148.85 | 48.3% (41.4%; 42%) | UNKNOWN: no STLY; OTB 14 n / £2,588.75 | 1 / 11 / £1,956.10 | Not classified: intentional block (policy) |
 | P07 | Woolwich | 0.0% | UNKNOWN (0 nights) | £0.00 | 0.0% (100%; 25%) | UNKNOWN: no STLY; OTB 0 | 0 / 0 / £0 | Not classified: intentional block (policy) |
-| P08 | Islington | 100.0% | £167.82 | £167.82 | 34.5% (20.7%, new; 48%) | UNKNOWN: no STLY; OTB 11 n / £1,560.58 | 1 / 6 / £776.46 | Soft |
-| P09 | Greenwich | 96.7% | £116.75 | £112.86 | 58.6% (3.4%, new; 38%) | UNKNOWN: no STLY; OTB 18 n / £1,904.61 | 0 / 0 / £0 | Soft (58.6% booked; 60.7% of nights not blocked) |
-| P10 | Ealing / Hanger Lane | 76.7% | £113.51 | £87.02 | 96.6% (3.4%, new; 31%) | UNKNOWN: no STLY; OTB 29 n / £3,072.96 | 0 / 0 / £0 | Compressed |
+| P08 | Islington | 100.0% | £167.82 | £167.82 | 34.5% (20.7%, new; 48%); 43.5% excl. blocks | UNKNOWN: no STLY; OTB 11 n / £1,560.58 | 1 / 6 / £776.46 | Soft |
+| P09 | Greenwich | 96.7% | £116.75 | £112.86 | 58.6% (3.4%, new; 38%); 60.7% excl. blocks | UNKNOWN: no STLY; OTB 18 n / £1,904.61 | 0 / 0 / £0 | Soft if blocked nights stay in capacity; Unclassifiable (60–85%, no STLY) if they are taken out |
+| P10 | Ealing / Hanger Lane | 76.7% | £113.51 | £87.02 | 96.6% (3.4%, new; 31%); 100% excl. blocks | UNKNOWN: no STLY; OTB 29 n / £3,072.96 | 0 / 0 / £0 | Compressed |
 | P11 | Camden | 80.0% | £156.02 | £124.82 | 62.1% (0%; 45%) | UNKNOWN: no STLY; OTB 19 n / £3,436.89 | 0 / 0 / £0 | Unclassifiable (60–85%, no STLY) |
 | P12 | Mile End | 80.0% | £196.92 | £157.54 | 58.6% (0%; 39%) | −6 n (17 vs 23) / +4.6% (£3,343.78 vs £3,197.08) | 1 / 2 / £318.78 | Soft (fwd occ30 < 60%) |
 | P13 | Shepherd's Bush (one flat, 2 listings) | 96.7% | £160.30 | £154.96 | 48.3% (0%; 41%) | UNKNOWN: no STLY; OTB 15 n / £2,256.45 | 3 / 12 / £2,012.35 | Soft |
@@ -83,11 +90,24 @@ Windows and sources:
 
 \* P20: the extra nights of the 18–22 Oct extension were paid separately (policy), so the Smoobu total does not include them and ADR30/RevPAR30 are understated.
 
+**Forward occupancy with and without the 19 Oct Smoobu blocks (open question; prices.csv, Booked nights):**
+
+| Ref | Fwd30, blocked nights in capacity (Booked / 29) | Fwd30, blocked nights taken out | Fwd60, blocked nights in capacity (Booked / 59) | Fwd60, blocked nights taken out | Blocked in next 30 / next 60 |
+|---|---|---|---|---|---|
+| P01 | 100.0% (29/29) | 100.0% (29/29) | 69.5% (41/59) | 100.0% (41/41) | 0 / 18 |
+| P08 | 34.5% (10/29) | 43.5% (10/23) | 16.9% (10/59) | 43.5% (10/23) | 6 / 36 |
+| P09 | 58.6% (17/29) | 60.7% (17/28)† | 40.7% (24/59) | 68.6% (24/35)† | 1† / 24† |
+| P10 | 96.6% (28/29) | 100.0% (28/28) | 47.5% (28/59) | 100.0% (28/28) | 1 / 31 |
+
+† P09's figures also take out the Blocked 25 Oct, which is not one of the 19 Oct blocks. Excluding only the 19 Oct blocks, P09 is 58.6% (17/29) for the next 30 and 66.7% (24/36) for the next 60.
+
+If the blocks mean the units are leaving or going to a long let, nothing beyond these dates can be booked through the channels: P08 from 14 Nov, P10 from 19 Nov, P09 from 27 Nov, and P01 apart from its 18–21 Dec booking. That is a question of supply, not demand.
+
 **P04 note.** The pack's fwd occ30 of 48.3% (14 of 29) and fwd occ60 of 40.7% (24 of 59) come from the PriceLabs calendar of the Channex listing (prices.csv), and that calendar still shows 2–6 Nov as Booked. In Smoobu, the 2–7 Nov reservation has status cancelled. Counting confirmed Smoobu stays only gives 9 of 29 nights (31.0%) for 22 Oct–19 Nov and 19 of 59 (32.2%) for 22 Oct–19 Dec. PriceLabs' own figures for Smoobu listing 3562176 are 30% next 30 and 32% next 60 (pl_kpis.csv), which match the confirmed count. Which one is right is not in the data. The other figures in the pack for P04 also come from the import, not from real bookings:
 - The median lead time of 36 days is measured from the import date (20 Oct), not the real booking date.
 - The median stay of 6 nights and the 100% Booking.com share describe only the 5 imported future stays.
 
-How classes were set (same rules as 20 Oct): **Compressed** = fwd occ30 ≥ 85%. **Soft** = fwd occ30 < 60%, or pace behind STLY by more than 10%. **On track** needs an STLY figure, so a unit at 60–85% with no STLY is Unclassifiable. P02, P03, P06 and P07 are blocked on purpose (policy) and are not classified. **No class changed since 20 Oct.** P12 rose from 55.2% to 58.6% (window shift) and stays Soft. P09 stays Soft at 58.6%. P10 dropped to 96.6% because 19 Nov is newly Blocked, and stays Compressed.
+How classes were set (same rules as 20 Oct): **Compressed** = fwd occ30 ≥ 85%. **Soft** = fwd occ30 < 60%, or pace behind STLY by more than 10%. **On track** needs an STLY figure, so a unit at 60–85% with no STLY is Unclassifiable. P02, P03, P06 and P07 are blocked on purpose (policy) and are not classified. **No class changed since 20 Oct** if blocked nights stay in capacity. If the 19 Oct blocks are taken out, P09 moves from Soft to Unclassifiable (60.7%); P08 stays Soft and P01/P10 stay Compressed. P12 rose from 55.2% to 58.6% (window shift) and stays Soft. P09 stays Soft at 58.6%. P10 dropped to 96.6% because 19 Nov is newly Blocked, and stays Compressed.
 
 ### Last 365 nights, forward 60 vs market, pace 90, booking profile
 Windows and sources:
@@ -123,13 +143,13 @@ P03 and P15–P19: every column is UNKNOWN (see Data gaps).
   - P12: no Smoobu stay covers 21 Oct (the 14–21 Oct stay checks out today), and 22 Oct is open (min stay 2) before an arrival on 23 Oct. That is 2 open nights. prices.csv does not cover 21 Oct, so the min stay in force tonight is UNKNOWN.
   - P13: 22 Oct is open (min stay 1).
 - **Blocks outside the policy list:**
-  - P01, P08, P09 and P10 are newly Blocked (109 nights; see "What changed").
+  - P01, P08, P09 and P10 are newly Blocked (109 nights; "Blocked channel", created in Smoobu on 19 Oct and running into 2027–2028; reason unknown, waiting on Corentin; see "What changed"). These are not counted as gaps or as lost demand.
   - P05 has 1 Blocked night (27 Oct) in the next 30, reason unknown.
   - P04's 25 Oct is unavailable with no Booked/Blocked label. No confirmed Smoobu stay covers it: one stay checks out 25 Oct and the next arrives 26 Oct.
   - P02, P06 and P07 are blocked on purpose (policy) and are not counted as gaps.
 
 Data gaps:
-1. P01, P08, P09, P10: the reason for the 109 nights that changed from open to Blocked between the 20 and 21 Oct snapshots is not in the data (not in the policy, and no PriceLabs log entry).
+1. **Open question:** P01, P08, P09, P10 have "Blocked channel" blocks, created in Smoobu on 19 Oct at 17:33–17:36Z, running to 30 Sep 2028 (P01), 30 Jun 2028 (P08), 23 Apr 2027 (P09) and 31 Aug 2028 (P10). They are not in policy.json and the reason is unknown (Corentin to confirm; units leaving or long let is possible but not confirmed). The reason for P09's 25 Oct block and the 18 Dec mismatch on P01 (Booked in PriceLabs, inside the block in the note) are also unknown.
 2. P04 Barking: in Smoobu only since 20 Oct, and all 6 rows were created on the import date. Last-30/365, pace vs STLY, 7-day pickup and lead time are UNKNOWN. The 2–7 Nov stay is cancelled in Smoobu but Booked on the PriceLabs Channex calendar, so forward occupancy is 48.3% or 31.0% depending on the source. The reason 25 Oct is unavailable is not in the data. The P04 mapping is still to be confirmed with Corentin (`data/id_map.json`).
 3. Pipeline: `rm/analyse.py` does not apply `smoobu_since` to `pickup_7d` or `booking_profile`, so P04 shows imported rows as 5 bookings of pickup with a lead time of 36 days. `pace_vs_stly` returns STLY 0 instead of null when Smoobu history does not reach the year-ago window.
 4. STLY: there are no Smoobu bookings for the year-ago windows of P01, P02, P05–P11, P13, P14 and P20 (their first stays are 18 Nov 2025 or later), so pace 30/90 is UNKNOWN for 12 of the 13 units with history. Only P12 has STLY. STLY also leaves out bookings that were live a year ago and cancelled later.

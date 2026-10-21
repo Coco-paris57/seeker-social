@@ -45,6 +45,10 @@ def run(day=None):
         if _d > today - timedelta(days=365):
             last365[_r] = dict(_unknown)
     no_stly = {r for r, d in _since.items() if d > today - timedelta(days=365)}
+    # Bookings created on the day a unit was imported into Smoobu are migrated stays, not pickup:
+    # leave them out of pickup and booking profile (lead time is measured from the import date).
+    res_flow = [r for r in res if not (r["ref"] in _since and r.get("booked_on")
+                                       and r["booked_on"] <= _since[r["ref"]].isoformat())]
     if not res:  # no booking data is "unknown", never 0% occupancy
         unknown = {"nights": None, "revenue": None, "capacity": None, "occupancy": None, "adr": None, "revpar": None}
         last30 = {r: dict(unknown) for r in refs}
@@ -90,8 +94,8 @@ def run(day=None):
             "avg_open_price_next30": our_price, "price_percentile": pct, "comps": comp,
             "pace_30": metrics.pace_vs_stly(res, ref, today, 30) if res and ref in res_refs and ref not in no_stly else {"revenue_delta_pct": None},
             "pace_90": metrics.pace_vs_stly(res, ref, today, 90) if res and ref in res_refs and ref not in no_stly else {"revenue_delta_pct": None},
-            "pickup_7d": metrics.pickup(res, ref, today, 7) if res and ref in res_refs else None,
-            "booking_profile": metrics.booking_profile(res, ref),
+            "pickup_7d": metrics.pickup(res_flow, ref, today, 7) if res and ref in res_refs else None,
+            "booking_profile": metrics.booking_profile(res_flow, ref),
             "gaps": metrics.gaps(prices, ref),
             "sync_issues": sync.get(ref, []) if prices else None, "bounds": bnd.get(ref),
             "parity_flags": [p for p in parity if p["ref"] == ref and p["flag"]],
