@@ -124,3 +124,17 @@ Guests open the page and leave. The page itself scores 97% and the reviews are 8
 - **Mystery shop** on Booking.com, logged out, on a phone: Shepherd's Bush, 2 guests and 4 guests, 2–3 nights, three date ranges in the next 4 weeks (e.g. 31 Oct–2 Nov, 8–11 Nov, 17–20 Nov). Note: bookable or not, which rate plans show (flexible / non-refundable), the total with cleaning fee, and the cancellation policy. Then price the same dates on the Airbnb listings.
 - **Extranet → Rates & availability → Calendar**: for each rate plan, confirm it is open, has a price, and has no closed-to-arrival or stricter minimum stay.
 - **Smoobu → Channel Manager → Booking.com**: confirm both rate plans (standard and non-refundable) are mapped and syncing.
+
+## Mystery shop (guest view on Booking.com, 21 Oct 2026)
+
+| Stay | Days ahead | Discount shown | Flexible total (2–4 guests) | Per night incl. cleaning | PriceLabs per night |
+|---|---|---|---|---|---|
+| Sat 31 Oct – Mon 2 Nov (2 n) | 10 | 18–19% (Last Minute applies) | £490 (NR £459) | £245 | £195 |
+| Sun 8 – Wed 11 Nov (3 n) | 18 | 8% | £851 (NR £781) | £284 | £211 |
+| Tue 17 – Fri 20 Nov (3 n) | 27 | 8% | £841 (NR £772) | £280 | see snapshot |
+
+Bookable on every date, both rates shown, clear beds and amenities, totals include charges. On 31 Oct–2 Nov the flexible rate was missing for 6 guests (it shows on the other dates).
+
+**Finding:** outside the Last Minute window (0–15 days) guests pay £280–284 a night including cleaning, because the +20% markup, cleaning and charges (~£130–170 a stay) and only 8% off add up. The room part is ~£230–240 a night against a Booking.com peer ADR of ~£186. Since Booking.com guests here book mostly within a week, and visitors further out leave (0.45% conversion), the Booking.com price outside the last-minute window is the likeliest reason for the collapse. Pending: the Airbnb total for the same dates, to confirm the gap with the identical flat on Airbnb.
+
+**Recommended fix (Corentin's decision):** lower the Smoobu Booking.com markup for Shepherd's Bush from +20% to about +10–12%, or extend Last Minute from 0–15 to 0–30 days; and make sure the flexible rate is offered for 6 guests on all dates.
