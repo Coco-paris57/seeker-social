@@ -40,7 +40,8 @@
    "pricing_rules_listing_A": "LOS 5+ nights -8%, 7+ -15%, 28+ -20%; Last-minute -15% within 28 days; Early bird -12% at 60+ days",
    "pricing_rules_listing_B": "LOS 5+ nights -10%, 7+ -15%, 28+ -25%; Last-minute -15% within 28 days; Early bird -15% at 60+ days",
    "fees": "Cleaning £150 per booking; guests included 1; price per extra guest £0",
-   "finding": "These Smoobu 'Default pricing rules' are pushed to Airbnb and stack on top of PriceLabs prices, which already include PriceLabs' own last-minute and far-out logic. They explain the systematic Airbnb gap (~0.76-0.80x PriceLabs) that removing date promotions did not change."
+   "finding": "These Smoobu 'Default pricing rules' are pushed to Airbnb and stack on top of PriceLabs prices, which already include PriceLabs' own last-minute and far-out logic. They explain the systematic Airbnb gap (~0.76-0.80x PriceLabs) that removing date promotions did not change.",
+   "changed_21oct": "Both Shepherd's Bush Airbnb listings (Corentin, 21 Oct 2026): last-minute -10% within 14 days, early bird -10% at 60+ days, 7+ nights -15%, 28+ nights -20%, guests included 4, extra guest ~£15. No per-flat Airbnb price adjustment exists in Smoobu (the Airbnb price adjustment is global, 0%)."
   },
   "airbnb_visible_discounts": "Corentin prefers discounts that Airbnb shows to guests (strikethrough) over invisible PriceLabs cuts (21 Oct 2026). Propose 'price in' set-ups (Smoobu Airbnb uplift + visible discount) rather than removing visible discounts."
  },
@@ -83,6 +84,10 @@
   {
    "date": "2026-10-21",
    "what": "All manual Airbnb promotions removed (portfolio); Shepherd's Bush Booking.com Last Minute 0-30 days"
+  },
+  {
+   "date": "2026-10-21",
+   "what": "Shepherd's Bush Airbnb rules: last-minute -10% (14 days), early bird -10% (60+), 28-night -20%, extra guest fee above 4"
   }
  ],
  "handbacks": {
