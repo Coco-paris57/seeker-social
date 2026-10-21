@@ -143,7 +143,10 @@
   ],
   "visibility_booster": "18% commission for Camden check-ins 1 Nov-18 Dec 2026 and January-February 2027 (Corentin, 21 Oct 2026). ~18% Booking.com commission on these stays is expected.",
   "ranking_last_30_days": "Search views 20,820 (-64.17% vs market), page visits 169 (-82.88%), bookings 10 (-63.08%); click-through 0.81% vs market 1.70%; page-to-booking 5.92% vs market 2.74% (screenshot 21 Oct; assumed Camden).",
-  "analytics_trend": "Booking.com analytics data is shown only up to 10 Oct 2026 (as of 21 Oct): values after 10 Oct read 0 for us and market, a reporting lag. Availability for search 13.28% (-33.71% vs market, Camden 68% booked next 60 days); property page score 97.75% (+16.88%); guest review score 8.0 (+29.81% vs market); ADR £201.01 (+3.60%)."
+  "analytics_trend": "Booking.com analytics data is shown only up to 10 Oct 2026 (as of 21 Oct): values after 10 Oct read 0 for us and market, a reporting lag. Availability for search 13.28% (-33.71% vs market, Camden 68% booked next 60 days); property page score 97.75% (+16.88%); guest review score 8.0 (+29.81% vs market); ADR £201.01 (+3.60%).",
+  "changes": [
+   "21 Oct 2026: Early Booker off, Genius Level 2&3 unticked, main photo and property name updated (Corentin: 'done')."
+  ]
  },
  "non_refundable_rate": "All listings have a Booking.com non-refundable rate at -10% (Corentin, 21 Oct 2026).",
  "booking_promotions_p13_21oct": {
@@ -166,6 +169,15 @@
   ],
   "mystery_shop_31oct_2nov": "Guest view 21 Oct for Sat 31 Oct-Mon 2 Nov (2 nights): bookable. 2 and 4 adults: non-refundable £459 (was £568, 19% off) and fully refundable before 27 Oct £490 (was £599, 18% off, 'cannot combine with other offers'), both 'includes taxes and charges'. 6 adults: non-refundable only, £475 (was £590). Beds: 2 doubles + sofa bed; 52 m2.",
   "mystery_shop_8_11nov": "Guest view 21 Oct for Sun 8-Wed 11 Nov (3 nights): bookable. 4 adults: non-refundable £781 (was £851, 8% off), free cancellation before 25 Oct £851 (was £929, 8% off). 6 adults: non-refundable £814, flexible £888 (was £970). PriceLabs 3064856: £217+£198+£218 = £633. The '2 adults' screenshot was not applied (still showed 31 Oct-2 Nov).",
-  "mystery_shop_17_20nov": "Guest view 21 Oct for Tue 17-Fri 20 Nov (3 nights): bookable. 2 and 4 adults: non-refundable £772 (was £841, 8% off), free cancellation before 3 Nov £841 (was £918, 8% off). 6 adults: non-refundable £804, flexible £877 (was £958)."
+  "mystery_shop_17_20nov": "Guest view 21 Oct for Tue 17-Fri 20 Nov (3 nights): bookable. 2 and 4 adults: non-refundable £772 (was £841, 8% off), free cancellation before 3 Nov £841 (was £918, 8% off). 6 adults: non-refundable £804, flexible £877 (was £958).",
+  "mystery_shop_8_11nov_after": "After Last Minute 0-30 days (21 Oct): 4 adults non-refundable £678 (19% off), flexible £737 (20% off); 6 adults £706 / £768."
+ },
+ "monitoring": {
+  "airbnb_after_promotions_removed": {
+   "since": "2026-10-21",
+   "until": "2026-11-04",
+   "why": "Manual Airbnb promotions (15-20%) removed 21 Oct. Check Airbnb booking volume vs the prior 14 days and paid vs PriceLabs on bookings made after 21 Oct.",
+   "finding_21oct": "Airbnb Shepherd's Bush 3064856, 8-11 Nov, 4 guests: £632 total after the change = £482 room + £150 cleaning vs PriceLabs £633, still ~24% under PriceLabs. The reduction is systematic (~0.76-0.80x on every date checked), so it is not only the date promotions: check Smoobu → Channel Manager → Airbnb price settings."
+  }
  }
 }

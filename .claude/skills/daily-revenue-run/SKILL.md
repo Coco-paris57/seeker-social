@@ -88,6 +88,10 @@ and a `Data gaps:` list.
 - `rm-pricelabs-auditor` - all properties, plus the `_unmatched` and `confidence: check` entries
   of `id_map.json` (duplicate listings, listings with push off, properties missing from PriceLabs).
 - `rm-channel-parity-auditor` - all properties; use `rate_leak_next_30` from the pack.
+  Also, every run until 4 Nov 2026 (`policy.json` → `monitoring`): Airbnb bookings made in the last 14 days vs
+  the 14 days before, per property and portfolio (count, nights, paid £/night), and paid vs PriceLabs
+  (after 15%/20% stay discounts) for Airbnb bookings made after 21 Oct. Flag a drop of more than half
+  in Airbnb bookings, and say whether new Airbnb bookings still pay ~20-25% under PriceLabs.
 - `rm-market-analyst` - next 90 days.
 - `rm-competitor-analyst` - three agents, one per batch:
   - East: P01, P04, P07, P09, P12, P15
