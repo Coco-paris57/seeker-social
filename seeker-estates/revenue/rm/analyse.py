@@ -35,6 +35,16 @@ def run(day=None):
     for _r in refs:
         if _r not in res_refs:
             last30[_r], last365[_r] = dict(_unknown), dict(_unknown)
+    # A unit that moved into Smoobu recently has no history there: past windows starting before
+    # `smoobu_since` are unknown, never 0%. Pace vs last year needs a full year in Smoobu.
+    _since = {r: date.fromisoformat(v["smoobu_since"]) for r, v in _ids.items()
+              if not r.startswith("_") and v.get("smoobu_since")}
+    for _r, _d in _since.items():
+        if _d > today - timedelta(days=30):
+            last30[_r] = dict(_unknown)
+        if _d > today - timedelta(days=365):
+            last365[_r] = dict(_unknown)
+    no_stly = {r for r, d in _since.items() if d > today - timedelta(days=365)}
     if not res:  # no booking data is "unknown", never 0% occupancy
         unknown = {"nights": None, "revenue": None, "capacity": None, "occupancy": None, "adr": None, "revpar": None}
         last30 = {r: dict(unknown) for r in refs}
@@ -78,8 +88,8 @@ def run(day=None):
             "market_occ_30": mk.get("market_occ_30"), "market_occ_60": mk.get("market_occ_60"),
             "market_percentiles": {k: mk.get(k) for k in ("p25", "p50", "p75", "p90")},
             "avg_open_price_next30": our_price, "price_percentile": pct, "comps": comp,
-            "pace_30": metrics.pace_vs_stly(res, ref, today, 30) if res and ref in res_refs else {"revenue_delta_pct": None},
-            "pace_90": metrics.pace_vs_stly(res, ref, today, 90) if res and ref in res_refs else {"revenue_delta_pct": None},
+            "pace_30": metrics.pace_vs_stly(res, ref, today, 30) if res and ref in res_refs and ref not in no_stly else {"revenue_delta_pct": None},
+            "pace_90": metrics.pace_vs_stly(res, ref, today, 90) if res and ref in res_refs and ref not in no_stly else {"revenue_delta_pct": None},
             "pickup_7d": metrics.pickup(res, ref, today, 7) if res and ref in res_refs else None,
             "booking_profile": metrics.booking_profile(res, ref),
             "gaps": metrics.gaps(prices, ref),
