@@ -67,3 +67,23 @@ Monthly, read from the charts (approximate):
 
 ### Still needed to locate the break
 In the same Trend view, click the "Property page visits" and "Bookings made" radio buttons (last 365 days) and send those two charts, plus the Funnel view for the last 30 days (click-through and booking rate vs market). Also: what Booking.com shows as the cleaning fee and the total for a 3-night stay.
+
+## Promotions, Genius, booster and property page (Corentin's screenshots, 21 Oct 2026)
+
+- **Active promotions:** Mobile rate 10% (always on, since 8 Dec 2025: 42 bookings, 192 nights, ADR £197.86, £37,988.76); Last Minute Deal 15% (0–15 days before check-in, since 26 Aug, stays to 26 Nov: 2 bookings, ADR £122.45); Early Booker 15% (60+ days, since 26 Sep, stays to 20 Dec: 0 bookings); Domestic country rate 10% and EEA country rate 10% (since 2 Oct, always on: 0 bookings); Black Friday Deal 30% (bookable 19 Nov–2 Dec, stays 19 Nov 2026–30 Apr 2027, excluding 9 dates).
+- **Genius:** Level 1 (10%), Level 2 & 3 (15%) and Level 3 (20%) all ticked; dynamic discount 0–30%; Genius Potential Score 100/100.
+- **Visibility Booster:** on for check-ins 21 Oct–20 Dec and all of January and February.
+- **Property page:** "Top Floor 2Bed with Private Terrace in Shepherds Bush Near Westfield & Tube", 8.4 "Very good" (15 reviews), strong main photo (living room with skyline view), 28 photos, "2 bedrooms, 3 beds, 1 bathroom", city view and terrace highlighted.
+
+### Conclusion
+Every visibility and discount lever is already on, the page and reviews are good, and the flat is available more than its peers, yet Booking.com produced 0–2 bookings a month since August. More discounts are not the answer:
+1. **Guests now pay about half the PriceLabs price on Booking.com.** Booking.com guests here book late (median 7.5 days), so a typical guest gets Last Minute 15% + Genius 10–20% + Mobile 10% + Domestic 10%. Paid ADR fell to ~£120 (Oct) against a PriceLabs price around £223 for open nights and peers at ~£186. Even after the +20% markup, Booking.com is now the cheapest channel for this flat (Airbnb paid ~£160).
+2. **The new deals added since August (Last Minute 26 Aug, Early Booker 26 Sep, Domestic and EEA 2 Oct) produced 2 bookings between them.** Bookings did not respond to deeper discounts, so they only cut the rate on bookings that would have come anyway.
+3. **Black Friday 30% from 19 Nov runs to 30 Apr 2027** and can combine with Genius, so some guests could pay under half price for five months.
+4. What remains unexplained is the drop between search and booking. That needs the monthly page-visit and bookings trend and the 30-day funnel.
+
+### Recommended changes (Booking.com extranet, this property)
+- Switch off Domestic and EEA country rates, Early Booker and the Black Friday Deal.
+- Keep Mobile 10% (it produced 42 bookings) and Last Minute 15% only if Genius is cut back to Level 1 (10%): untick Genius Level 2 & 3 and Level 3.
+- Keep the Visibility Booster (it costs nothing unless a booking comes).
+- Check the cleaning fee and total shown at checkout for a 3-night stay.
