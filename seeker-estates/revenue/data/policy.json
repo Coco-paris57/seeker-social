@@ -78,5 +78,46 @@
  },
  "intentional_overrides": {
   "P13": "1 Dec 2026 +50% with 1-night minimum is intentional (Corentin, 21 Oct 2026)."
- }
+ },
+ "listing_facts": {
+  "note": "Corrections from Corentin, 21 Oct 2026. Smoobu/PriceLabs apartment names are internal; they are NOT the public OTA titles. Never infer the public title or channel presence from the Smoobu name or from the absence of bookings.",
+  "P20": {
+   "channels": [
+    "airbnb",
+    "booking"
+   ],
+   "public_title": "Parking & Views - 2 Bedrooms in Canary Wharf (parking first so it shows in map search)",
+   "min_stay": "3 nights from 25 Oct to 30 Nov",
+   "reviews": "New listing: first guest in residence since ~7 Oct; no reviews yet",
+   "airbnb_new_listing_promotion": "20% new-listing discount active on Airbnb; this is why price has not been adjusted. It is part of the Airbnb paid-vs-price gap on P20."
+  },
+  "P05": {
+   "cover_photo": "Changed to an external shot on 21 Oct 2026",
+   "title": "Changed 21 Oct 2026",
+   "cleaning": "Guest pays £195 cleaning; landlord is charged £150+VAT (short-let management model). Do not propose lowering the cleaning fee."
+  },
+  "P13": {
+   "twin_listings": "The two Airbnb listings must keep slightly different photos and prices or Airbnb blocks them as duplicates. Propose narrowing the price gap, never making them identical."
+  },
+  "P11": {
+   "channels": [
+    "booking"
+   ],
+   "airbnb": "Camden is not on Airbnb (it had 30 Airbnb bookings, the last made 2 Jun 2026)."
+  },
+  "P04": {
+   "airbnb": "Barking is on Airbnb under a different Airbnb account. Whether that account is connected to Smoobu is unconfirmed."
+  }
+ },
+ "booking_promotions_camden_21oct": {
+  "source": "Corentin screenshots 21 Oct 2026 (Camden extranet)",
+  "calendar": "Synced by XML from Smoobu (last sync 21 Oct 12:13); open on unbooked dates.",
+  "active": [
+   "Mobile rate 10% (always on, since 17 Dec 2025: 40 bookings, 212 nights, ADR £185.87, £39,404 in 12 months)",
+   "Early Booker Deal 10% (bookable 30+ days before check-in, created 4 Oct 2026, stays 4 Oct 2026-4 Jan 2027; 0 bookings)",
+   "Genius Level 1 10% + Level 2&3 15% (dynamic 0-25%)"
+  ],
+  "visibility_booster": "Was used; end date unconfirmed (Corentin not sure it stopped on 10 Oct)."
+ },
+ "non_refundable_rate": "All listings have a Booking.com non-refundable rate at -10% (Corentin, 21 Oct 2026)."
 }
