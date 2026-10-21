@@ -97,7 +97,8 @@
    "cleaning": "Guest pays £195 cleaning; landlord is charged £150+VAT (short-let management model). Do not propose lowering the cleaning fee."
   },
   "P13": {
-   "twin_listings": "The two Airbnb listings must keep slightly different photos and prices or Airbnb blocks them as duplicates. Propose narrowing the price gap, never making them identical."
+   "twin_listings": "The two Airbnb listings must keep slightly different photos and prices or Airbnb blocks them as duplicates. Propose narrowing the price gap, never making them identical.",
+   "ids": "Likely mapping, to confirm with Corentin: Airbnb 'Shepherd's Bush 1' (2.26% overall conversion) = Smoobu 3090701 'Bright 2BR w/Terrace in W12 Near Westfield & Tube' (8 Airbnb bookings 23 Jul-21 Oct); 'Shepherd's Bush 2' (0.48%) = 3064856 'Top-Floor 2Bed with Private Terrace in W12' (4 bookings)."
   },
   "P11": {
    "channels": [
@@ -117,7 +118,8 @@
    "Early Booker Deal 10% (bookable 30+ days before check-in, created 4 Oct 2026, stays 4 Oct 2026-4 Jan 2027; 0 bookings)",
    "Genius Level 1 10% + Level 2&3 15% (dynamic 0-25%)"
   ],
-  "visibility_booster": "Was used; end date unconfirmed (Corentin not sure it stopped on 10 Oct)."
+  "visibility_booster": "Active on check-in dates 21-31 Oct 2026 only (screenshot 21 Oct); none in Nov/Dec.",
+  "ranking_last_30_days": "Search views 20,820 (-64.17% vs market), page visits 169 (-82.88%), bookings 10 (-63.08%); click-through 0.81% vs market 1.70%; page-to-booking 5.92% vs market 2.74% (screenshot 21 Oct; assumed Camden)."
  },
  "non_refundable_rate": "All listings have a Booking.com non-refundable rate at -10% (Corentin, 21 Oct 2026)."
 }
