@@ -165,3 +165,10 @@ Next: the price breakdown on each side for 8–11 Nov (Booking.com: the (i) next
 The Airbnb total **including cleaning** is at or below the PriceLabs price for the room alone, with no discount shown to the guest on 8–11 and 17–20 Nov. Airbnb is therefore selling about 20–25% under PriceLabs through a reduction guests cannot see (matching the ~23% Airbnb paid-vs-price gap found since 1 Oct), while Booking.com sells about 20% over it plus charges. For the same flat and dates the Booking.com flexible total is 30–46% higher than the cheaper Airbnb listing.
 
 Also confirmed: 3064856 is the cheaper of the two Airbnb listings, yet it converts worst (0.79%), so price is not why it under-converts on Airbnb.
+
+### Update 21 Oct: cleaning fees and markup scope
+Cleaning fee is now £150 on both channels (Airbnb was £100, Booking.com £149). The Smoobu Booking.com markup (+20%) is global, so it cannot be lowered for Shepherd's Bush alone; Camden converts well on Booking.com at +20% (5.9% page-to-booking), so a global cut would give away rate there.
+
+Estimated effect for 8–11 Nov, 4 guests: Airbnb 3064856 rises from £582 to about £632 (+£50 cleaning); Booking.com stays about £851, so still ~35% dearer. Per-flat levers that close the rest:
+1. Booking.com Last Minute Deal for Shepherd's Bush extended from 0–15 to 0–30 days: Booking.com ≈ £740 (≈ +17% vs Airbnb).
+2. Trim the hidden Airbnb reduction (~−23% under PriceLabs) to about −10%: Airbnb ≈ £720. Together the channels land within a few percent.
