@@ -1,5 +1,5 @@
 {
- "_about": "Standing decisions from Corentin. Every agent reads this file and must not raise these as problems. Updated 20 Oct 2026.",
+ "_about": "Standing decisions from Corentin. Every agent reads this file and must not raise these as problems. Updated 21 Oct 2026.",
  "intentional_blocks": {
   "refs": [
    "P02",
@@ -49,6 +49,30 @@
   {
    "date": "2026-10-20",
    "what": "P13 +10% on 31 Oct-3 Nov, 8-12 Nov, 17-18 Nov on both 3064856 and 3090701 (verified)"
+  },
+  {
+   "date": "2026-10-21",
+   "what": "P11 Camden darts nights 13-17 Dec raised (Corentin); average above £300/night"
   }
- ]
+ ],
+ "handbacks": {
+  "note": "Flats being given back to their owners after these dates (Corentin, 21 Oct 2026). The Smoobu 'Blocked channel' blocks created 19 Oct mark the end of our management. Nights after the date are not inventory: exclude them from occupancy, opportunity and lost-demand findings, and propose nothing for them. Before the date, maximise revenue normally.",
+  "P01": {
+   "last_night": "2026-12-20",
+   "gap_block": "2026-11-30 to 2026-12-17 also blocked (inside the handback block set)"
+  },
+  "P08": {
+   "last_night": "2026-11-13"
+  },
+  "P09": {
+   "last_night": "2026-11-26",
+   "note": "blocked 27 Nov 2026 to 23 Apr 2027 (and 25 Oct)"
+  },
+  "P10": {
+   "last_night": "2026-11-18"
+  }
+ },
+ "intentional_overrides": {
+  "P13": "1 Dec 2026 +50% with 1-night minimum is intentional (Corentin, 21 Oct 2026)."
+ }
 }
