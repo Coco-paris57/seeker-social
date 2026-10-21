@@ -130,5 +130,18 @@
   "ranking_last_30_days": "Search views 20,820 (-64.17% vs market), page visits 169 (-82.88%), bookings 10 (-63.08%); click-through 0.81% vs market 1.70%; page-to-booking 5.92% vs market 2.74% (screenshot 21 Oct; assumed Camden).",
   "analytics_trend": "Booking.com analytics data is shown only up to 10 Oct 2026 (as of 21 Oct): values after 10 Oct read 0 for us and market, a reporting lag. Availability for search 13.28% (-33.71% vs market, Camden 68% booked next 60 days); property page score 97.75% (+16.88%); guest review score 8.0 (+29.81% vs market); ADR £201.01 (+3.60%)."
  },
- "non_refundable_rate": "All listings have a Booking.com non-refundable rate at -10% (Corentin, 21 Oct 2026)."
+ "non_refundable_rate": "All listings have a Booking.com non-refundable rate at -10% (Corentin, 21 Oct 2026).",
+ "booking_promotions_p13_21oct": {
+  "source": "Corentin screenshots 21 Oct 2026 (Shepherd's Bush extranet)",
+  "active": [
+   "Mobile 10% always on (42 bookings, ADR £197.86, £37,988.76)",
+   "Last Minute 15% 0-15 days (since 26 Aug, stays to 26 Nov; 2 bookings)",
+   "Early Booker 15% 60+ days (since 26 Sep, stays to 20 Dec; 0 bookings)",
+   "Domestic country rate 10% and EEA country rate 10% (since 2 Oct; 0 bookings)",
+   "Black Friday 30% bookable 19 Nov-2 Dec for stays 19 Nov 2026-30 Apr 2027 (excl. 9 dates)",
+   "Genius Level 1 10%, Level 2&3 15%, Level 3 20% (dynamic 0-30%)"
+  ],
+  "visibility_booster": "On for check-ins 21 Oct-20 Dec 2026 and Jan-Feb 2027",
+  "page": "Title 'Top Floor 2Bed with Private Terrace in Shepherds Bush Near Westfield & Tube', review 8.4 (15), page score 92-97%"
+ }
 }
