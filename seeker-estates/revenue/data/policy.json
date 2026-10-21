@@ -61,6 +61,10 @@
   {
    "date": "2026-10-21",
    "what": "Camden Booking.com Visibility Booster at 18% extended to January-February 2027"
+  },
+  {
+   "date": "2026-10-21",
+   "what": "Shepherd's Bush Booking.com: Domestic, EEA and Early Booker promotions switched off"
   }
  ],
  "handbacks": {
@@ -143,6 +147,9 @@
   ],
   "visibility_booster": "On for check-ins 21 Oct-20 Dec 2026 and Jan-Feb 2027",
   "page": "Title 'Top Floor 2Bed with Private Terrace in Shepherds Bush Near Westfield & Tube', review 8.4 (15), page score 92-97%",
-  "black_friday_rule": "Black Friday Deal does not stack with Genius or any other promotion; the largest single discount is shown (Corentin, 21 Oct 2026)."
+  "black_friday_rule": "Black Friday Deal does not stack with Genius or any other promotion; the largest single discount is shown (Corentin, 21 Oct 2026).",
+  "changes": [
+   "21 Oct 2026: Domestic country rate, EEA country rate and Early Booker switched off (Corentin). Active now: Mobile 10%, Last Minute 15% (0-15 days), Black Friday 30% (bookable 19 Nov-2 Dec, non-stacking), Genius (Level 2&3 / Level 3 status to confirm), Visibility Booster."
+  ]
  }
 }
