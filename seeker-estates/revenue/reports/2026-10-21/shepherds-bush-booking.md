@@ -90,3 +90,37 @@ Every visibility and discount lever is already on, the page and reviews are good
 
 
 Correction (21 Oct): Black Friday does not stack with Genius or other promotions (largest discount shown). Which of the other promotions combine is per Booking.com's rules for each deal; the about-half-price figure comes from what guests actually paid (Smoobu basePrice), not from assumed stacking rules.
+
+## Where the bookings are lost (page visits and bookings trend, 30-day funnel; Corentin's screenshots, data as of 15 Oct)
+
+Read from the monthly charts (approximate) and the funnel:
+
+| Month | Page visits (ours / market) | Bookings (ours / market) | Our page-to-booking rate |
+|---|---|---|---|
+| Dec 25 | ~200 / ~560 | 4 / ~21 | ~2% |
+| Jan 26 | ~135 / ~710 | 8 / ~31 | ~6% |
+| Feb | ~80 / ~615 | 5 / ~24 | ~6% |
+| Mar | ~175 / ~645 | 24 / ~25 | ~14% |
+| Apr | ~200 / ~700 | 13 / ~24 | ~6.5% |
+| May | ~175 / ~765 | 5 / ~25 | ~3% |
+| Jun | ~150 / ~765 | 3 / ~24 | ~2% |
+| Jul | ~140 / ~855 | 3 / ~24 | ~2% |
+| Aug | ~385 / ~910 | 0 / ~26 | 0% |
+| Sep | ~285 / ~955 | 2 / ~28 | ~0.7% |
+| Oct (to 15th) | ~115 / ~540 | 1 / ~14 | ~0.9% |
+
+Last 30 days (funnel): 22,641 search views (market 58,106), click-through 0.98% (market 1.70%), 221 page visits (market 987), **conversion 0.45% (market 2.74%, −83.5%)**, 1 booking (market 27).
+
+### Diagnosis
+**The leak is on the property page / at checkout, not in search.** From August, page visits doubled (≈385 in August, the most of the year, after the booster and deals went on), but bookings went to 0–2 a month. Page-to-booking conversion fell from 6–14% in Jan–Apr to about 2% in May–July and under 1% since August, against ~3% for the market. Search views and clicks are lower than the market but not the reason bookings stopped.
+
+Guests open the page and leave. The page itself scores 97% and the reviews are 8.4, so the likely causes are what a guest sees once they pick dates:
+1. **Rates or availability at the date picker**: the flexible rate closed or not synced from Smoobu (only the non-refundable rate offered), "no availability" for most date combinations, or restrictions (minimum stay, closed to arrival) stricter than PriceLabs shows.
+2. **The total at checkout**: cleaning fee and any other charges making the total jump versus the search price.
+3. **Price versus the same flat elsewhere**: the identical flat is on Airbnb twice with the same photos; if Airbnb is cheaper for the guest's dates, page visitors book there (Airbnb bookings on the flat rose from June).
+4. **Room set-up**: maximum guests or bed set-up that excludes the searched party size (the page shows 2 bedrooms, 3 beds, 1 bathroom).
+
+### Checks (10 minutes)
+- **Mystery shop** on Booking.com, logged out, on a phone: Shepherd's Bush, 2 guests and 4 guests, 2–3 nights, three date ranges in the next 4 weeks (e.g. 31 Oct–2 Nov, 8–11 Nov, 17–20 Nov). Note: bookable or not, which rate plans show (flexible / non-refundable), the total with cleaning fee, and the cancellation policy. Then price the same dates on the Airbnb listings.
+- **Extranet → Rates & availability → Calendar**: for each rate plan, confirm it is open, has a price, and has no closed-to-arrival or stricter minimum stay.
+- **Smoobu → Channel Manager → Booking.com**: confirm both rate plans (standard and non-refundable) are mapped and syncing.
