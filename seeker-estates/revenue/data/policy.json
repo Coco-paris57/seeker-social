@@ -41,7 +41,8 @@
    "pricing_rules_listing_B": "LOS 5+ nights -10%, 7+ -15%, 28+ -25%; Last-minute -15% within 28 days; Early bird -15% at 60+ days",
    "fees": "Cleaning £150 per booking; guests included 1; price per extra guest £0",
    "finding": "These Smoobu 'Default pricing rules' are pushed to Airbnb and stack on top of PriceLabs prices, which already include PriceLabs' own last-minute and far-out logic. They explain the systematic Airbnb gap (~0.76-0.80x PriceLabs) that removing date promotions did not change."
-  }
+  },
+  "airbnb_visible_discounts": "Corentin prefers discounts that Airbnb shows to guests (strikethrough) over invisible PriceLabs cuts (21 Oct 2026). Propose 'price in' set-ups (Smoobu Airbnb uplift + visible discount) rather than removing visible discounts."
  },
  "separate_payments": {
   "P20": "Waterford Court Airbnb stay extended from 18 to 22 Oct 2026: the extra nights were paid separately (Corentin, 20 Oct 2026), so the Smoobu reservation total does not include them. Do not flag; P20 last-30 ADR is understated for 18-22 Oct."
