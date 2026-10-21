@@ -152,6 +152,7 @@
    "21 Oct 2026: Domestic country rate, EEA country rate and Early Booker switched off (Corentin). Active now: Mobile 10%, Last Minute 15% (0-15 days), Black Friday 30% (bookable 19 Nov-2 Dec, non-stacking), Genius (Level 2&3 / Level 3 status to confirm), Visibility Booster.",
    "21 Oct 2026: Genius Level 2&3 and Level 3 unticked (Corentin); Genius Level 1 10% kept."
   ],
-  "mystery_shop_31oct_2nov": "Guest view 21 Oct for Sat 31 Oct-Mon 2 Nov (2 nights): bookable. 2 and 4 adults: non-refundable £459 (was £568, 19% off) and fully refundable before 27 Oct £490 (was £599, 18% off, 'cannot combine with other offers'), both 'includes taxes and charges'. 6 adults: non-refundable only, £475 (was £590). Beds: 2 doubles + sofa bed; 52 m2."
+  "mystery_shop_31oct_2nov": "Guest view 21 Oct for Sat 31 Oct-Mon 2 Nov (2 nights): bookable. 2 and 4 adults: non-refundable £459 (was £568, 19% off) and fully refundable before 27 Oct £490 (was £599, 18% off, 'cannot combine with other offers'), both 'includes taxes and charges'. 6 adults: non-refundable only, £475 (was £590). Beds: 2 doubles + sofa bed; 52 m2.",
+  "mystery_shop_8_11nov": "Guest view 21 Oct for Sun 8-Wed 11 Nov (3 nights): bookable. 4 adults: non-refundable £781 (was £851, 8% off), free cancellation before 25 Oct £851 (was £929, 8% off). 6 adults: non-refundable £814, flexible £888 (was £970). PriceLabs 3064856: £217+£198+£218 = £633. The '2 adults' screenshot was not applied (still showed 31 Oct-2 Nov)."
  }
 }
