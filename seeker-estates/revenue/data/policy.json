@@ -32,7 +32,8 @@
   "booking_markup": 0.2,
   "booking_markup_note": "Smoobu adds +20% to the PriceLabs price on Booking.com (confirmed by Corentin 20 Oct 2026). Expected Booking price = 1.2 x PriceLabs, before stay discounts.",
   "booking_stacked_promotions": "Corentin confirms Booking.com promotions stack on top of each other (20 Oct 2026). A Booking paid rate below 1.2 x price after stay discounts is explained by these promotions: report its size, do not call it unexplained.",
-  "airbnb_discount": "Corentin confirms an Airbnb discount is active beyond the 15%/20% stay discounts (20 Oct 2026); type and % not yet given. The Airbnb paid-vs-price gap is explained by it: keep measuring its size, do not call it unexplained."
+  "airbnb_discount": "Corentin confirms an Airbnb discount is active beyond the 15%/20% stay discounts (20 Oct 2026); type and % not yet given. The Airbnb paid-vs-price gap is explained by it: keep measuring its size, do not call it unexplained.",
+  "booking_markup_scope": "The Smoobu +20% Booking.com markup is global (all apartments); it cannot be set per flat (Corentin, 21 Oct 2026). Per-flat levers are Booking.com promotions (per property) and PriceLabs prices."
  },
  "separate_payments": {
   "P20": "Waterford Court Airbnb stay extended from 18 to 22 Oct 2026: the extra nights were paid separately (Corentin, 20 Oct 2026), so the Smoobu reservation total does not include them. Do not flag; P20 last-30 ADR is understated for 18-22 Oct."
@@ -65,6 +66,10 @@
   {
    "date": "2026-10-21",
    "what": "Shepherd's Bush Booking.com: Domestic, EEA and Early Booker promotions switched off"
+  },
+  {
+   "date": "2026-10-21",
+   "what": "Shepherd's Bush cleaning fee: Airbnb £100 -> £150, Booking.com £149 -> £150"
   }
  ],
  "handbacks": {
@@ -111,7 +116,8 @@
   "P13": {
    "twin_listings": "The two Airbnb listings must keep slightly different photos and prices or Airbnb blocks them as duplicates. Propose narrowing the price gap, never making them identical.",
    "ids": "Likely mapping, to confirm with Corentin: Airbnb 'Shepherd's Bush 1' (2.26% overall conversion) = Smoobu 3090701 'Bright 2BR w/Terrace in W12 Near Westfield & Tube' (8 Airbnb bookings 23 Jul-21 Oct); 'Shepherd's Bush 2' (0.48%) = 3064856 'Top-Floor 2Bed with Private Terrace in W12' (4 bookings).",
-   "airbnb_vs_booking_21oct": "Airbnb 3090701, 4 guests: 31 Oct-2 Nov £404 (was £450); 8-11 Nov £596; 17-20 Nov £640. Booking.com flexible for the same: £490 / £851 / £841. Booking.com is 21-43% dearer for the identical flat. Airbnb 3064856, 4 guests: £378 / £582 / £603 for the same stays (at or below the PriceLabs room price even including cleaning)."
+   "airbnb_vs_booking_21oct": "Airbnb 3090701, 4 guests: 31 Oct-2 Nov £404 (was £450); 8-11 Nov £596; 17-20 Nov £640. Booking.com flexible for the same: £490 / £851 / £841. Booking.com is 21-43% dearer for the identical flat. Airbnb 3064856, 4 guests: £378 / £582 / £603 for the same stays (at or below the PriceLabs room price even including cleaning).",
+   "cleaning_fees": "Cleaning fee now £150 on both Booking.com (was £149) and Airbnb (was £100), changed 21 Oct 2026 (Corentin)."
   },
   "P11": {
    "channels": [
