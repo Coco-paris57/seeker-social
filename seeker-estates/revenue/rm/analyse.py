@@ -16,6 +16,10 @@ def run(day=None):
     from . import checks as _checks
     pol = config.policy()
     prices = _checks.link_bookings(prices, res)  # one unit listed twice: the other listing's bookings are bookings
+    # Flats being handed back: nights after the last managed night are not inventory (policy.json handbacks)
+    handbacks = {r: date.fromisoformat(v["last_night"]) for r, v in pol.get("handbacks", {}).items()
+                 if isinstance(v, dict) and v.get("last_night")}
+    prices = [p for p in prices if not (p["ref"] in handbacks and date.fromisoformat(p["date"]) > handbacks[p["ref"]])]
     # Settings come from the listing that prices each unit (id_map `pricelabs`), never from a duplicate copy
     import json as _j
     _map = _j.loads(config.ID_MAP_FILE.read_text()) if config.ID_MAP_FILE.exists() else {}
@@ -110,6 +114,7 @@ def run(day=None):
                                         and today <= date.fromisoformat(x["date"]) < today + timedelta(days=30)),
             "intentional_block": ref in pol.get("intentional_blocks", {}).get("refs", []),
             "special_setup": pol.get("special_setups", {}).get(ref),
+            "handback_last_night": handbacks[ref].isoformat() if ref in handbacks else None,
             "recommendation": {"action": action, "price_move": move, "reason": reason},
         })
 
