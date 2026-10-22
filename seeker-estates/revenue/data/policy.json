@@ -125,7 +125,8 @@
    "public_title": "Parking & Views - 2 Bedrooms in Canary Wharf (parking first so it shows in map search)",
    "min_stay": "3 nights from 25 Oct to 30 Nov",
    "reviews": "New listing: first guest in residence since ~7 Oct; no reviews yet",
-   "airbnb_new_listing_promotion": "20% new-listing discount active on Airbnb; this is why price has not been adjusted. It is part of the Airbnb paid-vs-price gap on P20."
+   "airbnb_new_listing_promotion": "20% new-listing discount active on Airbnb; this is why price has not been adjusted. It is part of the Airbnb paid-vs-price gap on P20.",
+   "airbnb_discounts_22oct": "Airbnb Discounts page (Corentin screenshot 22 Oct): weekly 7+ nights 15%, monthly 28+ nights 20%, last-minute 15% for stays booked 0-14 days before arrival; top-rated guests, early-bird and trip-length are not set. Together with the 20% new-listing promotion. The 28-31 Oct booking (made 21 Oct, 7 days out) paid exactly 72% of the Smoobu rate pushed after the 21 Oct 08:52Z refresh (234+248+254 = 736; x0.72 = 529.92), i.e. 28% total discount; Airbnb's breakdown of that 28% was not seen. Not an unexplained leak: do not flag P20 bookings that match these discounts."
   },
   "P05": {
    "cover_photo": "Changed to an external shot on 21 Oct 2026",
