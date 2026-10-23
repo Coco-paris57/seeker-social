@@ -39,7 +39,7 @@ Source: reservations.csv, `booked_on` (a date with no time). "Since" is 18–23 
 | P05 | base 500 (18 Oct), then 550 (20 Oct) | 1: 18 Oct, Airbnb, 22–29 Dec, 7 n, £4,527.95. The 22 Oct report places it before the raise (20:33–20:43Z); the time is not in reservations.csv. **0 since the £550 base on 20 Oct.** | 2 made: 1 still confirmed (18–22 Nov, 4 n, £1,835.10); 1 made 5 Oct for 27–30 Dec, £1,887.00, since cancelled | 0 | 24 (incl. 13–21 Dec, 9 n) |
 | P06 | base 357 | 0 | 5 made: 4 still confirmed (18 n, £3,400.07); 1 since cancelled | 0 | 3 (rest blocked on purpose) |
 | P09 | base 176 | 0 | 3 (23 n, £2,371.55) | 0 | 11 (to 26 Nov) |
-| P11 | base 286 (+13–17 Dec raised 21 Oct) | 0 | 1 (4 n, £650.48) | **19–27 Nov (booked 19 Sep): −8 n, −£1,736.41** | 27 |
+| P11 | base 286 (+13–17 Dec raised 21 Oct) | 0 | 1 (4 n, £650.48) | **19–27 Nov (booked 19 Sep): −8 n, −£1,736.41** | 27 (8 of them still shown Booked in PriceLabs) |
 | P12 | base 284 | 0 | 2 (5 n, £849.98) | **1–8 Nov (booked 3 Oct): −7 n, −£1,382.86** | 33 (to 13 Dec) |
 | **Total** | | **2 bookings, 10 n, £5,248.85**, both made by 19 Oct; 0 made 20–23 Oct | **14 made, 13 still confirmed, 84 n, £13,671.08** | −15 n, −£3,119.27 | 98 |
 
@@ -117,7 +117,7 @@ Windows and sources:
 - **New open runs from the cancellations:** P12 1–13 Nov (13 n) and P11 18–27 Nov (10 n). PriceLabs still shows P11 19–26 Nov as Booked (see above).
 - **Single open nights at min stay 1:** P04 2 Dec; P12 17 Nov; P13 1 Dec (the 1-night minimum is intentional, per policy). P11's 18 Nov and 27 Nov are no longer single nights.
 - **Short runs that exactly meet the min stay:** P20 25–27 Oct (3, min 3); P13 25–26 Oct (2, min 2); P05 16–17 Nov and 7–8 Dec (2, min 2).
-- **Open nights left before handback:** P08 13 (26 Oct–7 Nov); P09 11 (to 26 Nov); P12 33 (1–13 Nov and 29 Nov–13 Dec, plus 17 Nov); P01 and P10 none.
+- **Open nights left before handback:** P08 13 (26 Oct–7 Nov); P09 11 (to 26 Nov); P12 33 (26–29 Oct, 1–13 Nov, 17 Nov, 29 Nov–13 Dec); P11 27 (28 Oct–2 Nov, 10–13 Nov, 18–27 Nov, 12–18 Dec); P01 and P10 none.
 - **Blocks outside policy:**
   - **P20 20–21 Nov are newly Blocked** (open in the 22 Oct prices.csv); the reason is not in the data.
   - P05 27 Oct and P09 25 Oct are still Blocked for an unknown reason.
