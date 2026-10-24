@@ -194,7 +194,7 @@
    "21 Oct 2026: Early Booker off, Genius Level 2&3 unticked, main photo and property name updated (Corentin: 'done')."
   ]
  },
- "non_refundable_rate": "All listings have a Booking.com non-refundable rate at -10% (Corentin, 21 Oct 2026).",
+ "non_refundable_rate": "All listings have a Booking.com non-refundable rate at -10% (Corentin, 21 Oct 2026). | 24 Oct: NR rate has custom occupancy pricing (6 guests normal, 5 guests -0%, 1-4 guests -5%). Smoobu maps the Standard Rate only (SB: 60677614 Standard; 60677615 NR not mapped, derived on Booking.com). NR not shown to guests on Camden/Mile End; suspected cause: promotions (Mobile, Last Minute, Genius) applied to Standard only, making Standard cheaper than NR so Booking.com hides NR - to verify in Promotions > rate plans.",
  "booking_promotions_p13_21oct": {
   "source": "Corentin screenshots 21 Oct 2026 (Shepherd's Bush extranet)",
   "active": [
