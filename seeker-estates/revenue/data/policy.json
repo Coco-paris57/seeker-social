@@ -29,8 +29,8 @@
   "P05": "St John's Wood (Abbey Rd): 4 bedrooms, 5 beds including a sofa bed (Corentin, 18 Oct 2026). PriceLabs shows 4 bedrooms since 19 Oct 2026; benchmark against 4-bed listings."
  },
  "channel_pricing": {
-  "booking_markup": 0.3,
-  "booking_markup_note": "CORRECTED 24 Oct (Corentin): Smoobu Booking.com markup is +30% (not +20%), global, switched on ~11 months ago (since ~Nov 2025). Promotions stack on top.",
+  "booking_markup": 0.15,
+  "booking_markup_note": "Smoobu Booking.com markup changed +30% -> +15% on 24 Oct 2026 (Corentin), global. Before: +30% for ~11 months. Extranet calendars synced before the change still showed ~1.3x on 24 Oct.",
   "booking_stacked_promotions": "Corentin confirms Booking.com promotions stack on top of each other (20 Oct 2026). A Booking paid rate below 1.2 x price after stay discounts is explained by these promotions: report its size, do not call it unexplained.",
   "airbnb_discount": "Was: manual Airbnb promotions on selected dates giving 15-20% off (Corentin, 21 Oct 2026). All removed 21 Oct 2026. From bookings made after 21 Oct, Airbnb paid-vs-price should be close to PriceLabs minus the 15%/20% stay discounts; flag any remaining gap as unexplained.",
   "booking_markup_scope": "The Smoobu +20% Booking.com markup is global (all apartments); it cannot be set per flat (Corentin, 21 Oct 2026). Per-flat levers are Booking.com promotions (per property) and PriceLabs prices.",
@@ -135,9 +135,11 @@
    "public_title": "Parking & Views - 2 Bedrooms in Canary Wharf (parking first so it shows in map search)",
    "min_stay": "3 nights from 25 Oct to 30 Nov",
    "reviews": "New listing: first guest in residence since ~7 Oct; no reviews yet",
-   "airbnb_new_listing_promotion": "20% new-listing discount active on Airbnb; this is why price has not been adjusted. It is part of the Airbnb paid-vs-price gap on P20.",
+   "airbnb_new_listing_promotion": "ENDED: Airbnb's new-listing discount disappeared after 3 reservations (Corentin 24 Oct). Airbnb guests now see full price.",
    "airbnb_discounts_22oct": "Airbnb Discounts page (Corentin screenshot 22 Oct): weekly 7+ nights 15%, monthly 28+ nights 20%, last-minute 15% for stays booked 0-14 days before arrival; top-rated guests, early-bird and trip-length are not set. Together with the 20% new-listing promotion. The 28-31 Oct booking (made 21 Oct, 7 days out) paid exactly 72% of the Smoobu rate pushed after the 21 Oct 08:52Z refresh (234+248+254 = 736; x0.72 = 529.92), i.e. 28% total discount; Airbnb's breakdown of that 28% was not seen. Not an unexplained leak: do not flag P20 bookings that match these discounts.",
-   "block_20_21_nov": "Smoobu block 20-22 Nov = delivery (Corentin 24 Oct). Intentional."
+   "block_20_21_nov": "Smoobu block 20-22 Nov = delivery (Corentin 24 Oct). Intentional.",
+   "max_guests": "Max guests stays 4 (Corentin 24 Oct). Do not propose raising it.",
+   "booking_deal": "Booking.com deal already applied (Corentin 24 Oct)."
   },
   "P05": {
    "cover_photo": "Changed to an external shot on 21 Oct 2026",
@@ -157,14 +159,18 @@
    ],
    "airbnb": "Camden is not on Airbnb (it had 30 Airbnb bookings, the last made 2 Jun 2026).",
    "darts_override_24oct": "Corentin 24 Oct: leave the darts override as it is (+5% set by Reyhan 23 Oct). Do not re-raise.",
-   "non_refundable_24oct": "Corentin 24 Oct: no non-refundable option shown on Booking.com for Camden."
+   "non_refundable_24oct": "NR rate exists on Booking.com (10% below Standard; screenshot 24 Oct). It did not show in Corentin's search."
   },
   "P04": {
    "airbnb": "Barking is on Airbnb under a different Airbnb account. Whether that account is connected to Smoobu is unconfirmed.",
    "min_stay_rule": "Never open for less than 3 nights (Corentin 24 Oct). Do not propose min-stay 1 or 2 on P04 gap nights."
   },
   "P12": {
-   "non_refundable_24oct": "Corentin 24 Oct: no non-refundable option shown on Booking.com for Mile End."
+   "non_refundable_24oct": "Corentin 24 Oct: no non-refundable option shown on Booking.com for Mile End.",
+   "booking_reviews_24oct": "Booking.com 9.1/10 from 44 reviews, page score 86%. Latest 11 Oct 6/10 'really difficult to get the key'; 7 Oct 9/10; 10 Sep 8/10. NR rate exists (10% below Standard, Standard is Flexible-7 days).",
+   "airbnb_title_24oct": "Airbnb title changed 24 Oct to '2 bed, 2 bath, near the Tube, sleeps 6 with views'.",
+   "airbnb_one_star": "The 1-star review is from July 2025, publicly answered Aug 2025.",
+   "check_in": "Key collection only via a shop about 10 minutes' walk from the flat (Corentin 24 Oct)."
   }
  },
  "booking_promotions_camden_21oct": {
@@ -212,7 +218,10 @@
    "until": "2026-11-04",
    "why": "Manual Airbnb promotions (15-20%) removed 21 Oct. Check Airbnb booking volume vs the prior 14 days and paid vs PriceLabs on bookings made after 21 Oct.",
    "finding_21oct": "Airbnb Shepherd's Bush 3064856, 8-11 Nov, 4 guests: £632 total after the change = £482 room + £150 cleaning vs PriceLabs £633, still ~24% under PriceLabs. The reduction is systematic (~0.76-0.80x on every date checked), so it is not only the date promotions: check Smoobu → Channel Manager → Airbnb price settings. Source found: Smoobu Airbnb default pricing rules (last-minute -15% within 28 days, early bird -12/-15% at 60+ days, 5-night -8/-10%)."
-  }
+  },
+  "airbnb_flexible_cancellation_test": "From 24 Oct 2026 Airbnb cancellation set to Flexible on P20, P06, P05 only (test). Compare their Airbnb bookings vs the other flats over the next 14 days.",
+  "booking_last_minute_24oct": "Corentin 24 Oct: added Booking.com Last Minute 10% for stays within 30 days of check-in.",
+  "booking_markup_cut_24oct": "Track Booking.com bookings per day before/after the markup cut on 24 Oct (+30% -> +15%)."
  },
  "deprioritised": {
   "airbnb_rules_p09": "Corentin 24 Oct: Greenwich Airbnb rules/discounts screen not a priority; leave as is."
