@@ -263,5 +263,10 @@
   "source": "Corentin 24 Oct 2026",
   "id_verification": "required",
   "deposit": "£1,000 card hold, OR damage waiver £99 (1-bed), £109 (2-bed), £119 (3-bed+)"
+ },
+ "booking_discount_stack_24oct": {
+  "source": "Corentin screenshots 24 Oct: new P12 Booking.com booking 5-12 Nov, 3 adults",
+  "finding": "Paid £932.90 room (£133/night) vs Smoobu base £1,456 and Booking.com list £1,678: 0.556x list, 0.64x base. Stack per night: Weekly Rate (-15%) x Last Minute Deal 15% x Mobile 10% x Genius 10% x occupancy -5% (3 guests) = 0.556. PriceLabs base already included its own -4% override and 25% gradual last-minute.",
+  "note": "First Booking.com booking on a Smoobu flat since 10 Oct, made the day of the +30%->+15% markup cut."
  }
 }
