@@ -176,7 +176,8 @@
    "booking_reviews_24oct": "Booking.com 9.1/10 from 44 reviews, page score 86%. Latest 11 Oct 6/10 'really difficult to get the key'; 7 Oct 9/10; 10 Sep 8/10. NR rate exists (10% below Standard, Standard is Flexible-7 days).",
    "airbnb_title_24oct": "Airbnb title changed 24 Oct to '2 bed, 2 bath, near the Tube, sleeps 6 with views'.",
    "airbnb_one_star": "The 1-star review is from July 2025, publicly answered Aug 2025.",
-   "check_in": "Key collection only via a shop about 10 minutes' walk from the flat (Corentin 24 Oct). No key safe possible and key collection cannot be changed (Corentin 24 Oct). Do not propose a key safe or smart lock."
+   "check_in": "Key collection only via a shop about 10 minutes' walk from the flat (Corentin 24 Oct). No key safe possible and key collection cannot be changed (Corentin 24 Oct). Do not propose a key safe or smart lock.",
+   "key_info_in_listing": "Shop address, walking time and opening hours are already in the listings and pre-arrival message (Corentin 24 Oct)."
   }
  },
  "booking_promotions_camden_21oct": {
@@ -225,13 +226,15 @@
    "why": "Manual Airbnb promotions (15-20%) removed 21 Oct. Check Airbnb booking volume vs the prior 14 days and paid vs PriceLabs on bookings made after 21 Oct.",
    "finding_21oct": "Airbnb Shepherd's Bush 3064856, 8-11 Nov, 4 guests: £632 total after the change = £482 room + £150 cleaning vs PriceLabs £633, still ~24% under PriceLabs. The reduction is systematic (~0.76-0.80x on every date checked), so it is not only the date promotions: check Smoobu → Channel Manager → Airbnb price settings. Source found: Smoobu Airbnb default pricing rules (last-minute -15% within 28 days, early bird -12/-15% at 60+ days, 5-night -8/-10%)."
   },
-  "airbnb_flexible_cancellation_test": "From 24 Oct 2026 Airbnb cancellation set to Flexible on P20, P06, P05 only (test). Compare their Airbnb bookings vs the other flats over the next 14 days.",
+  "airbnb_flexible_cancellation_test": "From 24 Oct 2026 Airbnb cancellation set to Flexible on P20, P06, P05 only (test). Compare their Airbnb bookings vs the other flats over the next 14 days. Corentin agreed 24 Oct: after 14 days compare, and if better switch the rest.",
   "booking_last_minute_24oct": "Corentin 24 Oct: added Booking.com Last Minute 10% for stays within 30 days of check-in.",
   "booking_markup_cut_24oct": "Track Booking.com bookings per day before/after the markup cut on 24 Oct (+30% -> +15%)."
  },
  "deprioritised": {
   "airbnb_rules_p09": "Corentin 24 Oct: Greenwich Airbnb rules/discounts screen not a priority; leave as is.",
-  "p13_twin_price_order": "Corentin 24 Oct: making the 4.67 Shepherd's Bush listing the cheaper one is not important; drop it."
+  "p13_twin_price_order": "Corentin 24 Oct: making the 4.67 Shepherd's Bush listing the cheaper one is not important; drop it.",
+  "p04_2dec_override": "Corentin 24 Oct: won't change Barking 2 Dec (+200%, min 1). Do not re-raise.",
+  "p12_17nov_override": "Corentin 24 Oct: won't change Mile End 17 Nov +50%. Do not re-raise."
  },
  "booking_search_check_24oct": {
   "source": "Corentin manual Booking.com searches 24 Oct; extranet: all open, price on each night, no connector error",
@@ -255,5 +258,10 @@
   "P01": "1684808250380202589",
   "bottom_10pct_quality": "P13 1571600691689064213, P12, P04, P10 (Airbnb qualityScorePercentileBucket)",
   "free_cancellation": "No 'Free cancellation' pill on any of our listings in 14 searches (comps 30-75%)"
+ },
+ "guest_requirements": {
+  "source": "Corentin 24 Oct 2026",
+  "id_verification": "required",
+  "deposit": "£1,000 card hold, OR damage waiver £99 (1-bed), £109 (2-bed), £119 (3-bed+)"
  }
 }
