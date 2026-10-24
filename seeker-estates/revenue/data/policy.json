@@ -89,6 +89,16 @@
   {
    "date": "2026-10-21",
    "what": "Shepherd's Bush Airbnb rules: last-minute -10% (14 days), early bird -10% (60+), 28-night -20%, extra guest fee above 4"
+  },
+  {
+   "date": "2026-10-24",
+   "ref": "P04",
+   "change": "Override -8% on 1-25 Nov (was -5%); Corentin: no demand. Minimum stay stays 3 nights: never open for fewer than 3 (25 Oct stays closed)."
+  },
+  {
+   "date": "2026-10-24",
+   "ref": "P13",
+   "change": "25-26 Oct +10%; 31 Oct-3 Nov, 8-12 Nov and 17-27 Nov overrides set to 0% (were +10% from 20 Oct)."
   }
  ],
  "handbacks": {
@@ -126,12 +136,14 @@
    "min_stay": "3 nights from 25 Oct to 30 Nov",
    "reviews": "New listing: first guest in residence since ~7 Oct; no reviews yet",
    "airbnb_new_listing_promotion": "20% new-listing discount active on Airbnb; this is why price has not been adjusted. It is part of the Airbnb paid-vs-price gap on P20.",
-   "airbnb_discounts_22oct": "Airbnb Discounts page (Corentin screenshot 22 Oct): weekly 7+ nights 15%, monthly 28+ nights 20%, last-minute 15% for stays booked 0-14 days before arrival; top-rated guests, early-bird and trip-length are not set. Together with the 20% new-listing promotion. The 28-31 Oct booking (made 21 Oct, 7 days out) paid exactly 72% of the Smoobu rate pushed after the 21 Oct 08:52Z refresh (234+248+254 = 736; x0.72 = 529.92), i.e. 28% total discount; Airbnb's breakdown of that 28% was not seen. Not an unexplained leak: do not flag P20 bookings that match these discounts."
+   "airbnb_discounts_22oct": "Airbnb Discounts page (Corentin screenshot 22 Oct): weekly 7+ nights 15%, monthly 28+ nights 20%, last-minute 15% for stays booked 0-14 days before arrival; top-rated guests, early-bird and trip-length are not set. Together with the 20% new-listing promotion. The 28-31 Oct booking (made 21 Oct, 7 days out) paid exactly 72% of the Smoobu rate pushed after the 21 Oct 08:52Z refresh (234+248+254 = 736; x0.72 = 529.92), i.e. 28% total discount; Airbnb's breakdown of that 28% was not seen. Not an unexplained leak: do not flag P20 bookings that match these discounts.",
+   "block_20_21_nov": "Smoobu block 20-22 Nov = delivery (Corentin 24 Oct). Intentional."
   },
   "P05": {
    "cover_photo": "Changed to an external shot on 21 Oct 2026",
    "title": "Changed 21 Oct 2026",
-   "cleaning": "Guest pays £195 cleaning; landlord is charged £150+VAT (short-let management model). Do not propose lowering the cleaning fee."
+   "cleaning": "Guest pays £195 cleaning; landlord is charged £150+VAT (short-let management model). Do not propose lowering the cleaning fee.",
+   "block_27_28_oct": "27-28 Oct block = delivery (Corentin 24 Oct). Intentional."
   },
   "P13": {
    "twin_listings": "The two Airbnb listings must keep slightly different photos and prices or Airbnb blocks them as duplicates. Propose narrowing the price gap, never making them identical.",
@@ -143,10 +155,12 @@
    "channels": [
     "booking"
    ],
-   "airbnb": "Camden is not on Airbnb (it had 30 Airbnb bookings, the last made 2 Jun 2026)."
+   "airbnb": "Camden is not on Airbnb (it had 30 Airbnb bookings, the last made 2 Jun 2026).",
+   "darts_override_24oct": "Corentin 24 Oct: leave the darts override as it is (+5% set by Reyhan 23 Oct). Do not re-raise."
   },
   "P04": {
-   "airbnb": "Barking is on Airbnb under a different Airbnb account. Whether that account is connected to Smoobu is unconfirmed."
+   "airbnb": "Barking is on Airbnb under a different Airbnb account. Whether that account is connected to Smoobu is unconfirmed.",
+   "min_stay_rule": "Never open for less than 3 nights (Corentin 24 Oct). Do not propose min-stay 1 or 2 on P04 gap nights."
   }
  },
  "booking_promotions_camden_21oct": {
@@ -195,5 +209,8 @@
    "why": "Manual Airbnb promotions (15-20%) removed 21 Oct. Check Airbnb booking volume vs the prior 14 days and paid vs PriceLabs on bookings made after 21 Oct.",
    "finding_21oct": "Airbnb Shepherd's Bush 3064856, 8-11 Nov, 4 guests: £632 total after the change = £482 room + £150 cleaning vs PriceLabs £633, still ~24% under PriceLabs. The reduction is systematic (~0.76-0.80x on every date checked), so it is not only the date promotions: check Smoobu → Channel Manager → Airbnb price settings. Source found: Smoobu Airbnb default pricing rules (last-minute -15% within 28 days, early bird -12/-15% at 60+ days, 5-night -8/-10%)."
   }
+ },
+ "deprioritised": {
+  "airbnb_rules_p09": "Corentin 24 Oct: Greenwich Airbnb rules/discounts screen not a priority; leave as is."
  }
 }
