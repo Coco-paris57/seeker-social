@@ -223,5 +223,21 @@
   "P13": "Shepherd's Bush: position 23 of 69; £695, non-refundable £641",
   "P12": "Mile End: position 1 of 937; £584; no non-refundable option",
   "P20": "Waterford: position 49 of 103 in Canary Wharf; £980, non-refundable £897"
+ },
+ "airbnb_listings_24oct": {
+  "source": "Airbnb public pages, read 24 Oct 2026 (host Seeker Estates LTD, id 551951609)",
+  "P13_3064856_probable": "1571600691689064213 'Elegant flat in Shepherds Bush with Terrace' 4.31 (13)",
+  "P13_3090701": "1587576514709814818 '2 Bed Near Westfield with view & Terrace' 4.67 (9)",
+  "P20": "1791529331262420081 'Parking & Views - 2 Bedrooms in Canary Wharf' new, max 4 guests",
+  "P12": "1414703602412646285 'Preferred choice flat for summer with open views' 4.27 (15)",
+  "P05": "1618929775762183214 4.76 (34)",
+  "P08": "1683999279257475317 4.33 (3)",
+  "P09": "1681417771483132994 2 reviews",
+  "P04": "1455876748739910219",
+  "P06": "1671691529957957272",
+  "P10": "1681425766690680710",
+  "P01": "1684808250380202589",
+  "bottom_10pct_quality": "P13 1571600691689064213, P12, P04, P10 (Airbnb qualityScorePercentileBucket)",
+  "free_cancellation": "No 'Free cancellation' pill on any of our listings in 14 searches (comps 30-75%)"
  }
 }
