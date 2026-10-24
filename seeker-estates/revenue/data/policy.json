@@ -30,7 +30,7 @@
  },
  "channel_pricing": {
   "booking_markup": 0.15,
-  "booking_markup_note": "Smoobu Booking.com markup changed +30% -> +15% on 24 Oct 2026 (Corentin), global. Before: +30% for ~11 months. Extranet calendars synced before the change still showed ~1.3x on 24 Oct.",
+  "booking_markup_note": "Smoobu Booking.com markup changed +30% -> +15% on 24 Oct 2026 (Corentin), global. Before: +30% for ~11 months. Extranet calendars synced before the change still showed ~1.3x on 24 Oct. Booking.com overwrite (full resync) done 24 Oct 13:38 (Corentin).",
   "booking_stacked_promotions": "Corentin confirms Booking.com promotions stack on top of each other (20 Oct 2026). A Booking paid rate below 1.2 x price after stay discounts is explained by these promotions: report its size, do not call it unexplained.",
   "airbnb_discount": "Was: manual Airbnb promotions on selected dates giving 15-20% off (Corentin, 21 Oct 2026). All removed 21 Oct 2026. From bookings made after 21 Oct, Airbnb paid-vs-price should be close to PriceLabs minus the 15%/20% stay discounts; flag any remaining gap as unexplained.",
   "booking_markup_scope": "The Smoobu +20% Booking.com markup is global (all apartments); it cannot be set per flat (Corentin, 21 Oct 2026). Per-flat levers are Booking.com promotions (per property) and PriceLabs prices.",
@@ -99,6 +99,11 @@
    "date": "2026-10-24",
    "ref": "P13",
    "change": "25-26 Oct +10%; 31 Oct-3 Nov, 8-12 Nov and 17-27 Nov overrides set to 0% (were +10% from 20 Oct)."
+  },
+  {
+   "date": "2026-10-24",
+   "ref": "P20",
+   "change": "Base 380->350; -5% override 31 Oct-19 Nov."
   }
  ],
  "handbacks": {
@@ -139,7 +144,8 @@
    "airbnb_discounts_22oct": "Airbnb Discounts page (Corentin screenshot 22 Oct): weekly 7+ nights 15%, monthly 28+ nights 20%, last-minute 15% for stays booked 0-14 days before arrival; top-rated guests, early-bird and trip-length are not set. Together with the 20% new-listing promotion. The 28-31 Oct booking (made 21 Oct, 7 days out) paid exactly 72% of the Smoobu rate pushed after the 21 Oct 08:52Z refresh (234+248+254 = 736; x0.72 = 529.92), i.e. 28% total discount; Airbnb's breakdown of that 28% was not seen. Not an unexplained leak: do not flag P20 bookings that match these discounts.",
    "block_20_21_nov": "Smoobu block 20-22 Nov = delivery (Corentin 24 Oct). Intentional.",
    "max_guests": "Max guests stays 4 (Corentin 24 Oct). Do not propose raising it.",
-   "booking_deal": "Booking.com deal already applied (Corentin 24 Oct)."
+   "booking_deal": "Booking.com deal already applied (Corentin 24 Oct).",
+   "price_24oct": "Base price 380 -> 350 and -5% override 31 Oct-19 Nov in PriceLabs (Corentin 24 Oct)."
   },
   "P05": {
    "cover_photo": "Changed to an external shot on 21 Oct 2026",
@@ -170,7 +176,7 @@
    "booking_reviews_24oct": "Booking.com 9.1/10 from 44 reviews, page score 86%. Latest 11 Oct 6/10 'really difficult to get the key'; 7 Oct 9/10; 10 Sep 8/10. NR rate exists (10% below Standard, Standard is Flexible-7 days).",
    "airbnb_title_24oct": "Airbnb title changed 24 Oct to '2 bed, 2 bath, near the Tube, sleeps 6 with views'.",
    "airbnb_one_star": "The 1-star review is from July 2025, publicly answered Aug 2025.",
-   "check_in": "Key collection only via a shop about 10 minutes' walk from the flat (Corentin 24 Oct)."
+   "check_in": "Key collection only via a shop about 10 minutes' walk from the flat (Corentin 24 Oct). No key safe possible and key collection cannot be changed (Corentin 24 Oct). Do not propose a key safe or smart lock."
   }
  },
  "booking_promotions_camden_21oct": {
@@ -224,7 +230,8 @@
   "booking_markup_cut_24oct": "Track Booking.com bookings per day before/after the markup cut on 24 Oct (+30% -> +15%)."
  },
  "deprioritised": {
-  "airbnb_rules_p09": "Corentin 24 Oct: Greenwich Airbnb rules/discounts screen not a priority; leave as is."
+  "airbnb_rules_p09": "Corentin 24 Oct: Greenwich Airbnb rules/discounts screen not a priority; leave as is.",
+  "p13_twin_price_order": "Corentin 24 Oct: making the 4.67 Shepherd's Bush listing the cheaper one is not important; drop it."
  },
  "booking_search_check_24oct": {
   "source": "Corentin manual Booking.com searches 24 Oct; extranet: all open, price on each night, no connector error",
