@@ -51,7 +51,7 @@ class Audits(unittest.TestCase):
         self.assertEqual(len(audit.pricelabs_vs_smoobu(prices)["P01"]), 1)
 
     def test_channel_price(self):
-        self.assertEqual(audit.expected_channel_price(100, "booking"), 120.0)   # Smoobu +20% markup
+        self.assertEqual(audit.expected_channel_price(100, "booking"), 115.0)   # Smoobu +15% markup
         self.assertEqual(audit.expected_channel_price(100, "direct"), 90.0)
 
 

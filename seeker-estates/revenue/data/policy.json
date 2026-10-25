@@ -263,5 +263,16 @@
   "source": "Corentin 24 Oct 2026",
   "id_verification": "required",
   "deposit": "£1,000 card hold, OR damage waiver £99 (1-bed), £109 (2-bed), £119 (3-bed+)"
+ },
+ "booking_discount_stack_24oct": {
+  "source": "Corentin screenshots 24 Oct: new P12 Booking.com booking 5-12 Nov, 3 adults",
+  "finding": "Paid £932.90 room (£133/night) vs Smoobu base £1,456 and Booking.com list £1,678: 0.556x list, 0.64x base. Stack per night: Weekly Rate (-15%) x Last Minute Deal 15% x Mobile 10% x Genius 10% x occupancy -5% (3 guests) = 0.556. PriceLabs base already included its own -4% override and 25% gradual last-minute.",
+  "note": "First Booking.com booking on a Smoobu flat since 10 Oct, made the day of the +30%->+15% markup cut."
+ },
+ "booking_monthly_rate_issue_24oct": {
+  "source": "Corentin screenshots 24 Oct: new P04 Booking.com booking 14-18 Nov (4 nights, 2 adults 2 children)",
+  "finding": "Paid £437.69 room vs Booking.com list £711 (0.6156x) and PriceLabs £617 (0.71x). Every night = Monthly rate (-20%) x occupancy (-5%, 4 of 6 guests) x Mobile 10% x Genius 10% = 0.6156 exactly. A 4-night stay was sold on the Monthly rate plan, so the Monthly plan (managed in Booking.com, 'Not XML') has no 28-night minimum. Likely also why the Non-refundable rate is not shown: Monthly (-20%, flexible) is cheaper than NR (-10%).",
+  "room_name": "Smoobu says 2 bedrooms; the Booking.com room type is named 'Three-Bedroom Apartment' (rate plan and reservation screenshots). The Booking.com room name is a separate setting in the extranet.",
+  "correction": "Corentin screenshots 24 Oct: Barking Monthly rate (ID 68413541, 20% below Standard, Flexible-7 days) HAS a 28-night minimum and Weekly rate (ID 68413529, 15% below) HAS a 7-night minimum at rate-plan level; Monthly plan shows 25% cancellation rate and £4,918.74 net revenue. Yet the 14-18 Nov 4-night booking was priced on the Monthly rate. The rate-plan minimum is not being enforced (cause unknown; Booking.com to confirm)."
  }
 }
