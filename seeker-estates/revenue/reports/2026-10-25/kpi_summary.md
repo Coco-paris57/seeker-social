@@ -16,7 +16,7 @@ Portfolio, last 30 nights: occupancy 70% · ADR £176 · RevPAR £123 · revenue
 | P10 | Ealing / Hanger Lane | 80% | £115 | £92 | 3.23 | — | — | 100% | 31% | — | — | 0 | — | raise-signal |
 | P11 | Camden | 80% | £166 | £133 | 1.02 | — | — | 45% | 44% | — | — | 0 | 0% | hold-signal |
 | P12 | Mile End | 73% | £201 | £147 | 1.55 | — | — | 62% | 40% | — | -0% | 0 | 0% | raise-signal |
-| P13 | Shepherd's Bush | 93% | £161 | £150 | 1.01 | — | — | 41% | 41% | — | — | 0 | 0% | hold-signal |
+| P13 | Shepherd's Bush | 93% | £161 | £150 | 1.01 | — | — | 41% | 41% | 0% | — | 0 | 0% | raise +5% |
 | P14 | Primrose Hill | 0% | — | £0 | 0.0 | — | — | 0% | 40% | — | — | 0 | 82% | weak-signal |
 | P15 | Bow / Devons Road | — | — | — | — | — | — | — | — | — | — | 0 | — | collect-data |
 | P16 | Little Venice | — | — | — | — | — | — | — | — | — | — | 0 | — | collect-data |
@@ -137,7 +137,7 @@ Portfolio, last 30 nights: occupancy 70% · ADR £176 · RevPAR £123 · revenue
 - ✅ Calendar open: No blocked nights in the next 30
 - ✅ Booked vs market (next 30): 41% booked vs 41% market
 - ℹ️ Paid rate vs price (after 15%/20% stay discounts): No booked nights with known stay length in the next 30
-- ✅ Price signal: booked +0% vs market; price position unknown until comps are priced
+- ✅ Price signal: in line with market but priced below what quality supports (P0)
 
 **P14 Primrose Hill**
 - ✅ Prices pushed in the last day: Push on, last push 2026-10-25T05:58:41.000Z
@@ -175,6 +175,5 @@ Portfolio, last 30 nights: occupancy 70% · ADR £176 · RevPAR £123 · revenue
 
 ## Missing data (KPIs depending on it show —)
 
-- `market.csv`: empty
 - `comps.csv`: empty
 - `channel_checks.csv`: empty

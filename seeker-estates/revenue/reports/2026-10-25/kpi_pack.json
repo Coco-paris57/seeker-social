@@ -21,8 +21,8 @@
     "net": 84.5
    },
    "booking": {
-    "guest_price": 120.0,
-    "net": 102.0
+    "guest_price": 115.0,
+    "net": 97.75
    },
    "vrbo": {
     "guest_price": 108.0,
@@ -1386,10 +1386,10 @@
    "market_occ_30": 0.31,
    "market_occ_60": 0.25,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 113.0,
+    "p50": 132.0,
+    "p75": 160.0,
+    "p90": 194.0
    },
    "avg_open_price_next30": null,
    "price_percentile": null,
@@ -1848,13 +1848,13 @@
    "market_occ_30": 0.41,
    "market_occ_60": 0.35,
    "market_percentiles": {
-    "p25": null,
-    "p50": null,
-    "p75": null,
-    "p90": null
+    "p25": 204.0,
+    "p50": 244.0,
+    "p75": 302.0,
+    "p90": 368.0
    },
    "avg_open_price_next30": 184.24,
-   "price_percentile": null,
+   "price_percentile": 0.0,
    "comps": null,
    "pace_30": {
     "otb_nights": 12,
@@ -1921,9 +1921,9 @@
    "special_setup": null,
    "handback_last_night": null,
    "recommendation": {
-    "action": "hold-signal",
-    "price_move": null,
-    "reason": "booked +0% vs market; price position unknown until comps are priced"
+    "action": "raise",
+    "price_move": 0.05,
+    "reason": "in line with market but priced below what quality supports (P0)"
    },
    "checks": [
     {
@@ -1959,7 +1959,7 @@
     {
      "name": "Price signal",
      "status": "ok",
-     "detail": "booked +0% vs market; price position unknown until comps are priced"
+     "detail": "in line with market but priced below what quality supports (P0)"
     }
    ]
   },
@@ -2642,7 +2642,6 @@
   }
  ],
  "missing": {
-  "market": "empty",
   "comps": "empty",
   "channel_checks": "empty"
  },
