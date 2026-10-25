@@ -116,7 +116,7 @@ Group and account logs are empty. Every listing entry was made by reyhan@:
 **5. Both new bookings are reflected in PriceLabs.**
 - **P12 (2699998, refreshed 25 Oct 05:21Z):** 5–11 Nov reads Booked, booked_date 2026-10-24.
 - **P04 (3562176, refreshed 24 Oct 21:10Z):** 14–17 Nov reads Booked, booked_date 2026-10-24.
-- The 4.1% `occupancy_next_30` effect was not re-read.
+- The effect on `occupancy_next_30` was not re-read.
 - **New gap from the P12 booking:** 12–13 Nov is a 2-night hole (£221 / £288, min stay 2) between 5–12 Nov and the 14–17 Nov Airbnb stay. It is sellable as is.
 - P04's open runs are 1–13 Nov (13 nights) and 18–24 Nov (7 nights), all at min stay 3. That matches policy (never under 3).
 
