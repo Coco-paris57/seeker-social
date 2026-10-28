@@ -124,7 +124,7 @@
 ### Trend vs 27 Oct (same comp ids, same stays)
 - **Comps:** 30 Oct -1.5% (n=2), 31 Oct -1.5% (n=2), 10-12 Nov -0.4% (n=5), 24-26 Nov -3.0% (n=8), 26-28 Nov +0.1% (n=4).
 - **Ours on 31 Oct-2 Nov:** 231.5 -> 213.5 (-7.8%) and 204.0 -> 189.0 (-7.4%). The stay moved inside 14 days, so it picked up the extra 0.85 step.
-- **Ours on 10-12 Nov:** 219.0 unchanged and 202.0 -> 194.0 (-4.0%). PriceLabs 3064856 went from 159+? to 158+152.
+- **Ours on 10-12 Nov:** 219.0 unchanged and 202.0 -> 194.0 (-4.0%). The cause is PriceLabs 3064856: 10-11 Nov went 159+172 to 158+152 (raw 27 vs 28 Oct).
 - **PriceLabs NL 2BR percentiles:** 192 / 238 / 289 / 363, against 205 / 245 / 303 / 373 yesterday.
 
 ### Findings
