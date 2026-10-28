@@ -46,7 +46,7 @@
 
   - **P06 3288517:** 9-15 Nov, min-stay-only override, min 2 (12:15:47Z).
 - **Customizations:** **no change** from the 27 Oct readings on any listing.
-- **Calendar.** In PriceLabs, P11 28 Nov-11 Dec went from Booked to open, matching the cancelled £2,950.82 booking.
+- **Calendar.** In PriceLabs, P11 28 Nov-11 Dec went from Booked to open, matching the cancelled £2,950.82 booking (cancelled 27 Oct 11:29, before the 11:58Z refresh).
   - P20 2-5 Nov now shows Booked, and P08 29-30 Oct shows Booked.
   - P05 29-30 Oct changed from open to **Blocked**.
   - P06 8-14 Nov changed from Blocked to status blank, but still has user_price -1 and available=False.
@@ -99,10 +99,10 @@
 
 - Example: 13-19 Nov fell from £257/266/255/246/251/260/268 to £237/243/237/236/227/236/243.
 - **Even with the +10% override, 31 Oct is £246 against £297 uncustomized.** The customization stack alone is about -25% inside 15 days.
-- P20 had its first booking since the flexible-cancellation test: Airbnb 2-6 Nov, made 27 Oct, £733.62 including £150 cleaning (`reservations.csv`).
-  - Room £583.62 is 0.587x the PriceLabs price on 26 Oct (£251/250/251/242 = £994).
-  - With Reyhan's -2% that is about £974; after Airbnb's 15% last-minute discount (policy `listing_facts.P20.airbnb_discounts_22oct`), about **£828**.
-  - That leaves **about £244 (30%) unexplained** by PriceLabs or policy-listed discounts. The exact price pushed at booking time is UNKNOWN: P20's only recorded push is 14:42:30Z and the booking time is not in the CSV.
+- P20 had its first booking since the flexible-cancellation test: Airbnb 2-6 Nov, made 27 Oct, **room £733.62** (`reservations.csv` total_gbp is the Smoobu basePrice and excludes cleaning, per the dispatcher's correction).
+  - That is 0.738x the PriceLabs price on 26 Oct (£251/250/251/242 = £994).
+  - With Reyhan's -2% on 2-5 Nov (12:00:31Z) that is about £974; after Airbnb's 15% last-minute discount (policy `listing_facts.P20.airbnb_discounts_22oct`), about **£828**.
+  - That leaves **about £94 (11%) unexplained** by PriceLabs or policy-listed discounts. The exact price pushed at booking time is UNKNOWN: P20's only recorded push is 14:42:30Z and the booking time is not in the CSV.
 - **Check:**
   - PriceLabs 3547481 > Date Specific Overrides: 6-8 Nov and 13-30 Nov -10%, 1-20 Dec -5%;
   - Customizations > Occupancy (Aggressive) and Booking Recency: set Custom 0% if a-discount-cut stands;
@@ -236,7 +236,7 @@
 - No product of policy-listed factors gives 0.658:
   - markup 1.15 × weekly 0.85 × Last Minute 0.85 (0-30 days; booked 22 days out) × Mobile 0.90 × Genius L1 0.90 = **0.680 (£1,183)**;
   - adding occupancy -5% gives 0.646 (£1,124).
-- Also UNKNOWN: whether the total includes the £150 cleaning (not split on Booking.com rows), and which rate plan was used. Black Friday is not bookable until 19 Nov.
+- `total_gbp` excludes cleaning (dispatcher's correction), so £1,143.76 is room only. Still UNKNOWN: the rate plan used and whether Genius L2/L3 or the NR rate applied. Black Friday is not bookable until 19 Nov.
 - Needs the Booking.com reservation breakdown.
 
 **12. Info pack vs PriceLabs** (`build/properties.py` vs `listings.csv`)
