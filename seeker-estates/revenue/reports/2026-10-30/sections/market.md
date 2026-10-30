@@ -187,8 +187,8 @@ Smoobu shows 24 open nights. Prices are from the 30 Oct 06:19Z refresh.
 ## 5. Dates to price above / below the PriceLabs default (summary, per submarket)
 - **Above the default / above current (verified event or market well ahead of STLY):**
   - **Shepherd's Bush P13:** 14–23 Dec to the default (+£123); 24–26 Dec towards P50 (+£159). Market occupancy is +11 to +23 points vs STLY.
-  - **Camden P11:** 3 Jan about £213 (darts final; default 202). Also 26 Nov to at least the £233 fortnight (Nia Archives; default from neighbourhood £232).
-  - **Canary Wharf P20:** 16 Dec to at least the £298 fortnight (The Darkness / Horse Show eve). 10–11 and 13 Nov to the £257 fortnight (ExCeL expos / Noah Kahan).
+  - **Camden P11:** 3 Jan about £213 (darts final; default 202). Also 26 Nov from £217 to at least the £233 fortnight (Nia Archives; PL default £262, P50 £264).
+  - **Canary Wharf P20:** 16 Dec to at least the £298 fortnight (The Darkness / Horse Show eve; PL default £317). 10–11 and 13 Nov to at least the £257 fortnight (ExCeL expos / Noah Kahan; PL default £312–313, so we are £66–68 a night under it. Reyhan's −5% on 6–24 Nov (28 Oct log) explains only about £16 of that; the rest comes from listing customizations, which were not pulled).
   - **St John's Wood P05:** 7–8 Dec towards P75 (about £598 / £594; still under the default; market +7.8 points vs STLY). **9 Nov: min stay 1 or the night is lost.**
 - **At the default (hold):** P11 23–25 Dec; P05 29 Nov – 2 Dec, 13–21 Dec and 4 Jan →; P20 19–27 Dec at today's level (£396 under the default); P12 7–13 Dec and 12–13 Nov.
 - **Below the default:**
