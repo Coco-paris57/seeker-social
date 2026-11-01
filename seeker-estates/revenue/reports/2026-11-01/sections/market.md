@@ -59,7 +59,7 @@ Market occ 30/60 is `market_occupancy_next_30/60` from `pl_kpis.csv` 1 Nov. Perc
 **18–24 Nov (7-night open run, min 3; Smoobu)**
 | Nights | Ours (31 Oct) | PL default | P50 / **P75** | Mkt occ vs STLY | Events |
 |---|---|---|---|---|---|
-| Wed 18 – Tue 24 Nov | 188 / 187 / 196 / 200 / 188 / 187 / 188 = **£1,334** (£1,448) | £1,661 | £1,077 / **£1,456** | 15.4–24.9 vs 18.8–26.5% (**−1.6 to −8.1 pts**) | London EV Show 18–19 and Vet Show 19–20 Nov (ExCeL); The Script, O2, Sat 21 Nov |
+| Wed 18 – Tue 24 Nov | 188 / 187 / 196 / 200 / 188 / 187 / 188 = **£1,334** (£1,448) | £1,661 | £1,077 / **£1,456** | 15.4–24.9 vs 18.8–26.5% (**−1.6 to −8.2 pts**) | London EV Show 18–19 and Vet Show 19–20 Nov (ExCeL); The Script, O2, Sat 21 Nov |
 
 - **The event nights are still priced:** 18–19 Nov 188 / 187 vs a fortnight of £186; 20–21 Nov 196 / 200 vs £190.
 - **Proposal: hold below the default.** This follows Corentin's "no demand" stance, and the market is behind STLY.
@@ -110,8 +110,8 @@ Market occ 30/60 is `market_occupancy_next_30/60` from `pl_kpis.csv` 1 Nov. Perc
 **Christmas (open 7–26 Dec; booked 27 Dec – 3 Jan)**
 | Nights | Ours | PL default | P50 | Mkt occ vs STLY | Proposal |
 |---|---|---|---|---|---|
-| 7–13 Dec | £1,551 | £1,687 | £1,656 | +6.8 to +14.2 | To the default (+£136) |
-| **14–23 Dec** | **£2,253** (31 Oct: £2,297) | £2,407 | **£2,492** | **+6.5 to +22.2** | **To P50 (+£239)** |
+| 7–13 Dec | £1,551 | £1,687 | £1,656 | +7.3 to +14.2 | To the default (+£136) |
+| **14–23 Dec** | **£2,253** (31 Oct: £2,297) | £2,407 | **£2,492** | **+5.7 to +22.2** | **To P50 (+£239)** |
 | **24–26 Dec** (min 3) | 227 / 228 / 233 = **£688** | £726 | 275 / 285 / 287 = **£847** | +12.8 / +8.5 / +11.5 | **To P50 (+£159)** |
 
 - **Total above current: +£534 on 7–26 Dec** (31 Oct: +£350 on 14–26 Dec).
@@ -127,7 +127,7 @@ Market occ 30/60 is `market_occupancy_next_30/60` from `pl_kpis.csv` 1 Nov. Perc
 - **NYE 31 Dec is priced by PriceLabs:** £588 vs the fortnight £316 (NYE week excluded).
   - Event: [london.gov.uk/events/london-new-years-eve-2026](https://www.london.gov.uk/events/london-new-years-eve-2026), checked 1 Nov. Tickets are on Ticketmaster at £20–55, with a second batch to come.
 - **Proposal: hold 19–27 Dec** (between P75 and P90, under the default).
-- **28 Dec – 2 Jan: cap at about P90 (−£305; yesterday −£405).** The market is well ahead of STLY, so this is a judgement call for Corentin. The case for the cap: a new listing with no reviews, 23% next-60 occupancy, and prices £27–92 a night above market P90.
+- **28 Dec – 2 Jan: cap at about P90 (−£305; yesterday −£405).** The market is well ahead of STLY, so this is a judgement call for Corentin. The case for the cap: a new listing with no reviews, 23% next-60 occupancy, and prices £6–92 a night above market P90 (£73–92 on 31 Dec – 2 Jan).
 
 ## 3. Demand calendar, next 90 days (today's prices; fortnight = average of the surrounding 14 nights)
 **Events (checked 1 Nov 2026, domain-restricted WebSearch):**
@@ -250,7 +250,7 @@ Pace is from Smoobu `reservations.csv` 1 Nov (confirmed, room only, future-dated
 | **P09** | 176 vs 1 BR P50 132 / P75 162 / P90 204 | 176 | 3 (10–12 Nov, avg £148) before the 26 Nov handback | 3 / 23 n / £103 → 1 / 2 n / £127 | **Hold 176** (= rec; 3 nights affected). Prices are from the 31 Oct 08:09Z refresh. |
 | **P11** | 286 vs 2 BR P50 288 / P75 330 | 285 | 36; list £8,135 vs default £9,319 vs daily P50 £9,361 | 1 / 4 n / £163 → 2 / 6 n / £204 | **Hold 286 (= rec, at P50).** The base is not the lever: list sits 13% under the default because of Reyhan's −7% (10 Nov – 4 Dec) and −5% (8–18 Dec, darts conflict), and the listing is Booking.com-only. Our occupancy 40 / 38% vs market 46 / 39%. |
 | **P12** | 284 vs 2 BR P50 206 / P75 244 / P90 303 (+38% vs P50) | **273** | 23 before the 13 Dec handback; list £5,965 vs default £6,606, P50 £4,842, P75 £6,032 | 2 / 5 n / £170 → 4 / 20 n / £173 (+1 cancelled) | **273 is the market-backed figure.** The effect is small: Reyhan's −7% already puts the list just under daily P75. Our occupancy 53 / 60% vs market 40 / 34%. Either 273, or 284 with the date fixes, is defensible. |
-| **P13 at 250** (Reyhan, 24 Oct 21:14Z; `get_user_logs`) | 250 vs 2 BR P50 224 / P75 280 | 233 / 232 / 235 (3064856 / 3090701 / Vrbo) | 30; list £6,350 (avg £212) vs default £6,639 vs daily P50 £7,125 | Since 24 Oct: 2 bookings: 27 Dec – 3 Jan Airbnb 7 n £252 a night (made 26 Oct); 18–27 Nov Booking.com 9 n £127 a night (made 27 Oct) | **Keep 250.** The base is above P50, but what guests see is £212 on average, under P50. That comes from the close-in factors and Reyhan's −3% / −5% overrides. December market occupancy is +6.5 to +22.2 pts vs STLY, so there is no market case for 233. The P13 levers are 12 Nov and December (§2c), not the base. |
+| **P13 at 250** (Reyhan, 24 Oct 21:14Z; `get_user_logs`) | 250 vs 2 BR P50 224 / P75 280 | 233 / 232 / 235 (3064856 / 3090701 / Vrbo) | 30; list £6,350 (avg £212) vs default £6,639 vs daily P50 £7,125 | Since 24 Oct: 2 bookings: 27 Dec – 3 Jan Airbnb 7 n £252 a night (made 26 Oct); 18–27 Nov Booking.com 9 n £127 a night (made 27 Oct) | **Keep 250.** The base is above P50, but what guests see is £212 on average, under P50. That comes from the close-in factors and Reyhan's −3% / −5% overrides. December market occupancy is +5.7 to +22.2 pts vs STLY, so there is no market case for 233. The P13 levers are 12 Nov and December (§2c), not the base. |
 
 Data gaps:
 1. All market figures are PriceLabs Nearby Listings data: Airbnb-derived, not comp sets, horizon unstated, cleaning not included.
