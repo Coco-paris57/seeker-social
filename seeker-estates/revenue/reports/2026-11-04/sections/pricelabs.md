@@ -2,11 +2,11 @@
 
 **Sources**
 - Snapshot `data/snapshots/2026-11-04/`: `raw/listing_data.json` (06:55Z), `raw/prices_*.json` (06:57-07:16Z, window **5 Nov 2026 - 3 Jan 2027**), `prices.csv` (07:17Z), `listings.csv`, `reservations.csv` (Smoobu, room only, cleaning excluded). Yesterday: `data/snapshots/2026-11-03/` and `reports/2026-11-03/sections/pricelabs.md`.
-- **Live read-only calls, 4 Nov 07:17-07:40Z**, one at a time except one pair (the group and account `get_user_logs` calls ran in parallel; both returned 200 and empty).
+- **Live read-only calls, 4 Nov 07:17-07:4xZ**, one at a time except one pair (the group and account `get_user_logs` calls ran in parallel; both returned 200 and empty).
   - `get_user_logs` listing / group / account, 3-4 Nov.
   - `get_listing_data` (all 20 listings) at 07:18Z, and again for P09 after 07:38Z.
-  - `get_customizations` (toggled_on=false): P12, P04, P09.
-  - `get_listing_date_overrides`: P09, P13 3064856.
+  - `get_customizations` (toggled_on=false; last-minute, occupancy, booking recency, seasonality, demand, far-out): P12, P04, P09, P11, P20, P05, P13 3064856.
+  - `get_listing_date_overrides`: P09, P13 3064856, P11, P20, P12, P04.
   - `get_listing_prices`: P12, 4-5 Nov.
 - **Live Smoobu `GET /api/rates`** at 07:19Z for 12 apartments, 4 Nov-3 Jan. Saved to `/tmp/claude-0/-home-user-seeker-social/33ffe751-5682-5be6-8410-99ebc2a7045b/scratchpad/smoobu_rates_0404.json` (contains no guest data).
 - `kpi_pack.json`: `sync_issues` lists only P09 10-11 Nov. `gaps` is [] for every property. `market_percentiles` are all null, and market/comps/channel_checks are "empty". Base vs market therefore uses the latest rows in `data/snapshots/2026-11-03/market.csv` (pulled 2-3 Nov), plus today's `raw/neighbourhood_P13.json` for P13.
@@ -46,7 +46,10 @@
   - Raises: P12 4 Nov and P11 23-25 Dec.
   - Less negative: P12 26 Nov +25% -> +15% (a cut), P13 Jan/Feb, P20 Dec.
   - Deeper or new cuts: everything else.
-- **Customizations: no change** on P12, P04 and P09 (live). The other listings were not re-read today; the logs carry no customization entries, but whether the logs record customization changes at all is UNKNOWN.
+- **Customizations: no change** vs 3 Nov on P12, P04, P09, P11, P20, P05 and P13 3064856 (live). P06 and 3090701 were not re-read.
+- **Live overrides** on P12, P04, P13 3064856, P20 and P11 match the log entries above.
+  - P11 23-25 Dec DSOs date from 7 Sep and were updated at 01:25Z; their previous values are NOT CHECKED.
+  - P04 26 Nov-5 Dec stays at -8% (20 Oct), with 2 Dec at +200%, min 1.
 
 ---
 
@@ -96,7 +99,15 @@
 - **Check:** PriceLabs > Date Specific Overrides on 2699998 16-25 Nov, 3064856 8-12 Nov, 3562176 9-24 Nov, 3547481 16-19 Nov (min stay), and 3547481 > Base. Corentin to confirm each.
 
 **H2. a-discount-cut: the measured gap narrowed, but only because uncustomized prices fell and nights sold; open-night prices fell** (raw `price` vs `uncustomized_price` on PriceLabs-open nights; same method and exclusions as 3 Nov: handback nights excluded, P05 9 Nov and P04 2 Dec excluded, P13 netted, P06 and P14 excluded)
-- Layers (live today: P12, P04, P09) are **identical to 3 Nov**: P04 -5% gradual last-minute, Aggressive occupancy, Booking Recency default; P09 -18% gradual last-minute, Booking Recency off (so the default applies); P12 0% last-minute, Custom occupancy. P05, P11, P13, P20 and P06: NOT re-read today (3 Nov values in yesterday's section).
+- Layers (live today) are **identical to 3 Nov**:
+  - P04: -5% gradual last-minute, Aggressive occupancy, Conservative demand.
+  - P05: -1% gradual last-minute, Aggressive occupancy, Conservative demand.
+  - P09: -18% gradual last-minute; Booking Recency toggle off, so the default applies.
+  - P11 and P20: 0% last-minute, Aggressive occupancy.
+  - P12: 0% last-minute, Custom occupancy, Moderately Conservative demand.
+  - P13 3064856: 0% last-minute, Aggressive occupancy, Moderately Conservative seasonality, Conservative demand.
+  - Booking Recency is on at the default (5-15%) on all of them except P09.
+  - P06: NOT re-read.
 
 | Ref | Next 14 (4-17 Nov) now | 3 Nov raw, same dates | Next 30 (4 Nov-3 Dec) now | 3 Nov raw, same dates |
 |---|---|---|---|---|
@@ -231,5 +242,8 @@ Data gaps:
 3. **`price` vs `user_price` diverge on 32 of 85 PriceLabs-open nights in next 30** (4 Nov raw; on 3 Nov: 8 of 93). Range: P12 4 Nov **+£93** (£302 vs £209) to P12 26 Nov **-£34** (£311 vs £345); P11 19 Nov £174 vs £146. Smoobu matches `price` on every date, so `price` is what reaches the channels. What `user_price` represents and why the two diverge is UNKNOWN. All gap figures use `price`.
 4. The cause of the P09 10-11 Nov Smoobu £100 / £110 is UNKNOWN (C1), and so is why P09 skipped its refresh.
 5. Who blocked P20 18-19 Nov is UNKNOWN (M1).
-6. Not re-read live today: customizations on P05, P06, P11, P13, P20 and the rest; overrides on P04, P05, P06, P08, P11, P12, P20 and the Vrbo copies (today's state comes from the logs plus raw prices). P11's DSO values on 23-25 Dec before 01:25Z: NOT CHECKED.
+6. Not re-read live today:
+   - Customizations on P01, P06, P08, P10, P14, P02, P03, P07 and 3090701.
+   - Overrides on P05, P06, P08, P13 3090701 and the Vrbo copies. Their state comes from the logs plus raw prices.
+   - P11's DSO values on 23-25 Dec before 01:25Z: NOT CHECKED.
 7. One pair of `get_user_logs` calls (group, account) ran in parallel, against the one-at-a-time rule. Both returned 200 and empty.
