@@ -2,13 +2,13 @@
 
 **Sources**
 - Snapshot `data/snapshots/2026-11-04/`: `raw/listing_data.json` (06:55Z), `raw/prices_*.json` (06:57-07:16Z, window **5 Nov 2026 - 3 Jan 2027**), `prices.csv` (07:17Z), `listings.csv`, `reservations.csv` (Smoobu, room only, cleaning excluded). Yesterday: `data/snapshots/2026-11-03/` and `reports/2026-11-03/sections/pricelabs.md`.
-- **Live read-only calls, 4 Nov 07:17-07:4xZ**, one at a time except one pair (the group and account `get_user_logs` calls ran in parallel; both returned 200 and empty).
+- **Live read-only calls, 4 Nov 07:17-07:43Z**, one at a time except one pair (the group and account `get_user_logs` calls ran in parallel; both returned 200 and empty).
   - `get_user_logs` listing / group / account, 3-4 Nov.
-  - `get_listing_data` (all 20 listings) at 07:18Z, and again for P09 after 07:38Z.
+  - `get_listing_data` (all 20 listings) at 07:18Z, and again for P09 at about 07:41Z.
   - `get_customizations` (toggled_on=false; last-minute, occupancy, booking recency, seasonality, demand, far-out): P12, P04, P09, P11, P20, P05, P13 3064856.
   - `get_listing_date_overrides`: P09, P13 3064856, P11, P20, P12, P04.
-  - `get_listing_prices`: P12, 4-5 Nov.
-- **Live Smoobu `GET /api/rates`** at 07:19Z for 12 apartments, 4 Nov-3 Jan. Saved to `/tmp/claude-0/-home-user-seeker-social/33ffe751-5682-5be6-8410-99ebc2a7045b/scratchpad/smoobu_rates_0404.json` (contains no guest data).
+  - `get_listing_prices`: P12 4-5 Nov; P09 4-13 Nov (after its push).
+- **Live Smoobu `GET /api/rates`** at 07:19Z for 12 apartments, 4 Nov-3 Jan, plus P09 10-12 Nov at about 07:42Z. Saved to `/tmp/claude-0/-home-user-seeker-social/33ffe751-5682-5be6-8410-99ebc2a7045b/scratchpad/smoobu_rates_0404.json` (contains no guest data).
 - `kpi_pack.json`: `sync_issues` lists only P09 10-11 Nov. `gaps` is [] for every property. `market_percentiles` are all null, and market/comps/channel_checks are "empty". Base vs market therefore uses the latest rows in `data/snapshots/2026-11-03/market.csv` (pulled 2-3 Nov), plus today's `raw/neighbourhood_P13.json` for P13.
 - Policy respected: P02/P03/P06/P07 blocks, P14 special setup, handbacks (P01 20 Dec, P08 13 Nov, P09 26 Nov, P10 18 Nov, P12 13 Dec), P13 1 Dec intentional, P13 = one flat, and the deprioritised items (P12 17 Nov, P04 2 Dec). Where Reyhan's edits cross a standing decision, they are reported as conflicts for Corentin to confirm. They are not new proposals.
 
@@ -55,32 +55,41 @@
 
 ### CRITICAL
 
-**C1. P09 Torrent Lodge has not pushed for over 24 h, and Smoobu is £15 under PriceLabs on 10-11 Nov** (live `get_listing_data`; live Smoobu rates; `kpi_pack.sync_issues`; `prices.csv`)
-- `last_date_pushed` **3 Nov 07:37:46Z**, `last_refreshed_at` 3 Nov 07:37:45Z, push_enabled true. P09_PUSH_STATUS
-- **Every other Smoobu-priced listing refreshed and pushed at 01:25-01:31Z today**, triggered by Reyhan's edits. P09 had no edit and no refresh.
-  - P01 (05:46Z) and P10 (05:54Z) pushed with no edit. Their daily slot works; P09's 07:3xZ slot (2 Nov 07:53Z, 3 Nov 07:37Z) did not repeat.
-- **Sync gap, P09 10-11 Nov (consecutive):**
+None today. P09 pushed at 07:27:40Z, 23 h 50 m after its previous push, so it did not cross 24 h (T1). Every other listing pushed within 24 h except the P02 Vrbo copy (last push 24 Feb 2026, see M7). All 20 listings have push on.
 
-| Night | PriceLabs `price` | Smoobu (live 07:19Z) | Gap |
-|---|---|---|---|
-| 10 Nov | £115 | **£100** | -£15 |
-| 11 Nov | £125 | **£110** | -£15 |
-| 12 Nov | £131 | £131 | 0 |
+### HIGH (time-sensitive)
 
-  - On 3 Nov `prices.csv` showed Smoobu = PriceLabs = £117 / £127 on these dates, so Smoobu changed after 3 Nov 07:18Z.
-  - **£100 equals P09's PriceLabs minimum.** £110 matches no PriceLabs field.
-  - No PriceLabs log entry exists for P09. Its DSO on 4-12 Nov is -5%, min 2 (set 26 Oct; live `get_listing_date_overrides`), and that is already inside £115 / £125.
-  - Possible causes, none proven: a manual Smoobu rate entered after 3 Nov 07:18Z; the 3 Nov 07:37Z push carrying different values for these 2 dates; a Smoobu-side rule. "Sync off" is ruled out (push_enabled true). A PriceLabs DSO is ruled out (no log, and the DSO is already in the price).
-- P09's 10-12 Nov are its last open nights before the 26 Nov handback. They sell £30 below PriceLabs, the opposite of a-handback-lastnights (+10%).
-- **Check:** Smoobu > Rates for Torrent Lodge 10-11 Nov (manual price? who entered it, when?). PriceLabs > 3318172 > Sync history (why no refresh since 3 Nov 07:37Z?). Use "Sync now" on 3318172 only if Corentin wants it (read-only here).
+**T1. P09 Torrent Lodge: the push came 10 minutes before the 24 h mark, and it closed a Smoobu -£15 gap on 10-11 Nov whose cause is unknown** (live `get_listing_data` 07:18Z and after 07:40Z; live `get_listing_prices`; live Smoobu rates 07:19Z and after 07:40Z; `kpi_pack.sync_issues`; `prices.csv`)
+- **Push timeline:**
+  - 3 Nov: pushed 07:37:46Z.
+  - 4 Nov 07:18Z read: still 07:37:46Z (23 h 41 m old). Every other Smoobu-priced listing had pushed at 01:25-01:31Z after Reyhan's edits; P01 (05:46Z) and P10 (05:54Z) pushed with no edit.
+  - **Pushed 4 Nov 07:27:40Z** (refreshed 07:27:39Z), 23 h 50 m after the previous push.
+  - P09's daily slot keeps drifting earlier (2 Nov 07:53Z, 3 Nov 07:37Z, 4 Nov 07:27Z), with no edit. It never pushes without its slot or an edit.
+- **Sync gap, P09 10-11 Nov (consecutive), present in the 07:17Z snapshot and live at 07:19Z, closed by the 07:27Z push:**
 
-**C2. Tonight, P12 4 Nov: min 1 is fixed and Smoobu = PriceLabs, but the pushed price is £302 against PriceLabs' own £209** (live `get_listing_prices` 2699998; live Smoobu)
+| Night | PriceLabs `price` (06:55Z raw) | Smoobu 07:19Z | Gap | After 07:27Z push: PriceLabs = Smoobu |
+|---|---|---|---|---|
+| 10 Nov | £115 | **£100** | -£15 | **£113** |
+| 11 Nov | £125 | **£110** | -£15 | **£122** |
+| 12 Nov | £131 | £131 | 0 | **£129** |
+
+  - On 3 Nov `prices.csv` showed Smoobu = PriceLabs = £117 / £127. Smoobu therefore changed between 3 Nov 07:18Z and 4 Nov 07:17Z, with no PriceLabs refresh in between.
+  - £100 equals P09's PriceLabs minimum. **After the push, PriceLabs' `user_price` / `booked_price` ("Your Price") for 10-11 Nov reads £100 / £110**, the same values Smoobu held. What that field reflects is UNKNOWN.
+  - No PriceLabs log entry for P09. Its DSO on 4-12 Nov is -5%, min 2 (26 Oct; live overrides), already inside the price.
+  - Possible causes, none proven: a manual Smoobu rate; a partial push failure; a Smoobu-side rule. "Sync off" is ruled out (push_enabled true). A new DSO is ruled out (no log).
+- 10-12 Nov are P09's last open nights before the 26 Nov handback. They now sell at **£364 for 3 nights** (they were £389 on 3 Nov). a-handback-lastnights (+10%) was not applied.
+- **Check:**
+  - Smoobu > Rates / change history for Torrent Lodge 10-11 Nov: who set £100 / £110, and when?
+  - PriceLabs > 3318172 > Sync history: why it pushes only at a drifting ~07:30Z slot.
+  - Re-read tomorrow: if no push lands before about 07:27Z, it crosses 24 h.
+
+**T2. Tonight, P12 4 Nov: min 1 is fixed and Smoobu = PriceLabs, but the pushed price is £302 against PriceLabs' own £209** (live `get_listing_prices` 2699998; live Smoobu)
 - Live PriceLabs: `price` **£302**, `user_price` £209, `uncustomized_price` £178, min 1, demand "Low Demand", refreshed 01:25:11Z. Smoobu: **£302, min 1, available**.
 - Yesterday's gap (PriceLabs £196 vs Smoobu £170) is **closed**: Smoobu now equals the pushed price.
 - The DSO is +15% (Reyhan 01:24:03Z). +15% on £178 is about £205, close to `user_price` £209. **£302 is 1.70x uncustomized**, and nothing visible explains it.
   - Nights either side: 3 Nov went unsold (no Smoobu stay covers it); 5-11 Nov is booked at £111.06 ADR (PriceLabs `ADR`).
 - At £302 for one Low-Demand night, the orphan is unlikely to sell tonight.
-- **Check:** PriceLabs > 2699998 calendar, 4 Nov: which final price does it show, and what lifts £209 to £302? (See data gap 3: `price` and `user_price` diverge on 32 open nights today.)
+- **Check:** PriceLabs > 2699998 calendar, 4 Nov: which final price does it show, and what lifts £209 to £302? (See data gap 3. Smoobu follows `price` on every date checked.)
 
 ### HIGH
 
@@ -125,7 +134,7 @@
 - **Net uncustomized minus final, P06 and P14 excluded, P13 netted:**
   - **Next 14: £971** (yesterday **£1,330**). On 5-17 Nov only: £1,095 vs £1,321 in 3 Nov raw.
   - **Next 30: £2,485** (yesterday **£2,656**). On 5 Nov-3 Dec only: £2,609 vs £2,647.
-  - The P12 4 Nov £302-vs-£178 premium (C2) takes £124 off both totals. Without it: £1,095 / £2,609.
+  - The P12 4 Nov £302-vs-£178 premium (T2) takes £124 off both totals. Without it: £1,095 / £2,609.
 - **Why it narrowed although Reyhan cut deeper:**
   - P12 (+£171 on next 30) and P04 (+£181) widened with the -15% DSOs.
   - P13 3064856's pushed price now sits above uncustomized (-£143 swing).
@@ -138,10 +147,10 @@
 
 | Item | Status 4 Nov | Numbers |
 |---|---|---|
-| **t-p12-4nov** | **Min fixed** (4 Nov min 1, +15%, Reyhan 01:24:03Z). Price question in C2 | £302 pushed; Smoobu £302 |
+| **t-p12-4nov** | **Min fixed** (4 Nov min 1, +15%, Reyhan 01:24:03Z). Price question in T2 | £302 pushed; Smoobu £302 |
 | **t-p13-3nov** | **Passed unsold.** No Smoobu stay covers 3 Nov (`reservations.csv`). The P13 Airbnb 4-8 Nov stay arrives today | ~£124 lost (3 Nov price) |
 | **a-raise-1012nov** (3064856 12 Nov >= £176, min 1) | **Not done.** 3064856 12 Nov **£170, min 2** (up from £151 through the algorithm, not an edit; the DSO went to -7%). 3090701 **£191** (>= £183 met) | £6 short; min stay not changed |
-| **a-handback-lastnights** (+10% P08 5-7 Nov, P09 10-12 Nov) | **Wrong way.** P08 got **-5% on 4-21 Nov** (01:28:45Z): 5-7 Nov **£168 / £186 / £185 = £539** (was £594). P09: no edit; PriceLabs £115 / £125 / £131, Smoobu **£100 / £110** / £131 (C1) | P08 -£55; P09 -£30 vs PriceLabs |
+| **a-handback-lastnights** (+10% P08 5-7 Nov, P09 10-12 Nov) | **Wrong way.** P08 got **-5% on 4-21 Nov** (01:28:45Z): 5-7 Nov **£168 / £186 / £185 = £539** (was £594). P09: no edit. PriceLabs £115 / £125 / £131 vs Smoobu **£100 / £110** / £131 at 07:19Z; after the 07:27Z push both read **£113 / £122 / £129** (T1) | P08 -£55; P09 -£30 vs PriceLabs |
 | **a-p04-dec** (14-19 Dec DSO 0%, about £1,286; 8 Dec >= £193) | **Not done.** 14-19 Dec **£182 / £185 / £187 / £189 / £197 / £203 = £1,143** (3 Nov £1,157). 8 Dec **£180** | £143 below target; 8 Dec £13 short |
 | **a-p05-dec** (7-8 Dec about £1,184; 13-21 Dec about £5,857) | **Wrong way.** 13-19 Dec DSO -5% -> **-7%** (01:27:55Z). 7-8 Dec **£476 / £457 = £933** (£970). 13-21 Dec **£5,274** (£5,453) | -£37 / -£179 vs 3 Nov |
 | **t-p12-26nov-price** (0% would be about £303) | **Partly.** DSO +25% -> **+15%**, min 1 (01:24:21Z): **£311** (uncust £298; `user_price` £345) | £41 lower than 3 Nov's £352; still +4% over uncust |
@@ -167,13 +176,13 @@
 - **Check:** DSO 2 Jan-28 Feb on 3562176, 3547481, 3064856 (+3090701) and 3166592 (min stay).
 
 **M3. Min stay vs policy and short gaps** (`prices.csv`, PriceLabs-open nights, handback nights excluded)
-- **Below 2:** P12 4 Nov (tonight orphan, C2) and 26 Nov; P13 17 Nov, 27 Nov and 1 Dec (1 Dec intentional; 3064856 £193 / £335 / £310, 3090701 £217 / £243 / £225); P05 9 Nov and 29 Dec; P04 2 Dec (deprioritised).
+- **Below 2:** P12 4 Nov (tonight orphan, T2) and 26 Nov; P13 17 Nov, 27 Nov and 1 Dec (1 Dec intentional; 3064856 £193 / £335 / £310, 3090701 £217 / £243 / £225); P05 9 Nov and 29 Dec; P04 2 Dec (deprioritised).
 - **Above 3 inside 2 months:** P20 25-26 Dec min 4 (no DSO; profile UNKNOWN) and 27-28 Dec min 6, 29-31 Dec min 5. Unchanged.
 - **Short open runs a gap-fill rule would sell** (`kpi_pack.gaps` is [] for all):
   - P12 12-13 Nov (£199 / £249, min 2) and 30 Nov-2 Dec (£203 / £208 / £217, min 2).
   - P11 18-19 Nov (£159 / £174, min 2) and 23-25 Dec (£298 / £290 / £302, min 3 / 2 / 2).
   - P05 16-17 Nov (£373 / £388) and 7-8 Dec (£476 / £457), both min 2.
-  - P09 10-12 Nov (C1). P08 5-7 Nov (£168 / £186 / £185, min 2).
+  - P09 10-12 Nov (T1). P08 5-7 Nov (£168 / £186 / £185, min 2).
   - P13 25-26 Dec: min 3 with 27 Dec taken by the 3090701 stay, so arrivals on 25 or 26 Dec cannot fit (unchanged).
 
 **M4. Floor / ceiling** (`kpi_pack.bounds`)
@@ -221,13 +230,13 @@
 
 | Item | Status |
 |---|---|
-| t-push-check | **P09 not pushed since 3 Nov 07:37Z; Smoobu -£15 on 10-11 Nov (C1).** P12 4 Nov gap **closed** (both £302). All other Smoobu listings pushed 01:25-01:31Z (edit-triggered), P01 05:46Z, P10 05:54Z |
-| t-p12-4nov | Min 1 done; £302 vs `user_price` £209 (C2) |
+| t-push-check | **P09 pushed 07:27:40Z (23 h 50 m; just inside 24 h). Its Smoobu -£15 gap on 10-11 Nov was closed by that push (T1).** P12 4 Nov gap **closed** (both £302). All other Smoobu listings pushed 01:25-01:31Z (edit-triggered), P01 05:46Z, P10 05:54Z |
+| t-p12-4nov | Min 1 done; £302 vs `user_price` £209 (T2) |
 | t-p13-3nov | Passed unsold |
 | a-p13-record | Not recorded; P12 17 Nov, P13 8-12 Nov, P04 9-24 Nov worse; P20 16-19 Nov -5% but min 2; P20 base 330 open (H1) |
 | a-discount-cut | Gap £971 (next 14) / £2,485 (next 30) vs £1,330 / £2,656; layers unchanged; absolute prices lower (H2) |
 | a-raise-1012nov | Not done (£170, min 2) |
-| a-handback-lastnights | Wrong way (P08 -5%; P09 Smoobu £100 / £110) |
+| a-handback-lastnights | Wrong way (P08 -5%). P09 not raised: £113 / £122 / £129 after the push (Smoobu was £100 / £110 before it) |
 | a-p04-dec / a-p05-dec | Not done / wrong way (P05 13-19 Dec -7%) |
 | t-p12-26nov-price | Partly (+15%, £311) |
 | a-p13-twin | 4-7% gap now present in December |
@@ -239,8 +248,8 @@
 Data gaps:
 1. The raw window is **5 Nov-3 Jan**. Tonight (4 Nov) comes from a live call for P12 only; Smoobu shows every other listing unavailable tonight. The 180-day floor/ceiling check, the Jan-Feb DSO prices and the 5-night / 7-night rules beyond 3 Jan are NOT CHECKED.
 2. `kpi_pack.json`: `market_percentiles` null and market/comps/channel_checks empty, so base vs market uses the 2-3 Nov `market.csv` rows. P08, P10 and P14 have no market row.
-3. **`price` vs `user_price` diverge on 32 of 85 PriceLabs-open nights in next 30** (4 Nov raw; on 3 Nov: 8 of 93). Range: P12 4 Nov **+£93** (£302 vs £209) to P12 26 Nov **-£34** (£311 vs £345); P11 19 Nov £174 vs £146. Smoobu matches `price` on every date, so `price` is what reaches the channels. What `user_price` represents and why the two diverge is UNKNOWN. All gap figures use `price`.
-4. The cause of the P09 10-11 Nov Smoobu £100 / £110 is UNKNOWN (C1), and so is why P09 skipped its refresh.
+3. **Smoobu follows `price`**: it equalled `price` on 206 of 208 PriceLabs-open dates checked (5 Nov-3 Jan, 4 Nov raw) and `user_price` on none where the two differ. The 2 exceptions were P09 10-11 Nov before the push. **`price` vs `user_price` diverge on 32 of 85 PriceLabs-open nights in next 30** (4 Nov raw; on 3 Nov: 8 of 93). Range: P12 4 Nov **+£93** (£302 vs £209) to P12 26 Nov **-£34** (£311 vs £345); P11 19 Nov £174 vs £146. Smoobu matches `price` on every date, so `price` is what reaches the channels. What `user_price` represents and why the two diverge is UNKNOWN. All gap figures use `price`.
+4. The cause of the P09 10-11 Nov Smoobu £100 / £110 is UNKNOWN (T1). So is why P09 pushes only in a drifting ~07:30Z slot.
 5. Who blocked P20 18-19 Nov is UNKNOWN (M1).
 6. Not re-read live today:
    - Customizations on P01, P06, P08, P10, P14, P02, P03, P07 and 3090701.
