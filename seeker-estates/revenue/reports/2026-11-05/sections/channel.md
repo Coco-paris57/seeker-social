@@ -103,6 +103,7 @@ Gap = displayed room ÷ expected − 1. Flag if over 3%.
 | P05 | Airbnb | 4–7 Jan (60) | 7 | £1,271 | £1,271.00 | £1,118.48 (visible **"Early booking discount" −£152.52 = 12.0%**) | −12.0% | FLAG (visible, not in policy) | p05_0407jan |
 | P08 | Airbnb | 5–7 Nov (0) | 4 | £334 | £334.00 | £283.90 (£432.90) = **0.850** | −15.0% | FLAG | p08_0507nov 07:16:43Z |
 | P06 | Airbnb | 8–11 Nov (3) | 3 | **£443 (200 / 2 / 241)** | £443.00 | £537.03 (£666.03), **identical to 4 Nov** = 0.765 × 4 Nov Smoobu £702 | +21.2% | FLAG: Airbnb not following Smoobu | p06_0811nov 07:16:22Z |
+| P06 | Airbnb | **8–10 Nov (3)** | 3 and 2 | **£202 (200 / 2)** | £202.00 | £352.66 (£481.66) = 0.765 × 4 Nov Smoobu £461 (228 + 233); **£2 not shown** | +74.6% | FLAG (same) | p06_0810nov 07:21:24Z, _a2 07:21:49Z |
 | P06 | Airbnb | 9–11 Nov (4) | 3 | **£243 (2 / 241)** | £243.00 | £362.61 (£491.61) = 0.765 × 4 Nov Smoobu £474 | +49.2% | FLAG (same) | p06_0911nov 07:16:34Z |
 | P09 | Airbnb | 10–12 Nov (5) | 2 | £235 (113 / 122) | £235.00 | £304.77 − "Discount from Airbnb" £7.62 = £297.15 incl. cleaning; P09 cleaning is not on record. If the 0.765 layer applies, cleaning = £124.99 (inference) | NOT CHECKED (cleaning unknown) | — | p09_1012nov 07:16:38Z |
 | P04 synced | Airbnb | 9–12 Nov (4) | 2 | £423 | £423.00 | £323.59 = 0.765 | −23.5% | FLAG | §1 |
@@ -141,8 +142,13 @@ Gap = displayed room ÷ expected − 1. Flag if over 3%.
 - **PriceLabs on these nights has only a −5% override** (8–14 Nov, Reyhan 4 Nov 01:28Z; `get_listing_date_overrides`). That cannot produce £2.
 - The only later event is Reyhan's "fixed" override on **15–22 Nov at 12:52:23Z, logged without a price value**, followed by the P06 push at 12:52:54Z (`listing_data.json`).
 - Today PriceLabs returns LISTING_NO_DATA for P06. **Cause of the £2: NOT KNOWN.** The timing points at the 12:52Z push.
-- **Airbnb has not taken the new rates.** Both P06 cards equal 0.765 × the 4 Nov Smoobu rates to the penny (8–11 Nov £666.03, unchanged from 4 Nov). So the £2 is **not live on Airbnb** as of 07:16Z, and neither is the 8 Nov drop to £200.
-- **Booking.com (P06 has 11 Booking.com bookings in `reservations.csv`) is NOT CHECKED.** If it is synced, the list price for 9 Nov would be £2.30.
+- **Is the £2 bookable on Airbnb? No, as of 07:21Z.** Coordinator check of 8–10 and 9–11 Nov, Airbnb 1671691529957957272:
+  - **8–10 Nov:** £481.66 card (3 adults and 2 adults) = **£352.66 room = 0.765 × (£228 + £233)**, the 4 Nov rates (`p06_0810nov` 07:21:24Z, `_a2` 07:21:49Z).
+  - **9–11 Nov:** £491.61 card at 3 adults = £362.61 room = 0.765 × (£233 + £241) (`p06_0911nov` 07:16:34Z). A repeat at 2 adults (07:21:37Z) did not show the listing among 90 cards. That is ranking or paging, not proof of unavailability.
+  - **8–11 Nov:** £666.03, identical to 4 Nov.
+
+  **Airbnb has not taken the new rates.** Every card equals 0.765 × the 4 Nov Smoobu rates to the penny, so neither the £2 nor the 8 Nov drop to £200 is live. If the Smoobu → Airbnb sync resumes, the £2 will go live: 8–10 Nov would show about £154.53 room (0.765 × £202).
+- **Booking.com: NOT CHECKED.** The plain request at 07:18:03Z hit the AWS WAF and was not bypassed. P06 has 11 Booking.com bookings in `reservations.csv`. If its Booking.com calendar is synced, the list price for 9 Nov would be £2.30, and **that is the channel where the £2 could be bookable now.**
 - **Exposure:**
   - 8–10 Nov at Smoobu rates is £202, against £461 on 4 Nov rates (−£259).
   - The whole 8–12 Nov run is £498, against £716 (−£218).
