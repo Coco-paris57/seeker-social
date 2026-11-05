@@ -2,12 +2,12 @@
 
 **Sources**
 - Snapshot `data/snapshots/2026-11-05/`: `raw/listing_data.json` (06:56Z), `raw/prices_*.json` (06:57-07:11Z, window **6 Nov 2026 - 4 Jan 2027**), `prices.csv`, `listings.csv`, `reservations.csv` (Smoobu, room only, cleaning excluded), `market.csv`. Yesterday: `data/snapshots/2026-11-04/` and `reports/2026-11-04/sections/pricelabs.md`.
-- **Live PriceLabs calls (read-only), 5 Nov 07:14-07:3xZ:**
+- **Live PriceLabs calls (read-only), 5 Nov 07:14-07:29Z:**
   - `get_listings` for 3288517, 3318172, 3318177 and 3320302.
-  - `get_listing_data` for all 20 listings (07:14Z).
+  - `get_listing_data` for all 20 listings (07:14Z), and for P09 again at 07:28:33Z.
   - `get_listing_prices` for P09 3318172 (6-30 Nov) and P06 3288517 (6-15 Nov).
   - `get_user_logs`: listing, group and account for 4-5 Nov, plus listing logs for the four no-data ids over 6 Oct-5 Nov.
-  - `get_listing_date_overrides` for P09, P06 (Nov) and P12 (5 Nov-13 Dec).
+  - `get_listing_date_overrides` for P09, P06 (Nov), P12 (5 Nov-13 Dec) and P20 (Nov-Dec; it matches the logs, including Christmas -5% and 16-19 Nov min 2).
   - `get_customizations` for P09 and P04.
   - `get_listing_health_and_recommendations` for P06.
   - **Rule breach:** `get_listing_prices` (P09) and `get_listing_data` ran as a parallel pair. Both returned 200. Every other call ran one at a time.
@@ -96,7 +96,7 @@
 - **Check:**
   - PriceLabs > each of 3288517, 3318172, 3318177, 3320302 > open the listing: does the calendar load?
   - Use "Sync Now" (Corentin's action; not done here). If the calendar is still empty, raise LISTING_NO_DATA with PriceLabs support and quote the ids and `last_refreshed_at` null since 4 Nov.
-  - **PUSH-CHECK-P09 PLACEHOLDER**
+  - **P09 re-read at 07:28:33Z** (live `get_listing_data`): `last_date_pushed` is still **4 Nov 07:27:40Z** and `last_refreshed_at` is null. **P09 is now past 24 h with no push.** Its daily ~07:30Z slot did not fire today (2 Nov 07:53Z, 3 Nov 07:37Z, 4 Nov 07:27Z, 5 Nov none).
 
 ### HIGH
 
@@ -265,5 +265,5 @@ Data gaps:
 4. `kpi_pack` `sync_issues`, `bounds`, `market_percentiles` and `avg_open_price_next30` are null. Everything was recomputed.
 5. What `user_price` represents is inferred, not confirmed (a one-cycle lag, matching on 96 of 108 nights).
 6. Whether the 4-7 Dec P12 booking is the 3-7 Dec guest rebooking is NOT CHECKED. The 18 Oct base-rise "corrected method" was not re-run.
-7. Not re-read live today: customizations on all listings except P04 and P09; overrides on P04, P05, P08, P11, P13, P20 (their state comes from the logs plus raw).
+7. Not re-read live today: customizations on all listings except P04 and P09; overrides on P04, P05, P08, P11, P13 (their state comes from the logs plus raw).
 8. `get_listing_prices` (P09) and `get_listing_data` ran as one parallel pair, against the one-at-a-time rule. Both returned 200.
