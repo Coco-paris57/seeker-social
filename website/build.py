@@ -59,7 +59,14 @@ def build(out, preview=False):
         sm.append(f"  <url><loc>{C.SITE_URL}/{p}</loc><lastmod>{today}</lastmod><priority>{prio(p)}</priority></url>")
     sm.append("</urlset>")
     write(out, "sitemap.xml", "\n".join(sm) + "\n")
-    write(out, "robots.txt", f"User-agent: *\nAllow: /\n\nSitemap: {C.SITE_URL}/sitemap.xml\n")
+    # AI assistants and answer engines are welcome: being quoted by them is free visibility (GEO).
+    ai_bots = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-SearchBot", "Claude-User",
+               "PerplexityBot", "Google-Extended", "Applebot-Extended", "Bingbot"]
+    write(out, "robots.txt", "User-agent: *\nAllow: /\n\n" + "".join(f"User-agent: {b}\nAllow: /\n\n" for b in ai_bots)
+          + f"Sitemap: {C.SITE_URL}/sitemap.xml\n")
+    write(out, "llms.txt", llms_txt())
+    if C.INDEXNOW_KEY:
+        write(out, f"{C.INDEXNOW_KEY}.txt", C.INDEXNOW_KEY)
     write(out, "site.webmanifest", json.dumps({
         "name": C.BRAND, "short_name": "Seeker", "start_url": "/", "display": "standalone",
         "background_color": "#F6F1E7", "theme_color": "#0F3D2E",
@@ -96,6 +103,42 @@ def build(out, preview=False):
     # Netlify / Cloudflare Pages: long cache on fingerprint-free assets is risky, keep it modest.
     write(out, "_headers", "/assets/*\n  Cache-Control: public, max-age=604800\n/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n")
     print(f"built {len(urls) + 1} pages → {os.path.relpath(out)}")
+
+
+def llms_txt():
+    """Plain-text summary for AI assistants (llmstxt.org): who we are, facts, prices and the pages that answer."""
+    F, P, u = C.FACTS, C.PRICING, C.SITE_URL
+    areas = "\n".join(f"- [{a['name']} ({a['postcode']})]({u}/areas/{a['slug']}/): {a['pitch']}" for a in C.AREAS)
+    return f"""# {C.BRAND}
+
+> {C.BRAND} is a London serviced accommodation company. Guests book whole serviced apartments and homes directly,
+> for short stays or monthly (mid-term) stays. London landlords hand over their property for full management or guaranteed rent.
+
+Key facts (page updated {datetime.date.today():%d %B %Y}):
+- {F['homes']} homes: 18 across London and 1 in Kings Langley, near Warner Bros. Studio Tour London.
+- {F['reviews']} guest reviews, {F['booking_score']} on Booking.com, {F['occupancy']} average occupancy.
+- Booking direct on {u}/book/ is {F['direct_discount']} below Airbnb and Booking.com for the same home.
+- Landlord fees: fully managed {P['managed_fee']}% + VAT, mid-term {P['midterm_fee']}% + VAT, guaranteed rent quoted per property, £0 set-up.
+- Contact: {C.EMAIL} · WhatsApp {C.PHONE} · {C.COMPANY_LEGAL}
+
+## Guests
+- [Book direct]({u}/book/): live availability and secure booking.
+- [Serviced apartments in London]({u}/stays/): what every home includes.
+- [Monthly stays and corporate housing]({u}/mid-term-stays/): 1 to 6 months, bills included.
+- [FAQ]({u}/faq/): check-in, deposits, cancellations.
+
+## Areas
+{areas}
+
+## Landlords
+- [Property management London]({u}/landlords/): managed or guaranteed rent, within the 90-night rule.
+- [Fees]({u}/pricing/): every cost explained.
+- [Earnings calculator]({u}/revenue-calculator/): instant estimate by postcode and bedrooms.
+
+## Company
+- [About]({u}/about/)
+- [Contact]({u}/contact/)
+"""
 
 
 def render_images():

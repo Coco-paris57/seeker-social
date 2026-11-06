@@ -19,9 +19,9 @@ WHATSAPP_MESSAGE = {
     "owner": "Hi Seeker Estates, I own a property in London and would like to know more about your management service.",
 }
 COMPANY_LEGAL = "Seeker Estates Ltd · Company no. 15310020 · Registered in England & Wales"
-INSTAGRAM = ""                                  # CONFIRM: profile URL
-FACEBOOK = ""                                   # CONFIRM: page URL
-TIKTOK = ""                                     # CONFIRM: profile URL
+INSTAGRAM = "https://www.instagram.com/seekerestates/"
+FACEBOOK = "https://www.facebook.com/1348982741622088"
+TIKTOK = "https://www.tiktok.com/@seekerestatesltd"
 
 # --- Booking engine (Smoobu) ---------------------------------------------
 BOOKING_URL = "https://seekerestates.myweb.smoobu.com"   # hosted booking site: new-tab fallback only (it refuses to be framed)
@@ -46,6 +46,9 @@ ADS_ID = ""             # "AW-XXXXXXXXXX"
 ADS_LEAD_LABEL = ""     # conversion label for landlord leads
 ADS_BOOK_LABEL = ""     # conversion label for "Book" clicks (true bookings tracked in Smoobu)
 GOOGLE_SITE_VERIFICATION = ""
+BING_SITE_VERIFICATION = ""     # msvalidate.01 code from Bing Webmaster Tools, only if not verified via Search Console import
+# IndexNow (Bing, Yandex, Seznam, Naver): build.py publishes /<key>.txt so search engines accept our URL pings.
+INDEXNOW_KEY = "188b02a5ebd996312fb635e6e02c3517"
 
 # --- Facts shown on the site (from Corentin's info pack, 10 Sep 2026) -----
 FACTS = {
@@ -189,7 +192,7 @@ AREAS = [
         "palette": ("#0F3D2E", "#C9D8CF"), "motif": "stadium",
     },
     {
-        "slug": "harry-potter-studio-tour", "name": "Near the Studio Tour", "short": "Kings Langley, Hertfordshire",
+        "slug": "harry-potter-studio-tour", "name": "Near the Studio Tour", "place": "Kings Langley", "short": "Kings Langley, Hertfordshire",
         "postcode": "WD4", "lines": "Kings Langley (London Northwestern), Watford Junction nearby",
         "pitch": "A modern two-bedroom base around 10 minutes from the Warner Bros. Studio Tour London, with parking.",
         "who": "Families visiting the Studio Tour, visitors who want to drive, groups of up to 6.",

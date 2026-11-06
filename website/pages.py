@@ -472,7 +472,7 @@ def mid_term():
     schema = [faq_schema(FAQ_MID), crumbs_schema(ctx, [("", "Home"), ("mid-term-stays/", "Mid-term & corporate stays")])]
     return ctx.path, page(ctx,
         title="Furnished Monthly Rentals & Corporate Housing London | Seeker Estates",
-        description="Furnished London apartments for 1–6 months with bills, Wi-Fi and council tax included. Corporate housing, relocation and insurance stays. Request a monthly quote.",
+        description="Furnished London apartments for 1–6 months with bills, Wi-Fi and council tax included. Corporate housing, relocation and insurance stays. Monthly quotes.",
         body=body, schema=schema)
 
 
@@ -822,7 +822,7 @@ def calculator():
         faq_schema(faq), crumbs_schema(ctx, [("", "Home"), ("landlords/", "For landlords"), ("revenue-calculator/", "Earnings calculator")])]
     return ctx.path, page(ctx, audience="owner", scripts=("calculator.js",),
         title="Airbnb & Short Let Income Calculator London (Free) | Seeker Estates",
-        description="How much could your London property earn as a serviced apartment? Free instant estimate by postcode and bedrooms, after fees and costs, compared with a long let.",
+        description="How much could your London property earn as a serviced apartment? Free instant estimate by postcode and bedrooms, after fees, compared with a long let.",
         body=body, schema=schema)
 
 
@@ -853,10 +853,11 @@ def areas_index():
 def area_page(a):
     ctx = Ctx(f"areas/{a['slug']}/")
     venues = "".join(f'<li>{icon("pin")}<div><strong>{E(n)}</strong><span>{E(d)}</span></div></li>' for n, d in a["near"])
+    place = a.get("place", a["name"])
     faq = [
-        (f"Where are your apartments in {a['name']}?",
+        (f"Where are your apartments in {place}?",
          f"In and around {a['short']} ({a['postcode']}). The exact address is shared with your booking confirmation."),
-        (f"How do I get around from {a['name']}?", f"Nearest stations and lines: {a['lines']}."),
+        (f"How do I get around from {place}?", f"Nearest stations and lines: {a['lines']}."),
         ("Is it cheaper to book direct?", f"Yes. Our direct rate is {F['direct_discount']} below the price on Airbnb and Booking.com for the same home."),
     ]
     pics = photos(area=a["slug"])
@@ -886,7 +887,7 @@ def area_page(a):
   <div class="wrap split">
     <div class="reveal">
       <span class="eyebrow">What's nearby</span>
-      <h2>Why stay in <em>{E(a['name'])}.</em></h2>
+      <h2>Why stay in <em>{E(place)}.</em></h2>
       <p class="lead">Popular with: {E(a['who'])}</p>
       <p><strong>Our homes here:</strong> {E(a['homes'])}</p>
       <a class="btn btn--clay" {BOOK}>Check availability {icon('arrow')}</a>
@@ -904,7 +905,7 @@ def area_page(a):
 
 <section class="section section--sand">
   <div class="wrap split">
-    <div class="reveal">{section_head("Questions", f"Staying in <em>{E(a['name'])}.</em>")}{faq_block(faq)}</div>
+    <div class="reveal">{section_head("Questions", f"Staying in <em>{E(place)}.</em>")}{faq_block(faq)}</div>
     <div class="card card--green reveal">
       <span class="eyebrow" style="color:#F0A483">For property owners</span>
       <h3>Own a property in {E(a['postcode'])}?</h3>
@@ -916,7 +917,7 @@ def area_page(a):
 
 <section class="section">
   <div class="wrap">
-    {homes_map(ctx, area=a["slug"], title="Our homes in " + a["name"])}
+    {homes_map(ctx, area=a["slug"], title="Our homes in " + place)}
   </div>
 </section>
 
@@ -927,7 +928,7 @@ def area_page(a):
   </div>
 </section>
 
-{cta_band(ctx, title=f"Your {E(a['name'])} stay starts here.")}
+{cta_band(ctx, title=f"Your {E(place)} stay starts here.")}
 """
     schema = [faq_schema(faq), crumbs_schema(ctx, [("", "Home"), ("areas/", "Areas"), (ctx.path, a["name"])]),
               {"@context": "https://schema.org", "@type": "LodgingBusiness", "name": f"{C.BRAND} — {a['name']}",
@@ -936,11 +937,15 @@ def area_page(a):
                            "postalCode": a["postcode"], "addressCountry": "GB"},
                "parentOrganization": {"@id": C.SITE_URL + "/#org"}}]
     if a["slug"] == "harry-potter-studio-tour":
-        title = "Apartment Near Warner Bros. Studio Tour London, with Parking | Seeker Estates"
-        desc = "Modern two-bedroom apartment in Kings Langley, around 10 minutes from the Warner Bros. Studio Tour London. Sleeps 6, parking included. Book direct and save 10%."
+        title = "Apartment near the Harry Potter Studio Tour, with Parking | Seeker Estates"
+        desc = "Two-bedroom apartment in Kings Langley, about 10 minutes from Warner Bros. Studio Tour London – The Making of Harry Potter. Sleeps 6, parking included."
     else:
         title = f"Serviced Apartments {a['name']}, London ({a['postcode']}) | Seeker Estates"
+        if len(title) > 70:
+            title = f"Serviced Apartments {a['name']} ({a['postcode']}) | Seeker Estates"
         desc = f"Serviced apartments in {a['short']}: whole homes with kitchen, Wi-Fi and self check-in, near {a['near'][0][0]}. Book direct and save {F['direct_discount']}."
+        if len(desc) > 160:
+            desc = f"Serviced apartments in {a['short']}, near {a['near'][0][0]}: whole homes with kitchen and Wi-Fi. Book direct, save {F['direct_discount']}."
     return ctx.path, page(ctx, title=title, description=desc, body=body, schema=schema)
 
 
@@ -1035,7 +1040,9 @@ def contact():
 """
     return ctx.path, page(ctx, title="Contact Seeker Estates | London Serviced Apartments",
         description="Contact Seeker Estates about a stay, a corporate or monthly booking, or property management in London. We reply within one working day.",
-        body=body, schema=[crumbs_schema(ctx, [("", "Home"), ("contact/", "Contact")])])
+        body=body, schema=[crumbs_schema(ctx, [("", "Home"), ("contact/", "Contact")]),
+                           {"@context": "https://schema.org", "@type": "ContactPage", "url": ctx.abs(),
+                            "about": {"@id": C.SITE_URL + "/#org"}}])
 
 
 # ------------------------------------------------------------------ PRIVACY

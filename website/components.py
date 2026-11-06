@@ -237,6 +237,9 @@ def org_schema():
     }
     if C.PHONE:
         d["telephone"] = C.PHONE
+        d["contactPoint"] = [{"@type": "ContactPoint", "contactType": t, "telephone": C.PHONE, "email": C.EMAIL,
+                              "areaServed": "GB", "availableLanguage": ["English", "French"]}
+                             for t in ("reservations", "sales")]
     if same:
         d["sameAs"] = same
     return d
@@ -509,6 +512,8 @@ def page(ctx, *, title, description, body, audience="guest", schema=(), scripts=
         cfg["leaflet"] = {"js": vasset(ctx, "vendor/leaflet/leaflet.js"), "css": vasset(ctx, "vendor/leaflet/leaflet.css")}
     js = "".join(f'<script src="{vasset(ctx, "js/" + s)}" defer></script>' for s in scripts)
     verify = f'<meta name="google-site-verification" content="{C.GOOGLE_SITE_VERIFICATION}">' if C.GOOGLE_SITE_VERIFICATION else ""
+    if C.BING_SITE_VERIFICATION:
+        verify += f'<meta name="msvalidate.01" content="{C.BING_SITE_VERIFICATION}">'
     robots = "noindex, follow" if noindex else "index, follow, max-image-preview:large"
     body = re.sub(r'href="~/([^"]*)"', lambda m: f'href="{ctx.url(m.group(1))}"', body)
     page_id = ctx.path.strip("/").replace("/", "-") or "home"
