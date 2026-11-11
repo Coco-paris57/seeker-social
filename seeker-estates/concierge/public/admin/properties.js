@@ -151,8 +151,8 @@ export function propertiesView() {
 
   return {
     el,
-    // Stats move as drafts are approved elsewhere. Skip while someone is using a control here.
-    onEvent(type) { if ((type === 'properties' || type === 'draft') && !body.contains(document.activeElement)) load(); },
+    // Stats move as drafts are approved elsewhere.
+    onEvent(type) { if (type === 'properties' || type === 'draft') load(); },
   };
 }
 

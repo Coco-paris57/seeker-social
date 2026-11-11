@@ -9,17 +9,31 @@ const CONFIDENCE = {
   low: { label: 'Low confidence', tone: 'warn', icon: 'alert' },
 };
 
-/** "Remember" checkbox with its property/all-properties choice. */
-function rememberControl({ label, propertyName, checked = false }) {
+// Words and digit runs that suggest a saved answer holds something private (a code, a password).
+const PRIVATE_TEXT = /\d{3,}|\b(code|password|pin|key ?safe|lock ?box)\b/i;
+const PRIVATE_CATEGORIES = new Set(['access', 'wifi']);
+
+/**
+ * "Remember" checkbox with where to save it and who may be told. `text()` returns the words
+ * that would be saved: the verified-guests switch follows them until the person sets it.
+ */
+function rememberControl({ label, propertyName, category, text, checked = false }) {
   const scope = h('select', { 'aria-label': 'Where to save it' },
     propertyName && h('option', { value: 'property' }, 'This property only'),
     h('option', { value: 'global' }, 'All properties'));
-  const box = check(label, { checked, onchange: () => { scope.hidden = !box.input.checked; } });
-  scope.hidden = !checked;
+  const hintId = uid('sens');
+  const sensitive = check('Only share with verified guests', { 'aria-describedby': hintId });
+  const extra = h('div', { class: 'remember-more', hidden: !checked }, scope,
+    h('div', null, sensitive.wrap, h('p', { class: 'hint', id: hintId }, 'Keep on for door codes, WiFi and anything private.')));
+  const box = check(label, { checked, onchange: () => { extra.hidden = !box.input.checked; } });
+  let touched = false;
+  sensitive.input.addEventListener('change', () => { touched = true; });
+  const refresh = () => { if (!touched) sensitive.input.checked = PRIVATE_CATEGORIES.has(category) || PRIVATE_TEXT.test(text()); };
+  refresh();
   return {
-    el: h('div', { class: 'remember' }, box.wrap, scope),
-    input: box.input,
-    value: () => ({ remember: box.input.checked, scope: scope.value }),
+    el: h('div', { class: 'remember' }, box.wrap, extra),
+    refresh,
+    value: () => ({ remember: box.input.checked, scope: scope.value, sensitive: sensitive.input.checked }),
   };
 }
 
@@ -52,7 +66,7 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
 
   const textId = uid('draft');
   const textarea = autoGrow(h('textarea', { id: textId, class: 'draft-text', rows: 3, value: original }));
-  const remember = rememberControl({ label: property ? `Remember this answer for ${property}` : 'Remember this answer', propertyName: property });
+  const remember = rememberControl({ label: property ? `Remember this answer for ${property}` : 'Remember this answer', propertyName: property, category: draft.category, text: () => textarea.value });
   remember.el.hidden = true;
   const approve = button('Approve & send', { variant: 'primary', icon: 'check', 'data-primary': true });
   const reject = button('Reject', { icon: 'x' });
@@ -62,6 +76,7 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
   // Editing reveals "remember": a corrected answer is worth keeping for next time.
   const sync = () => {
     remember.el.hidden = reset.hidden = !edited();
+    remember.refresh();
     approve.lastChild.textContent = edited() ? 'Send edited reply' : 'Approve & send';
   };
   textarea.addEventListener('input', sync);
@@ -127,12 +142,13 @@ function rejectDialog(draft, conversation) {
     title: 'Reject this draft',
     build: (close) => {
       const reply = h('textarea', { rows: 4, id: uid('rej') });
-      const remember = rememberControl({ label: conversation.propertyName ? `Remember my reply for ${conversation.propertyName}` : 'Remember my reply', propertyName: conversation.propertyName });
+      const remember = rememberControl({ label: conversation.propertyName ? `Remember my reply for ${conversation.propertyName}` : 'Remember my reply', propertyName: conversation.propertyName, category: draft.category, text: () => reply.value });
       remember.el.hidden = true;
       const submit = button('Reject draft', { variant: 'danger' });
       reply.addEventListener('input', () => {
         const has = !!reply.value.trim();
         remember.el.hidden = !has;
+        remember.refresh();
         submit.lastChild.textContent = has ? 'Reject and send my reply' : 'Reject draft';
       });
       const go = () => busy(submit, async () => {
@@ -210,7 +226,7 @@ function answerForm(ticket, { autoMode, card }) {
   const hint = h('p', { class: 'hint', id: `${answerId}-hint` });
   answer.setAttribute('aria-describedby', hint.id);
 
-  const remember = ticket.savedToKnowledge ? null : rememberControl({ label: 'Save to knowledge base', propertyName: ticket.propertyName, checked: ticket.type === 'question' });
+  const remember = ticket.savedToKnowledge ? null : rememberControl({ label: 'Save to knowledge base', propertyName: ticket.propertyName, category: ticket.category, text: () => answer.value, checked: ticket.type === 'question' });
   const verbatim = check('Send exactly as written');
   // A maintenance update usually comes before the fix, so the request stays open by default.
   const keepOpen = followUp ? check('Keep open for follow-up', { checked: true }) : null;
@@ -241,6 +257,7 @@ function answerForm(ticket, { autoMode, card }) {
   };
   verbatim.input.addEventListener('change', sync);
   answer.addEventListener('input', () => {
+    remember?.refresh();
     // The answer changed, so the wording shown no longer belongs to it.
     if (previewed) {
       previewed = false;
