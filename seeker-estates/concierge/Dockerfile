@@ -1,0 +1,13 @@
+FROM node:22-slim
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+COPY src ./src
+COPY public ./public
+COPY scripts ./scripts
+ENV NODE_ENV=production PORT=8787 DATA_DIR=/data
+RUN mkdir -p /data && chown node:node /data
+VOLUME /data
+EXPOSE 8787
+USER node
+CMD ["node", "--disable-warning=ExperimentalWarning", "src/server.js"]

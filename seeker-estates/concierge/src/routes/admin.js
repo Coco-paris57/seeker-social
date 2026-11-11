@@ -5,7 +5,7 @@ import QRCode from 'qrcode';
 import { config, SETTING_DEFAULTS } from '../config.js';
 import { q, getSettings, setSetting, audit, parseJson } from '../db.js';
 import { createUser, endTeamSession, hashPassword, requireAdmin, requireUser, startTeamSession, currentUser, verifyPassword } from '../auth.js';
-import { answerTicket, approvalStats, approveDraft, closeTicket, propertyMode, rejectDraft, sendMessage, SENSITIVE_CATEGORIES, stageOf } from '../bot.js';
+import { answerTicket, approvalStats, approveDraft, closeTicket, previewTicketReply, propertyMode, rejectDraft, sendMessage, SENSITIVE_CATEGORIES, stageOf } from '../bot.js';
 import { CATEGORIES } from '../llm.js';
 import { bus, emitAdmin, emitConversation, notifyTeam, vapidPublicKey } from '../notify.js';
 import { syncAll } from '../sync.js';
@@ -170,9 +170,14 @@ admin.get('/tickets/:id', (req, res) => {
   res.json({ ticket: ticketOut(t) });
 });
 
+admin.post('/tickets/:id/preview', async (req, res) => {
+  res.json(await previewTicketReply(Number(req.params.id), req.body?.answer));
+});
+
 admin.post('/tickets/:id/answer', async (req, res) => {
-  const { answer, remember, scope, verbatim, keepOpen } = req.body || {};
-  const out = await answerTicket(Number(req.params.id), req.user, { answer, remember: !!remember, scope, verbatim: !!verbatim, close: !keepOpen });
+  const { answer, reply, remember, scope, verbatim, keepOpen } = req.body || {};
+  if (String(reply || '').length > 4000) throw new HttpError(400, 'Messages can be up to 4000 characters.');
+  const out = await answerTicket(Number(req.params.id), req.user, { answer, reply, remember: !!remember, scope, verbatim: !!verbatim, close: !keepOpen });
   res.json({ ticket: ticketOut(out.ticket), message: messageOut(out.message), knowledgeId: out.knowledgeId });
 });
 

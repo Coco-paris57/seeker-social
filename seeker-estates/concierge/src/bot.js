@@ -237,16 +237,20 @@ async function processConversation(conversationId) {
   }
   const meta = { confidence: decision.confidence, category: decision.category, summary: decision.summary, guestMessageId: lastGuest.id };
 
+  // Learning mode: nothing the assistant wrote reaches a guest without approval. The one
+  // exception is urgent safety guidance, which must not wait.
+  const learning = propertyMode(property, settings) !== 'auto';
+  const liveChat = conversation.channel === 'web'; // holding notes only make sense in a live chat
+
   if (decision.action === 'answer') {
-    const auto = propertyMode(property, settings) === 'auto' && decision.confidence === 'high';
-    if (auto) {
+    if (!learning && decision.confidence === 'high') {
       await sendMessage(conversation, 'bot', decision.reply, { meta: { ...meta, auto: true } });
       return;
     }
     const draft = insertMessage(conversation.id, 'bot', decision.reply, { status: 'pending', meta });
     emitConversation(conversation.id, 'draft', { messageId: draft.id });
-    if (!recentHolding(conversation.id, settings.holdingMinutes)) {
-      await sendMessage(conversation, 'bot', holdingText(decision.language), { kind: 'holding' });
+    if (liveChat && !recentHolding(conversation.id, settings.holdingMinutes)) {
+      await sendMessage(conversation, 'bot', holdingText('confirming', decision.language), { kind: 'holding' });
     }
     await notifyTeam({
       title: `Approve reply · ${where}`,
@@ -256,7 +260,7 @@ async function processConversation(conversationId) {
     return;
   }
 
-  // ask_team, maintenance, urgent: open a request for the team and send the holding reply.
+  // ask_team, maintenance, urgent: open a request for the team and acknowledge the guest.
   const type = decision.action === 'ask_team' ? 'question' : decision.action;
   const ticketId = q.insert(
     `INSERT INTO tickets(conversation_id, property_id, type, category, summary, question, guest_message_id)
@@ -264,7 +268,11 @@ async function processConversation(conversationId) {
     conversation.id, conversation.property_id, type, decision.category, clip(decision.summary, 200),
     decision.teamQuestion || latest, lastGuest.id,
   );
-  await sendMessage(conversation, 'bot', decision.reply, { kind: 'holding', meta: { ...meta, ticketId } });
+  if (!learning || type === 'urgent') {
+    await sendMessage(conversation, 'bot', decision.reply, { kind: 'holding', meta: { ...meta, ticketId, auto: true } });
+  } else if (liveChat) {
+    await sendMessage(conversation, 'bot', holdingText(type, decision.language), { kind: 'holding', meta: { ticketId } });
+  }
   emitConversation(conversation.id, 'ticket', { ticketId });
   const titles = { question: 'Question for the team', maintenance: 'Maintenance issue', urgent: 'URGENT' };
   await notifyTeam({
@@ -274,13 +282,35 @@ async function processConversation(conversationId) {
   });
 }
 
-function holdingText(language) {
+// Fixed wording for learning mode, so no unreviewed model text is sent.
+const HOLDING = {
+  confirming: {
+    en: 'Thank you for your message. I am just confirming this with the team and will reply shortly.',
+    fr: "Merci pour votre message. Je vérifie cela avec l'équipe et je reviens vers vous très vite.",
+    es: 'Gracias por su mensaje. Lo estoy confirmando con el equipo y le responderé enseguida.',
+    de: 'Vielen Dank für Ihre Nachricht. Ich kläre das kurz mit dem Team und melde mich gleich bei Ihnen.',
+    it: 'Grazie per il messaggio. Sto verificando con il team e le rispondo a breve.',
+  },
+  question: {
+    en: 'Thank you for your message. I have passed your question to the team and will reply here as soon as they answer.',
+    fr: "Merci pour votre message. J'ai transmis votre question à l'équipe et je vous répondrai ici dès que possible.",
+    es: 'Gracias por su mensaje. He trasladado su pregunta al equipo y le responderé aquí en cuanto contesten.',
+    de: 'Vielen Dank für Ihre Nachricht. Ich habe Ihre Frage an das Team weitergegeben und melde mich hier, sobald ich eine Antwort habe.',
+    it: 'Grazie per il messaggio. Ho inoltrato la sua domanda al team e le risponderò qui appena possibile.',
+  },
+  maintenance: {
+    en: 'Thank you for letting us know, and sorry about that. I have reported this to the team and will update you here as soon as they reply.',
+    fr: "Merci de nous avoir prévenus, et désolé pour ce désagrément. J'ai signalé le problème à l'équipe et je vous tiendrai informé ici dès que possible.",
+    es: 'Gracias por avisarnos y disculpe las molestias. He informado al equipo y le avisaré aquí en cuanto respondan.',
+    de: 'Vielen Dank für den Hinweis, und entschuldigen Sie bitte die Unannehmlichkeiten. Ich habe das Team informiert und melde mich hier, sobald ich mehr weiß.',
+    it: 'Grazie per la segnalazione e ci scusiamo per il disagio. Ho avvisato il team e la aggiornerò qui appena possibile.',
+  },
+};
+
+function holdingText(kind, language) {
   const l = String(language || '').toLowerCase();
-  if (l.startsWith('fr')) return 'Merci pour votre message. Je vérifie cela avec l\'équipe et je reviens vers vous très vite.';
-  if (l.startsWith('es') || l.startsWith('spa')) return 'Gracias por su mensaje. Lo estoy confirmando con el equipo y le responderé enseguida.';
-  if (l.startsWith('de') || l.startsWith('ger')) return 'Vielen Dank für Ihre Nachricht. Ich kläre das kurz mit dem Team und melde mich gleich bei Ihnen.';
-  if (l.startsWith('it')) return 'Grazie per il messaggio. Sto verificando con il team e le rispondo a breve.';
-  return 'Thank you for your message. I am just confirming this with the team and will reply shortly.';
+  const code = l.startsWith('fr') ? 'fr' : l.startsWith('es') || l.startsWith('spa') ? 'es' : l.startsWith('de') || l.startsWith('ger') ? 'de' : l.startsWith('it') ? 'it' : 'en';
+  return HOLDING[kind][code];
 }
 
 // ---------------------------------------------------------------------------------------
@@ -346,7 +376,7 @@ export async function rejectDraft(messageId, user, { replyText, remember = false
  * The team answers a request. The assistant words the reply for the guest (or sends the
  * team's words as written), and the answer can be saved so the assistant knows it next time.
  */
-export async function answerTicket(ticketId, user, { answer, remember = false, scope = 'property', verbatim = false, close = true } = {}) {
+export async function answerTicket(ticketId, user, { answer, reply: reviewed, remember = false, scope = 'property', verbatim = false, close = true } = {}) {
   const ticket = q.get('SELECT * FROM tickets WHERE id = ?', ticketId);
   if (!ticket) throw new HttpError(404, 'Request not found.');
   if (ticket.status === 'closed') throw new HttpError(409, 'This request is already closed.');
@@ -356,7 +386,10 @@ export async function answerTicket(ticketId, user, { answer, remember = false, s
 
   let reply = text;
   let worded = false;
-  if (!verbatim) {
+  if (String(reviewed || '').trim()) {
+    reply = String(reviewed).trim(); // wording already previewed and confirmed by the team member
+    worded = true;
+  } else if (!verbatim) {
     try {
       reply = await llm.compose(buildContext(conversation, { latest: '' }), ticket, text);
       worded = true;
@@ -382,6 +415,21 @@ export async function answerTicket(ticketId, user, { answer, remember = false, s
   audit(user.id, 'ticket.answer', `ticket ${ticket.id}`);
   emitConversation(conversation.id, 'ticket', { ticketId: ticket.id });
   return { message, knowledgeId, ticket: q.get('SELECT * FROM tickets WHERE id = ?', ticket.id) };
+}
+
+/** How the assistant would word the team's answer for the guest. Nothing is sent. */
+export async function previewTicketReply(ticketId, answer) {
+  const ticket = q.get('SELECT * FROM tickets WHERE id = ?', ticketId);
+  if (!ticket) throw new HttpError(404, 'Request not found.');
+  const text = String(answer || '').trim();
+  if (!text) throw new HttpError(400, 'Please write an answer.');
+  const conversation = q.get('SELECT * FROM conversations WHERE id = ?', ticket.conversation_id);
+  try {
+    return { reply: await llm.compose(buildContext(conversation, { latest: '' }), ticket, text), worded: true };
+  } catch (e) {
+    console.error(`Compose failed for ticket ${ticket.id}: ${e.message}`);
+    return { reply: text, worded: false };
+  }
 }
 
 export function closeTicket(ticketId, user) {

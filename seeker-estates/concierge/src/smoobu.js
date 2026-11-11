@@ -98,7 +98,13 @@ export class Smoobu {
 let client;
 /** Shared client, or null when Smoobu is switched off or not configured. */
 export function smoobu() {
+  if (client) return client;
   if (config.smoobuMode !== 'live') return null;
-  client ??= new Smoobu();
+  client = new Smoobu();
   return client;
+}
+
+/** Tests supply a stand-in client. */
+export function useSmoobuClient(next) {
+  client = next;
 }

@@ -46,8 +46,8 @@ dark grounds), `/shared/icon-192.png`, `/shared/icon-512.png`, `/shared/icon-mas
 `GET /g/<qrToken>/manifest.webmanifest` is a per-property web app manifest (not under `/api`).
 
 Behaviour to design for:
-- In learning mode the guest first gets a `holding` message ("confirming with the team") and the
-  real answer arrives minutes later once a team member approves it. In auto mode answers arrive
+- In learning mode the guest first gets a fixed-wording `holding` message ("confirming with the
+  team") and the real answer arrives minutes later once a team member approves it. In auto mode answers arrive
   in a few seconds. `typing` is on while the assistant is working.
 - Door codes, key-safe and WiFi details are only given to verified guests from `accessInfoHours`
   before check-in. An unverified guest can still chat about everything else.
@@ -87,7 +87,8 @@ Objects:
 | `POST /messages/:id/reject` | `{ replyText?: string, remember?, scope? }` | `{ message|null, knowledgeId }`. Discards the draft; `replyText` is sent as a team message instead. |
 | `GET /tickets?status=open\|closed\|all` | | `{ tickets }` |
 | `GET /tickets/:id` | | `{ ticket }` |
-| `POST /tickets/:id/answer` | `{ answer, remember?: boolean, scope?: 'property'|'global', verbatim?: boolean, keepOpen?: boolean }` | `{ ticket, message, knowledgeId }`. The assistant words the answer for the guest in their language and sends it (`verbatim: true` sends the team's words as written). `remember` saves question and answer to the knowledge base. Closes the ticket unless `keepOpen` (useful for maintenance: update now, close when fixed). |
+| `POST /tickets/:id/preview` | `{ answer }` | `{ reply, worded }`. How the assistant would word the team's answer for the guest, in the guest's language. Nothing is sent. `worded: false` means the model was unavailable and `reply` is the answer unchanged. |
+| `POST /tickets/:id/answer` | `{ answer, reply?: string, remember?: boolean, scope?: 'property'|'global', verbatim?: boolean, keepOpen?: boolean }` | `{ ticket, message, knowledgeId }`. `answer` is what the team told the assistant (this is what `remember` saves to the knowledge base). `reply` is the exact text to send to the guest, normally the previewed wording after any edits; without it the assistant words the answer itself and sends it (`verbatim: true` sends `answer` as written, as a team message). Closes the ticket unless `keepOpen` (useful for maintenance: update now, close when fixed). **Team app flow: in learning mode always preview first and send with `reply`, so a person has seen every word; in auto mode a one-step send is fine.** |
 | `POST /tickets/:id/close` | `{}` | `{ ticket }` |
 | `GET /conversations?propertyId=&q=` | | `{ conversations }` newest first (max 100). |
 | `GET /conversations/:id` | | `{ conversation, messages, tickets }` (messages include pending drafts and rejected ones). |

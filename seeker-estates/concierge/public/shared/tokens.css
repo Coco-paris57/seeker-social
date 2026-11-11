@@ -1,0 +1,50 @@
+/* Seeker Estates design tokens, shared by the guest chat and the team app.
+   Source: seeker-estates/brand/BRAND.md. Brass is an accent only, never a large area. */
+@import url("/shared/fonts.css");
+
+:root {
+  --navy: #0B1F35;
+  --ink: #011729;
+  --mist: #DCE8F2;
+  --brass: #C9A24D;
+  --brass-text: #7A5A12; /* brass dark enough for text on light grounds (AA) */
+  --white: #FFFFFF;
+
+  --ground: #F3F7FA;      /* page background, a lighter step of mist */
+  --surface: #FFFFFF;
+  --surface-2: #E9F0F6;
+  --line: #C5D3E0;
+  --text: #011729;
+  --text-2: #3D5166;      /* secondary text, AA on white and on ground */
+  --accent: #0B1F35;
+  --on-accent: #FFFFFF;
+
+  --ok: #1B6B45;
+  --ok-ground: #E2F3EA;
+  --warn: #8A5A00;
+  --warn-ground: #FFF3D6;
+  --danger: #A32020;
+  --danger-ground: #FCE8E6;
+
+  --font-display: "Lora", Georgia, "Times New Roman", serif;
+  --font-ui: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --radius-s: 8px;
+  --radius-m: 14px;
+  --radius-l: 20px;
+  --shadow: 0 1px 2px rgba(1, 23, 41, .06), 0 6px 20px rgba(1, 23, 41, .08);
+  --focus: 0 0 0 3px #FFFFFF, 0 0 0 6px #0B1F35;
+  --tap: 44px;            /* minimum touch target */
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; font-family: var(--font-ui); color: var(--text); background: var(--ground); line-height: 1.5; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 700; color: var(--navy); line-height: 1.2; margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: none; box-shadow: var(--focus); border-radius: var(--radius-s); }
+[hidden] { display: none !important; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}

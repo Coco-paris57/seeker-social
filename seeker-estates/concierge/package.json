@@ -13,7 +13,8 @@
     "test": "node --disable-warning=ExperimentalWarning --test \"test/*.test.js\"",
     "create-user": "node --disable-warning=ExperimentalWarning scripts/create-user.js",
     "seed-demo": "node --disable-warning=ExperimentalWarning scripts/seed-demo.js",
-    "sync": "node --disable-warning=ExperimentalWarning scripts/sync.js"
+    "sync": "node --disable-warning=ExperimentalWarning scripts/sync.js",
+    "register-webhook": "node --disable-warning=ExperimentalWarning scripts/register-webhook.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",
