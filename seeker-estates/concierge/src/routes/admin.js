@@ -9,6 +9,7 @@ import { answerTicket, approvalStats, approveDraft, closeTicket, previewTicketRe
 import { CATEGORIES } from '../llm.js';
 import { bus, emitAdmin, emitConversation, notifyTeam, vapidPublicKey } from '../notify.js';
 import { syncAll } from '../sync.js';
+import { channelInboxOn, ensureWebhook } from '../channel.js';
 import crypto from 'node:crypto';
 import { clip, failureLimiter, HttpError, newToken, rateLimiter } from '../util.js';
 import { iso, sse } from './shared.js';
@@ -134,7 +135,7 @@ admin.post('/logout', (req, res) => {
 admin.get('/me', (req, res) => {
   const user = currentUser(req);
   if (!user) return res.status(401).json({ error: 'Please sign in.' });
-  res.json({ user, llmMode: config.llmMode, smoobuMode: config.smoobuMode, smoobuInbox: config.smoobuInbox, baseUrl: config.baseUrl, categories: CATEGORIES });
+  res.json({ user, llmMode: config.llmMode, smoobuMode: config.smoobuMode, smoobuInbox: channelInboxOn(), baseUrl: config.baseUrl, categories: CATEGORIES });
 });
 
 admin.use(requireUser);
@@ -396,13 +397,17 @@ admin.delete('/knowledge/:id', (req, res) => {
 
 admin.get('/settings', (req, res) => res.json({ settings: getSettings() }));
 
-admin.patch('/settings', requireAdmin, (req, res) => {
+admin.patch('/settings', requireAdmin, async (req, res) => {
   const b = req.body || {};
+  // Switching channel messages on connects Smoobu first; if that fails nothing is saved.
+  if (b.channelInbox === true && !getSettings().channelInbox) await ensureWebhook();
   const numbers = { accessInfoHours: [0, 336], retentionDays: [7, 730], holdingMinutes: [1, 240] };
   for (const key of Object.keys(SETTING_DEFAULTS)) {
     if (!(key in b)) continue;
     let value = b[key];
-    if (key === 'defaultMode') {
+    if (key === 'channelInbox' || key === 'channelAuto') {
+      if (typeof value !== 'boolean') throw new HttpError(400, `${key} must be true or false.`);
+    } else if (key === 'defaultMode') {
       if (!['learning', 'auto'].includes(value)) throw new HttpError(400, 'Default mode must be learning or auto.');
     } else if (numbers[key]) {
       value = Number(value);

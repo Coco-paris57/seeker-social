@@ -260,8 +260,10 @@ async function processConversation(conversationId) {
 
   // Learning mode: nothing the assistant wrote reaches a guest without approval. The one
   // exception is urgent safety guidance, which must not wait.
-  const learning = propertyMode(property, settings) !== 'auto';
   const liveChat = conversation.channel === 'web'; // holding notes only make sense in a live chat
+  // Replies that go out through Airbnb, Booking.com or email wait for approval until the team
+  // switches channel replies to automatic; after that they follow the property's mode.
+  const learning = propertyMode(property, settings) !== 'auto' || (!liveChat && !settings.channelAuto);
 
   // Check-in, access and WiFi questions from a guest who has not verified their booking: ask
   // them to verify straight away, with fixed wording, instead of waiting for the team. The
@@ -307,7 +309,13 @@ async function processConversation(conversationId) {
       decision.teamQuestion || latest, lastGuest.id,
     );
   }
-  if (!learning || type === 'urgent') {
+  if (!liveChat && learning) {
+    // On a booking channel in approval mode even the first reply to a problem waits for a person.
+    if (type !== 'question') {
+      const draft = insertMessage(conversation.id, 'bot', decision.reply, { status: 'pending', kind: type === 'urgent' ? 'urgent' : 'holding', meta: { ...meta, ticketId } });
+      emitConversation(conversation.id, 'draft', { messageId: draft.id });
+    }
+  } else if (!learning || type === 'urgent') {
     // Urgent replies carry safety instructions, so they are marked for the chat to emphasise.
     await sendMessage(conversation, 'bot', decision.reply, { kind: type === 'urgent' ? 'urgent' : 'holding', meta: { ...meta, ticketId, auto: true } });
   } else if (liveChat && !(open && recentHolding(conversation.id, settings.holdingMinutes))) {

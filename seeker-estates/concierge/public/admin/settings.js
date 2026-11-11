@@ -1,5 +1,5 @@
 // Settings: assistant behaviour, notifications for this device, team, password, audit log.
-import { api, busy, button, chip, confirmDialog, field, fill, fullTime, h, icon, loadError, loading, openDialog, pageHeader, showError, toast } from './lib.js';
+import { api, busy, button, check, chip, confirmDialog, field, fill, fullTime, h, icon, loadError, loading, openDialog, pageHeader, showError, toast } from './lib.js';
 import { disablePush, enablePush, pushState } from './push.js';
 import { isAdmin, session } from './state.js';
 
@@ -18,6 +18,58 @@ function statusSection() {
         ? chip(session.smoobuInbox ? 'Smoobu connected, including guest messages' : 'Smoobu connected', { tone: 'ok', icon: 'check' })
         : chip('Smoobu not connected', { tone: 'neutral', icon: 'info' }),
         session.smoobuMode !== 'live' && h('p', { class: 'hint' }, 'Properties and bookings are not being synced.'))));
+}
+
+/** Guest messages from Airbnb, Booking.com and email. Each switch saves as soon as it is confirmed. */
+function channelSection() {
+  const body = h('div', null, loading('Loading'));
+  const admin = isAdmin();
+
+  async function load() {
+    let settings;
+    try {
+      ({ settings } = await api('/settings'));
+    } catch (err) {
+      if (err.status !== 401) fill(body, loadError(err, load));
+      return;
+    }
+    const change = async (key, on, confirm) => {
+      if (confirm && !(await confirmDialog(confirm))) return load();
+      try {
+        await api('/settings', { method: 'PATCH', body: { [key]: on } });
+        session.smoobuInbox = key === 'channelInbox' ? on : session.smoobuInbox;
+        toast('Saved');
+      } catch (err) {
+        showError(err);
+      }
+      load();
+    };
+    const inbox = check('Answer messages from Airbnb, Booking.com and email', {
+      switchStyle: true, checked: settings.channelInbox, disabled: !admin || session.smoobuMode !== 'live',
+      onchange: (e) => change('channelInbox', e.target.checked, e.target.checked && {
+        title: 'Start answering channel messages?',
+        message: 'Guest messages that reach Smoobu from Airbnb, Booking.com and email will appear in the Inbox with a drafted reply. Nothing is sent to a guest until someone taps Approve & send.',
+        confirmLabel: 'Turn on',
+      }),
+    });
+    const auto = check('Send channel replies without approval', {
+      switchStyle: true, checked: settings.channelAuto, disabled: !admin || !settings.channelInbox,
+      onchange: (e) => change('channelAuto', e.target.checked, e.target.checked && {
+        title: 'Send channel replies automatically?',
+        message: 'For properties in Auto mode, confident answers will go straight to guests on Airbnb, Booking.com and email without anyone on the team checking them. Properties in Learning mode still wait for approval.',
+        confirmLabel: 'Send automatically', danger: true,
+      }),
+    });
+    fill(body,
+      session.smoobuMode !== 'live' && h('p', { class: 'note' }, icon('info', 16), 'Smoobu is not connected, so this is not available.'),
+      !admin && h('p', { class: 'note' }, icon('lock', 16), 'Only administrators can change these settings.'),
+      inbox.wrap,
+      h('p', { class: 'hint' }, 'Off: these messages stay in Smoobu only. On: they also arrive here, with a notification, and approved replies go back to the guest through Smoobu.'),
+      auto.wrap,
+      h('p', { class: 'hint' }, 'Leave off while you are checking the drafts. With this off, every channel reply waits for Approve & send, whatever the property is set to.'));
+  }
+  load();
+  return section('Messages from booking channels', body);
 }
 
 /** Assistant settings. Read-only for agents. */
@@ -280,6 +332,7 @@ export function settingsView({ onSignOut }) {
     statusSection(),
     notificationsSection(),
     assistantSection(),
+    channelSection(),
     teamSection(),
     passwordSection(),
     isAdmin() && auditSection(),

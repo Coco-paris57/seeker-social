@@ -2,12 +2,12 @@
 // the payload is treated only as a hint: bookings and messages are re-read from the API.
 import crypto from 'node:crypto';
 import express from 'express';
-import { config } from '../config.js';
 import { q } from '../db.js';
 import { handleGuestMessage } from '../bot.js';
 import { emitConversation } from '../notify.js';
 import { smoobu } from '../smoobu.js';
 import { syncReservation } from '../sync.js';
+import { channelInboxOn, webhookToken } from '../channel.js';
 
 export const webhooks = express.Router();
 
@@ -15,7 +15,7 @@ const same = (a, b) => a.length === b.length && crypto.timingSafeEqual(Buffer.fr
 const plain = (html) => String(html || '').replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#0?39;|&apos;/g, "'").replace(/&quot;/g, '"').trim();
 
 webhooks.post('/smoobu/:token', (req, res) => {
-  if (!config.smoobuWebhookToken || !same(String(req.params.token), config.smoobuWebhookToken)) return res.status(404).end();
+  if (!same(String(req.params.token), webhookToken())) return res.status(404).end();
   res.json({ ok: true }); // acknowledge first; Smoobu does not need to wait for the work
   handleSmoobuEvent(req.body || {}).catch((e) => console.error(`Smoobu webhook: ${e.message}`));
 });
@@ -27,7 +27,7 @@ export async function handleSmoobuEvent(event) {
     await syncReservation(data.id);
   } else if (action === 'deleteReservation' && Number.isInteger(data.id)) {
     q.run('DELETE FROM reservations WHERE id = ?', data.id);
-  } else if (action === 'newMessage' && data.sender === 'guest' && config.smoobuInbox) {
+  } else if (action === 'newMessage' && data.sender === 'guest' && channelInboxOn()) {
     await importGuestMessage(Number(data.booking?.id), Number(data.id));
   }
 }

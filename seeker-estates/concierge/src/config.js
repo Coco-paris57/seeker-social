@@ -55,6 +55,8 @@ export const SETTING_DEFAULTS = {
   emergencyContact: '', // out-of-hours phone number the bot may give for urgent issues
   officeHours: 'Every day, 09:00 to 21:00 UK time',
   holdingMinutes: 10,
+  channelInbox: false, // handle guest messages from Airbnb, Booking.com and email (through Smoobu)
+  channelAuto: false, // false: every channel reply waits for approval, whatever the property's mode
   // What the guest's online check-in page (ChargeAutomation) shows and when. Told to the assistant.
   checkinPortalNote: 'The online check-in page holds the check-in instructions, access details and WiFi for the booking. They appear once the guest has completed the online check-in form. Instructions for getting in become visible 1 hour before check-in time.', // do not repeat the "checking with the team" note within this window
 };

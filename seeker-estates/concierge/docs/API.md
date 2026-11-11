@@ -108,7 +108,7 @@ Objects:
 | `POST /knowledge` | `{ propertyId?: number|null, category, question, answer, sensitive?: boolean }` | `201 { knowledge }`. `sensitive` defaults to true for `access` and `wifi`. |
 | `PATCH /knowledge/:id` | any of the same fields | `{ knowledge }` |
 | `DELETE /knowledge/:id` | | `{ ok }` |
-| `GET /settings` | | `{ settings: { defaultMode, botName, accessInfoHours, retentionDays, emergencyContact, officeHours, holdingMinutes, checkinPortalNote } }` |
+| `GET /settings` | | `{ settings: { defaultMode, botName, accessInfoHours, retentionDays, emergencyContact, officeHours, holdingMinutes, checkinPortalNote, channelInbox: boolean, channelAuto: boolean } }` |
 | `PATCH /settings` (admin) | any of those | `{ settings }` |
 | `GET /users` | | `{ users: [{ id, email, name, role, createdAt, notifications: boolean }] }` |
 | `POST /users` (admin) | `{ email, name, password, role: 'admin'|'agent' }` | `201 { user }` |

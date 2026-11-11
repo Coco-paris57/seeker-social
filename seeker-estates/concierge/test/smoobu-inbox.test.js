@@ -4,6 +4,7 @@ import { startServer, seed, signIn, q } from './helpers.js';
 import { config } from '../src/config.js';
 import { useSmoobuClient } from '../src/smoobu.js';
 import { handleSmoobuEvent } from '../src/routes/webhooks.js';
+import { setSetting } from '../src/db.js';
 
 let srv, ctx;
 const outbox = [];
@@ -15,7 +16,7 @@ const fake = {
   reservation: async () => { throw new Error('unknown booking'); },
 };
 
-before(async () => { srv = await startServer(); ctx = seed({ mode: 'auto' }); useSmoobuClient(fake); config.smoobuInbox = true; });
+before(async () => { srv = await startServer(); ctx = seed({ mode: 'auto' }); useSmoobuClient(fake); config.smoobuInbox = true; setSetting('channelAuto', true); });
 after(() => { useSmoobuClient(null); config.smoobuInbox = false; return srv.close(); });
 
 test('a guest message from Smoobu is answered back through Smoobu, once', async () => {
@@ -63,4 +64,53 @@ test('in learning mode the Smoobu reply waits for approval and no holding note i
   await team('POST', `/api/admin/messages/${draft.id}/approve`, {});
   assert.equal(outbox.length, 1);
   assert.match(outbox[0].body, /Cotton 40/);
+});
+
+test('the Settings switch connects Smoobu, and channel replies wait for approval until the second switch', async () => {
+  config.smoobuInbox = false;
+  setSetting('channelAuto', false);
+  q.run("UPDATE properties SET mode = 'auto' WHERE id = ?", ctx.propertyId);
+  const registered = [];
+  fake.webhooks = async () => ({ webhooks: [{ id: 1, webhookUrl: 'https://other.example/hook' }] });
+  fake.createWebhook = async (url) => { registered.push(url); return { id: 2 }; };
+  const team = await signIn(srv.base);
+
+  // Without a public https address the switch refuses and stays off.
+  assert.equal((await team('PATCH', '/api/admin/settings', { channelInbox: true })).status, 400);
+  assert.equal((await team('GET', '/api/admin/settings')).json.settings.channelInbox, false);
+
+  config.baseUrl = 'https://concierge.example';
+  assert.equal((await team('PATCH', '/api/admin/settings', { channelInbox: true })).status, 200);
+  assert.equal(registered.length, 1);
+  assert.equal(registered[0], 'https://concierge.example/api/webhooks/smoobu/test-webhook-token');
+  assert.equal((await team('GET', '/api/admin/me')).json.smoobuInbox, true);
+
+  // Property is in auto, but channel replies still wait for a person.
+  fake.messages = async () => [{ id: 9030, type: 1, message: 'How do I use the washing machine?', htmlMessage: '' }];
+  outbox.length = 0;
+  await handleSmoobuEvent({ action: 'newMessage', data: { id: 9030, sender: 'guest', booking: { id: 501 } } });
+  assert.equal(outbox.length, 0);
+  const draft = (await team('GET', '/api/admin/inbox')).json.approvals.at(-1).draft;
+  await team('POST', `/api/admin/messages/${draft.id}/approve`, {});
+  assert.equal(outbox.length, 1);
+
+  // Even an urgent first reply waits on a booking channel.
+  fake.messages = async () => [{ id: 9031, type: 1, message: 'I can smell gas in the kitchen', htmlMessage: '' }];
+  await handleSmoobuEvent({ action: 'newMessage', data: { id: 9031, sender: 'guest', booking: { id: 501 } } });
+  assert.equal(outbox.length, 1);
+  const inbox = (await team('GET', '/api/admin/inbox')).json;
+  assert.ok(inbox.tickets.some((t) => t.type === 'urgent'));
+  assert.equal(inbox.approvals.at(-1).draft.kind, 'urgent');
+
+  // Second switch: now the auto property answers by itself.
+  assert.equal((await team('PATCH', '/api/admin/settings', { channelAuto: true })).status, 200);
+  fake.messages = async () => [{ id: 9032, type: 1, message: 'washing machine instructions please', htmlMessage: '' }];
+  await handleSmoobuEvent({ action: 'newMessage', data: { id: 9032, sender: 'guest', booking: { id: 501 } } });
+  assert.equal(outbox.length, 2);
+
+  // Switched off again: messages are ignored.
+  await team('PATCH', '/api/admin/settings', { channelInbox: false });
+  fake.messages = async () => [{ id: 9033, type: 1, message: 'washing machine?', htmlMessage: '' }];
+  await handleSmoobuEvent({ action: 'newMessage', data: { id: 9033, sender: 'guest', booking: { id: 501 } } });
+  assert.equal(outbox.length, 2);
 });

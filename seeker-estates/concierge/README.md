@@ -87,11 +87,17 @@ Railway all work with the included `Dockerfile`; mount a volume at `/data`.
 
 ### Messages from Airbnb and Booking.com
 
-With `SMOOBU_INBOX=on` and the webhook registered, guest messages that reach Smoobu from any
-channel are answered through the same flow, and replies go back through Smoobu to the channel.
-These conversations count as verified because the channel identifies the guest. It is off by
-default: run the web chat in learning mode first, and note that Smoobu's own automated messages
-keep working alongside.
+Off until you switch it on in the team app: Settings, "Messages from booking channels".
+
+- **Answer messages from Airbnb, Booking.com and email.** Connects Smoobu (registers the
+  webhook) and brings guest messages from every channel into the Inbox, with a notification and
+  a drafted reply. Approved replies go back to the guest through Smoobu. These conversations
+  count as verified because the channel identifies the guest.
+- **Send channel replies without approval.** Off by default, and while it is off every channel
+  reply waits for Approve & send whatever the property's mode, including the first reply to an
+  urgent message. When on, channel replies follow each property's mode.
+
+Smoobu's and ChargeAutomation's own automated messages keep working alongside.
 
 ## Privacy and compliance
 
