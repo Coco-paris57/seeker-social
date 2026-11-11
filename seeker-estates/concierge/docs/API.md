@@ -29,7 +29,8 @@ Plus Jakarta Sans), `/shared/logo.svg` (wordmark for light grounds), `/shared/lo
 `conversation` object:
 `{ id, verified, property: {name, area}|null, guestFirstName|null, stay: {arrival, departure, checkIn, checkOut, checkinLink|null, checkinCompleted}|null, stage: 'unknown'|'before_arrival'|'during_stay'|'after_stay', accessReleased, teamHasTakenOver }`
 
-`message` object: `{ id, role: 'guest'|'assistant'|'team', text, kind: 'answer'|'holding'|'urgent'|'relay', at }`.
+`message` object: `{ id, role: 'guest'|'assistant'|'team', text, kind: 'answer'|'holding'|'urgent'|'relay'|'verify'|'checkin', at }`.
+`verify` asks the guest to verify their booking (the chat opens the form); `checkin` hands over their online check-in link.
 `text` is plain text with newlines (render with `white-space: pre-wrap`, never as HTML).
 
 | Call | Body / query | Returns |

@@ -4,7 +4,7 @@ import express from 'express';
 import { config } from '../config.js';
 import { q, getSettings } from '../db.js';
 import { currentConversation, endGuestSession, requireGuest, startGuestSession } from '../auth.js';
-import { accessReleased, handleGuestMessage, stageOf } from '../bot.js';
+import { accessReleased, afterVerification, handleGuestMessage, stageOf } from '../bot.js';
 import { bus, emitConversation, notifyTeam } from '../notify.js';
 import { addDays, HttpError, londonDate, normaliseName, rateLimiter } from '../util.js';
 import { iso, sse } from './shared.js';
@@ -134,6 +134,7 @@ guest.post('/verify', requireGuest, (req, res) => {
   const conversation = q.get('SELECT * FROM conversations WHERE id = ?', c.id);
   emitConversation(c.id, 'conversation');
   res.json({ conversation: describe(conversation) });
+  afterVerification(c.id).catch((e) => console.error(`After verification, conversation ${c.id}: ${e.message}`));
 });
 
 guest.get('/messages', requireGuest, (req, res) => {

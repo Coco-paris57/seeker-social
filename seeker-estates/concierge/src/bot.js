@@ -163,13 +163,14 @@ export async function sendMessage(conversation, role, body, opts = {}) {
   return message;
 }
 
-function recentHolding(conversationId, minutes) {
+function recentKind(conversationId, kind, minutes) {
   return !!q.get(
-    `SELECT 1 FROM messages WHERE conversation_id = ? AND kind = 'holding' AND status = 'sent'
+    `SELECT 1 FROM messages WHERE conversation_id = ? AND kind = ? AND status = 'sent'
      AND created_at > datetime('now', ?)`,
-    conversationId, `-${minutes} minutes`,
+    conversationId, kind, `-${minutes} minutes`,
   );
 }
+const recentHolding = (conversationId, minutes) => recentKind(conversationId, 'holding', minutes);
 
 // ---------------------------------------------------------------------------------------
 // Guest message in
@@ -262,6 +263,16 @@ async function processConversation(conversationId) {
   const learning = propertyMode(property, settings) !== 'auto';
   const liveChat = conversation.channel === 'web'; // holding notes only make sense in a live chat
 
+  // Check-in, access and WiFi questions from a guest who has not verified their booking: ask
+  // them to verify straight away, with fixed wording, instead of waiting for the team. The
+  // chat opens the verification form on this message. Asked once per half hour at most; after
+  // that the question follows the normal route so a guest who cannot verify still gets help.
+  const needsBooking = ['checkin', 'access', 'wifi'].includes(decision.category) && ['answer', 'ask_team'].includes(decision.action);
+  if (liveChat && !conversation.verified && needsBooking && !recentKind(conversation.id, 'verify', 30)) {
+    await sendMessage(conversation, 'bot', fixedText('verify', decision.language), { kind: 'verify', meta: { ...meta, auto: true } });
+    return;
+  }
+
   if (decision.action === 'answer') {
     if (!learning && decision.confidence === 'high') {
       await sendMessage(conversation, 'bot', decision.reply, { meta: { ...meta, auto: true } });
@@ -336,10 +347,66 @@ const HOLDING = {
   },
 };
 
-function holdingText(kind, language) {
+const languageCode = (language) => {
   const l = String(language || '').toLowerCase();
-  const code = l.startsWith('fr') ? 'fr' : l.startsWith('es') || l.startsWith('spa') ? 'es' : l.startsWith('de') || l.startsWith('ger') ? 'de' : l.startsWith('it') ? 'it' : 'en';
-  return HOLDING[kind][code];
+  return l.startsWith('fr') ? 'fr' : l.startsWith('es') || l.startsWith('spa') ? 'es' : l.startsWith('de') || l.startsWith('ger') ? 'de' : l.startsWith('it') ? 'it' : 'en';
+};
+const holdingText = (kind, language) => HOLDING[kind][languageCode(language)];
+
+// Fixed wording for the verification step and for handing over the online check-in link.
+const FIXED = {
+  verify: {
+    en: 'To send you your check-in details, I first need to confirm your booking. Please enter the surname on the booking and your arrival date.',
+    fr: "Pour vous envoyer vos informations d'arrivée, je dois d'abord confirmer votre réservation. Merci d'indiquer le nom de famille de la réservation et votre date d'arrivée.",
+    es: 'Para enviarle los datos de su llegada, primero necesito confirmar su reserva. Indique el apellido de la reserva y su fecha de llegada.',
+    de: 'Damit ich Ihnen Ihre Check-in-Informationen senden kann, muss ich zuerst Ihre Buchung bestätigen. Bitte geben Sie den Nachnamen der Buchung und Ihr Anreisedatum an.',
+    it: "Per inviarle le informazioni per il check-in devo prima confermare la prenotazione. Inserisca il cognome della prenotazione e la data di arrivo.",
+  },
+  link: {
+    en: 'Thank you, your booking is confirmed. Your check-in instructions, access details and WiFi are on your online check-in page:',
+    fr: "Merci, votre réservation est confirmée. Vos instructions d'arrivée, les informations d'accès et le WiFi se trouvent sur votre page d'enregistrement en ligne :",
+    es: 'Gracias, su reserva está confirmada. Las instrucciones de llegada, los datos de acceso y el WiFi están en su página de check-in online:',
+    de: 'Vielen Dank, Ihre Buchung ist bestätigt. Ihre Check-in-Anleitung, die Zugangsdaten und das WLAN finden Sie auf Ihrer Online-Check-in-Seite:',
+    it: 'Grazie, la prenotazione è confermata. Le istruzioni per il check-in, i dati di accesso e il WiFi sono nella sua pagina di check-in online:',
+  },
+  formFirst: {
+    en: 'Please complete the online check-in form there first. The details appear once it is done.',
+    fr: "Merci de compléter d'abord le formulaire d'enregistrement en ligne. Les informations s'affichent une fois celui-ci terminé.",
+    es: 'Complete primero el formulario de check-in online. Los datos aparecen una vez completado.',
+    de: 'Bitte füllen Sie dort zuerst das Online-Check-in-Formular aus. Danach werden die Informationen angezeigt.',
+    it: 'Compili prima il modulo di check-in online. I dati compaiono una volta completato.',
+  },
+  formDone: {
+    en: 'Your online check-in is complete, so the details are shown there. Instructions for getting in appear shortly before your check-in time.',
+    fr: "Votre enregistrement en ligne est terminé : les informations y sont affichées. Les instructions d'accès apparaissent peu avant votre heure d'arrivée.",
+    es: 'Su check-in online está completado, así que los datos ya aparecen allí. Las instrucciones de acceso se muestran poco antes de su hora de llegada.',
+    de: 'Ihr Online-Check-in ist abgeschlossen, die Informationen werden dort angezeigt. Die Zugangsanleitung erscheint kurz vor Ihrer Check-in-Zeit.',
+    it: "Il check-in online è completato, quindi i dati sono visibili lì. Le istruzioni per l'accesso compaiono poco prima dell'orario di check-in.",
+  },
+};
+const fixedText = (key, language) => FIXED[key][languageCode(language)];
+
+/**
+ * Called when a guest has just verified their booking. If they were asked to verify in order to
+ * get check-in details, hand over their online check-in link at once (fixed wording, the link
+ * comes from the booking). Without a link, their question goes back in the queue.
+ */
+export async function afterVerification(conversationId) {
+  const conversation = q.get('SELECT * FROM conversations WHERE id = ?', conversationId);
+  const asked = q.get("SELECT id, meta FROM messages WHERE conversation_id = ? AND kind = 'verify' ORDER BY id DESC LIMIT 1", conversationId);
+  if (!conversation?.verified || !asked) return;
+  if (q.get("SELECT 1 FROM messages WHERE conversation_id = ? AND kind = 'checkin' AND id > ?", conversationId, asked.id)) return;
+  const reservation = q.get('SELECT * FROM reservations WHERE id = ?', conversation.reservation_id);
+  if (reservation?.checkin_link && !reservation.cancelled && stageOf(reservation) !== 'after_stay') {
+    const lang = conversation.language;
+    const text = `${fixedText('link', lang)}\n${reservation.checkin_link}\n\n${fixedText(reservation.checkin_done ? 'formDone' : 'formFirst', lang)}`;
+    await sendMessage(conversation, 'bot', text, { kind: 'checkin', meta: { auto: true, category: 'checkin' } });
+    return;
+  }
+  for (const id of parseJson(asked.meta).covers || []) {
+    q.run("UPDATE messages SET meta = json_remove(meta, '$.handled') WHERE id = ? AND conversation_id = ? AND role = 'guest'", id, conversationId);
+  }
+  await handleGuestMessage(conversationId);
 }
 
 // ---------------------------------------------------------------------------------------

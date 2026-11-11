@@ -20,11 +20,32 @@ test('the link and status are read from the Smoobu booking note', () => {
   assert.equal(r.checkin_done, 1);
 });
 
-test('an unverified guest never gets the link', async () => {
+test('an unverified guest is asked to verify at once, then gets their link without waiting for the team', async () => {
   const guest = await openChat(srv.base);
   const me = await say(guest, 'How do I check in? What is the door code?');
-  const all = JSON.stringify(me) + JSON.stringify(q.all('SELECT body FROM messages WHERE conversation_id = ?', me.conversation.id));
-  assert.ok(!all.includes('chargeautomation'));
+  // Learning mode, yet no draft and no "confirming with the team": the fixed verify request goes straight out.
+  assert.deepEqual(me.messages.map((m) => m.kind), ['answer', 'verify']);
+  assert.ok(!JSON.stringify(me).includes('chargeautomation'));
+  assert.equal(q.get("SELECT COUNT(*) AS n FROM messages WHERE conversation_id = ? AND status = 'pending'", me.conversation.id).n, 0);
+
+  assert.equal((await guest('POST', '/api/guest/verify', { lastName: 'obrien muller', arrivalDate: ctx.arrival })).status, 200);
+  const { afterVerification } = await import('../src/bot.js');
+  await afterVerification(me.conversation.id); // idempotent: the route has already started it
+  const after = (await guest('GET', '/api/guest/me')).json;
+  assert.equal(after.messages.at(-1).kind, 'checkin');
+  assert.ok(after.messages.at(-1).text.includes(LINK));
+  assert.match(after.messages.at(-1).text, /complete the online check-in form/);
+  assert.equal(after.messages.filter((m) => m.kind === 'checkin').length, 1);
+});
+
+test('a guest who cannot verify is not asked twice in a row; the second question reaches the team', async () => {
+  const guest = await openChat(srv.base);
+  await say(guest, 'What is the door code?');
+  const me = await say(guest, 'I am staying with my friend, what is the door code?');
+  assert.equal(me.messages.filter((m) => m.kind === 'verify').length, 1);
+  const pending = q.get("SELECT COUNT(*) AS n FROM messages WHERE conversation_id = ? AND status = 'pending'", me.conversation.id).n;
+  const tickets = q.get('SELECT COUNT(*) AS n FROM tickets WHERE conversation_id = ?', me.conversation.id).n;
+  assert.ok(pending + tickets >= 1);
 });
 
 test('a verified guest gets their own link, and the model only ever sees a placeholder', async () => {

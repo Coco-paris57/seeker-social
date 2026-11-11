@@ -281,6 +281,13 @@ function messageNode(m) {
   const bubble = el('p', 'bubble');
   bubble.append(textWithLinks(m.text));
   item.append(meta, bubble);
+  // A request to verify carries its own button until the booking is verified.
+  if (m.kind === 'verify' && !state.conversation.verified) {
+    const verify = el('button', 'btn btn-primary msg-action', t('verifySubmit'));
+    verify.type = 'button';
+    verify.addEventListener('click', openVerify);
+    item.append(verify);
+  }
   return item;
 }
 
@@ -308,7 +315,7 @@ function renderMessages(forceBottom = false) {
   const scroll = $('scroll');
   const pinned = forceBottom || scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < 120;
   const items = [
-    ...state.messages.map((m) => ({ key: `m${m.id}`, make: () => messageNode(m) })),
+    ...state.messages.map((m) => ({ key: `m${m.id}${m.kind === 'verify' && state.conversation.verified ? ':done' : ''}`, make: () => messageNode(m) })),
     ...state.outbox.map((entry) => ({ key: `o${entry.localId}:${entry.status}`, make: () => outboxNode(entry) })),
   ];
   const keep = new Set(items.map((item) => item.key));
@@ -359,6 +366,8 @@ function applyMessages(list) {
   if (state.loaded && replies.length) {
     announce(replies.map((m) => `${m.role === 'team' ? t('roleTeam') : t('roleAssistant')}: ${m.text}`).join('\n'));
     if (!pinned) $('new-pill').hidden = false;
+    // The assistant has just asked for the booking details: open the form for the guest.
+    if (replies.some((m) => m.kind === 'verify') && !state.conversation.verified && !mustVerify() && !$('verify').open) openVerify();
   }
 }
 
@@ -531,6 +540,7 @@ async function submitVerify(event) {
     const { conversation } = await api('POST', '/verify', { lastName, arrivalDate });
     state.conversation = conversation;
     renderConversation();
+    renderMessages(); // the "verify" button on earlier messages is no longer needed
     $('verify').close();
     $('verify-form').reset();
     announce($('verified-text').textContent);

@@ -229,6 +229,8 @@ a { color: var(--brand); text-underline-offset: 0.15em; }
 }
 /* A holding note is a status update, not the answer: no filled bubble. */
 .msg-holding .bubble { background: transparent; border-style: dashed; font-size: 0.9375rem; }
+/* Button under a message that asks the guest to verify their booking. */
+.msg-action { align-self: flex-start; margin-top: 0.5rem; }
 /* Safety instructions: a heavier edge so they cannot be mistaken for a status note. */
 .msg-urgent .bubble { background: var(--danger-ground); border-color: var(--danger); border-left-width: 5px; font-weight: 500; }
 .msg-status { font-style: italic; }
