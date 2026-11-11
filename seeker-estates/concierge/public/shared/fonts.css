@@ -1,6 +1,7 @@
-/* Brand type, served from this site so guest devices make no third-party requests. */
-@font-face { font-family: "Lora"; font-weight: 600; font-style: normal; font-display: swap; src: url("/shared/fonts/lora-latin-600-normal.woff2") format("woff2"); }
-@font-face { font-family: "Lora"; font-weight: 700; font-style: normal; font-display: swap; src: url("/shared/fonts/lora-latin-700-normal.woff2") format("woff2"); }
-@font-face { font-family: "Poppins"; font-weight: 400; font-style: normal; font-display: swap; src: url("/shared/fonts/poppins-latin-400-normal.woff2") format("woff2"); }
-@font-face { font-family: "Poppins"; font-weight: 500; font-style: normal; font-display: swap; src: url("/shared/fonts/poppins-latin-500-normal.woff2") format("woff2"); }
-@font-face { font-family: "Poppins"; font-weight: 600; font-style: normal; font-display: swap; src: url("/shared/fonts/poppins-latin-600-normal.woff2") format("woff2"); }
+/* Brand type (Fraunces, Plus Jakarta Sans), served from this site so guest devices make no
+   third-party requests. Family names match seekerestates.com. */
+@font-face { font-family: "Fraunces"; font-weight: 300 900; font-style: normal; font-display: swap; src: url("/shared/fonts/fraunces-latin-wght-normal.woff2") format("woff2"); }
+@font-face { font-family: "Jakarta"; font-weight: 400; font-style: normal; font-display: swap; src: url("/shared/fonts/plus-jakarta-sans-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Jakarta"; font-weight: 500; font-style: normal; font-display: swap; src: url("/shared/fonts/plus-jakarta-sans-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Jakarta"; font-weight: 600; font-style: normal; font-display: swap; src: url("/shared/fonts/plus-jakarta-sans-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Jakarta"; font-weight: 700; font-style: normal; font-display: swap; src: url("/shared/fonts/plus-jakarta-sans-latin-700-normal.woff2") format("woff2"); }

@@ -67,7 +67,7 @@ function buildShell() {
     h('a', { class: 'skip-link', href: '#main' }, 'Skip to content'),
     h('div', { class: 'shell' },
       h('nav', { class: 'nav', 'aria-label': 'Main' },
-        h('div', { class: 'brand' }, h('img', { src: '/shared/logo-tile.png', alt: '', width: 40, height: 40 }), h('span', null, TITLE)),
+        h('div', { class: 'brand' }, h('img', { src: '/shared/mark-reversed.svg', alt: '', width: 40, height: 40 }), h('span', null, TITLE)),
         h('ul', null, links.map((a) => h('li', null, a))),
         h('p', { class: 'nav-user' }, session.user.name)),
       h('div', { class: 'content' }, demo, offline, main)));
@@ -134,11 +134,12 @@ function flushEvents() {
 
 /** The same alert that goes out as a push notification, shown in the open app. */
 function showAlert(alert) {
+  // The inbox already shows the new item as it arrives; only urgent alerts interrupt there.
+  if (!alert.urgent && current?.name === 'inbox') return;
   const hash = String(alert.url || '').split('#')[1];
   toast(alert.body || '', {
     kind: alert.urgent ? 'urgent' : 'info',
     title: alert.title,
-    sticky: !!alert.urgent,
     action: hash ? { label: 'Open', onClick: () => { location.hash = `#${hash}`; } } : null,
   });
 }

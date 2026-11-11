@@ -83,10 +83,11 @@ test('maintenance and urgent issues alert the team even in auto mode', async () 
   const guest = await openChat(srv.base);
   sent.length = 0;
   await say(guest, 'The shower is leaking onto the floor');
-  assert.equal(sent.at(-1).urgent, true);
+  assert.equal(sent.at(-1).urgent, false);
   assert.match(sent.at(-1).title, /Maintenance/);
   await say(guest, 'I can smell gas in the kitchen');
   assert.match(sent.at(-1).title, /URGENT/);
+  assert.equal(sent.at(-1).urgent, true);
   const inbox = (await team('GET', '/api/admin/inbox')).json;
   assert.equal(inbox.tickets[0].type, 'urgent'); // urgent sorts first
   assert.ok(inbox.tickets.some((t) => t.type === 'maintenance'));

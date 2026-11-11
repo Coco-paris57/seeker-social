@@ -1,46 +1,54 @@
 /* Seeker Estates design tokens, shared by the guest chat and the team app.
-   Source: seeker-estates/brand/BRAND.md. Brass is an accent only, never a large area. */
+   Source: the current brand as published on seekerestates.com (assets/css/site.css):
+   deep green, ivory and sand grounds, clay as the single accent, Fraunces + Plus Jakarta Sans.
+   Clay is an accent only, never a large area. */
 @import url("/shared/fonts.css");
 
 :root {
-  --navy: #0B1F35;
-  --ink: #011729;
-  --mist: #DCE8F2;
-  --brass: #C9A24D;
-  --brass-text: #7A5A12; /* brass dark enough for text on light grounds (AA) */
+  --brand: #0F3D2E;        /* green */
+  --brand-800: #0B3125;
+  --brand-600: #1F5A44;
+  --brand-tint: #DDE9E1;   /* green-100 */
+  --brand-50: #EEF4EF;
+  --ivory: #F6F1E7;
+  --sand: #EADFCB;
+  --sand-50: #FBF8F2;
+  --clay: #C8582F;
+  --clay-700: #A9441F;     /* clay dark enough for text on light grounds (AA) */
+  --clay-100: #F6DDD0;
+  --ink: #13221C;
   --white: #FFFFFF;
 
-  --ground: #F3F7FA;      /* page background, a lighter step of mist */
+  --ground: #FBF8F2;       /* page background (sand-50) */
   --surface: #FFFFFF;
-  --surface-2: #E9F0F6;
-  --line: #C5D3E0;
-  --text: #011729;
-  --text-2: #3D5166;      /* secondary text, AA on white and on ground */
-  --accent: #0B1F35;
+  --surface-2: #EEF4EF;
+  --line: #D3DCD5;
+  --text: #13221C;
+  --text-2: #4E5E56;       /* secondary text, AA on white and on ground */
   --on-accent: #FFFFFF;
 
-  --ok: #1B6B45;
-  --ok-ground: #E2F3EA;
+  --ok: #1F5A44;
+  --ok-ground: #DDE9E1;
   --warn: #8A5A00;
   --warn-ground: #FFF3D6;
   --danger: #A32020;
   --danger-ground: #FCE8E6;
 
-  --font-display: "Lora", Georgia, "Times New Roman", serif;
-  --font-ui: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-ui: "Jakarta", "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
-  --radius-s: 8px;
-  --radius-m: 14px;
+  --radius-s: 10px;
+  --radius-m: 16px;
   --radius-l: 20px;
-  --shadow: 0 1px 2px rgba(1, 23, 41, .06), 0 6px 20px rgba(1, 23, 41, .08);
-  --focus: 0 0 0 3px #FFFFFF, 0 0 0 6px #0B1F35;
-  --tap: 44px;            /* minimum touch target */
+  --shadow: 0 1px 2px rgba(19, 34, 28, .06), 0 12px 32px -12px rgba(19, 34, 28, .18);
+  --focus: 0 0 0 3px #FFFFFF, 0 0 0 6px #0F3D2E;
+  --tap: 44px;             /* minimum touch target */
 }
 
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; font-family: var(--font-ui); color: var(--text); background: var(--ground); line-height: 1.5; }
-h1, h2, h3 { font-family: var(--font-display); font-weight: 700; color: var(--navy); line-height: 1.2; margin: 0; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; color: var(--brand); line-height: 1.2; margin: 0; letter-spacing: -0.01em; }
 button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: none; box-shadow: var(--focus); border-radius: var(--radius-s); }
 [hidden] { display: none !important; }

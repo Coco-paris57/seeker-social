@@ -351,21 +351,13 @@ export function inboxView(params) {
   const el = h('div', { class: 'page page-inbox' }, pageHeader('Inbox', { sub: 'Replies waiting for approval and requests from the assistant.' }), notice, body);
 
   const openTickets = new Set(); // requests the person has expanded
-  const closedByHand = new Set(); // urgent requests the person chose to collapse
   let target = params.ticketId || null;
   let built = false;
 
   const renderTickets = (list, tickets) => reconcile(list, tickets, {
     key: (t) => t.id,
     signature: (t) => `${t.status}|${t.answer || ''}|${t.savedToKnowledge}|${inbox.modes.get(t.propertyId)}`,
-    create: (t) => ticketCard(t, {
-      // Urgent requests start open until someone has replied.
-      isOpen: openTickets.has(t.id) || (t.type === 'urgent' && t.status === 'open' && !closedByHand.has(t.id)),
-      onToggle: (open) => {
-        openTickets[open ? 'add' : 'delete'](t.id);
-        closedByHand[open ? 'delete' : 'add'](t.id);
-      },
-    }),
+    create: (t) => ticketCard(t, { isOpen: openTickets.has(t.id), onToggle: (open) => openTickets[open ? 'add' : 'delete'](t.id) }),
   });
 
   /** Bring the request named in the link into view, or explain where it went. */

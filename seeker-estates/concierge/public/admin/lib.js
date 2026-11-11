@@ -132,7 +132,7 @@ export function icon(name, size = 20) {
   return svg;
 }
 
-/** Small labelled pill. `tone`: neutral, ok, warn, danger, navy. Icon plus text, never colour alone. */
+/** Small labelled pill. `tone`: neutral, ok, warn, danger, brand. Icon plus text, never colour alone. */
 export const chip = (text, { tone = 'neutral', icon: iconName } = {}) =>
   h('span', { class: `chip chip-${tone}` }, iconName && icon(iconName, 14), text);
 
@@ -252,9 +252,10 @@ function toastRegion() {
 
 /**
  * Brief message at the edge of the screen, announced to screen readers.
- * kind: info, ok, error, urgent. `sticky` stays until dismissed. `action`: { label, onClick }.
+ * kind: info, ok, error, urgent. `action`: { label, onClick }. Every toast can be dismissed
+ * and none stays for good: on a phone a parked toast would cover the controls below it.
  */
-export function toast(message, { kind = 'info', title, action, sticky = false } = {}) {
+export function toast(message, { kind = 'info', title, action } = {}) {
   const region = toastRegion();
   const el = h('div', { class: `toast toast-${kind}`, role: kind === 'error' || kind === 'urgent' ? 'alert' : null });
   const close = () => el.remove();
@@ -265,8 +266,8 @@ export function toast(message, { kind = 'info', title, action, sticky = false } 
     h('button', { type: 'button', class: 'toast-close', 'aria-label': 'Dismiss', onclick: close }, icon('x', 18)),
   );
   region.append(el);
-  while (region.children.length > 4) region.firstChild.remove();
-  if (!sticky) setTimeout(close, kind === 'error' || action ? 9000 : 4500);
+  while (region.children.length > 3) region.firstChild.remove();
+  setTimeout(close, { urgent: 12000, error: 8000 }[kind] || (action ? 7000 : 3500));
 }
 
 // --- dialogs ------------------------------------------------------------------------------
@@ -328,7 +329,7 @@ export const categoryLabel = (c) => CATEGORY_LABELS[c] || c;
 export const TICKET_TYPES = {
   urgent: { label: 'Urgent', icon: 'alert', tone: 'danger' },
   maintenance: { label: 'Maintenance', icon: 'wrench', tone: 'warn' },
-  question: { label: 'Question', icon: 'help', tone: 'navy' },
+  question: { label: 'Question', icon: 'help', tone: 'brand' },
 };
 
 export const guestLabel = (name) => name || 'Unverified guest';

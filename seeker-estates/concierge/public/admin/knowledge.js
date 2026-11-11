@@ -95,7 +95,7 @@ export function knowledgeEditor({ propertyId = null, propertyName = null, onLoad
       h('p', { class: 'pre' }, k.answer),
       h('p', { class: 'kb-entry-meta' },
         k.sensitive && chip('Verified guests only', { tone: 'warn', icon: 'lock' }),
-        k.source === 'learned' && chip('Learned from a team answer', { tone: 'navy', icon: 'bookmark' }),
+        k.source === 'learned' && chip('Learned from a team answer', { tone: 'brand', icon: 'bookmark' }),
         h('span', { class: 'muted' }, 'Updated ', timeEl(k.updatedAt))));
   }
 

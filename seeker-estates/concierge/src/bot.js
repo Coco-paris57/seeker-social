@@ -293,7 +293,7 @@ async function processConversation(conversationId) {
   await notifyTeam({
     title: `${titles[type]} · ${where}`,
     body: clip(decision.teamQuestion || latest, 160),
-    url: `/admin/#/tickets/${ticketId}`, tag: `ticket-${ticketId}`, urgent: type !== 'question',
+    url: `/admin/#/tickets/${ticketId}`, tag: `ticket-${ticketId}`, urgent: type === 'urgent',
   });
 }
 

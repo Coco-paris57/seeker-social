@@ -98,3 +98,11 @@ test('webhook needs the secret token; QR codes and poster render', async () => {
   assert.notEqual(before, rotated);
   assert.equal((await anon('GET', '/api/guest/welcome?p=qr-test-token')).status, 404);
 });
+
+test('pages are served: team app, guest chat, privacy notice', async () => {
+  for (const [url, marker] of [['/admin/', 'Seeker Concierge'], ['/admin', 'Seeker Concierge'], ['/stay', '<html'], ['/privacy', '<html'], ['/shared/logo.svg', '<svg']]) {
+    const res = await fetch(srv.base + url);
+    assert.equal(res.status, 200, url);
+    assert.ok((await res.text()).includes(marker), url);
+  }
+});

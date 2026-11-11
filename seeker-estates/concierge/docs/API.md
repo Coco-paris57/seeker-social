@@ -15,9 +15,10 @@ Pages: `/g/<qrToken>` and `/stay` both serve `public/guest/index.html`; `/privac
 from `public/` (`/guest/*`, `/admin/*`, `/shared/*`). `/admin/sw.js` is served with
 `Service-Worker-Allowed: /admin/`.
 
-Shared assets: `/shared/fonts.css` (Lora 600/700, Poppins 400/500/600), `/shared/logo.png`
-(navy mark, transparent, for light grounds), `/shared/logo-tile.png` (mark in a white tile, for
-dark grounds), `/shared/icon-192.png`, `/shared/icon-512.png`, `/shared/icon-maskable-512.png`,
+Shared assets: `/shared/tokens.css` (brand colours and type), `/shared/fonts.css` (Fraunces,
+Plus Jakarta Sans), `/shared/logo.svg` (wordmark for light grounds), `/shared/logo-reversed.svg`
+(for green grounds), `/shared/mark.svg` (mark in a green tile), `/shared/mark-reversed.svg`
+(mark alone, for green grounds), `/shared/icon-192.png`, `/shared/icon-512.png`, `/shared/icon-maskable-512.png`,
 `/shared/apple-touch-icon.png`, `/shared/badge-96.png`.
 
 ## Guest API (`/api/guest`)

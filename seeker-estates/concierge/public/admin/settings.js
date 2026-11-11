@@ -185,12 +185,12 @@ function teamSection() {
       if (err.status !== 401) fill(body, loadError(err, load));
       return;
     }
-    const add = admin && button('Add team member', { icon: 'plus' });
+    const add = admin ? button('Add team member', { icon: 'plus' }) : null;
     add?.addEventListener('click', async () => { if (await addDialog()) load(); });
     fill(body,
       h('ul', { class: 'user-list' }, users.map((u) => {
         const self = u.id === session.user.id;
-        const remove = admin && !self && button('Remove', { variant: 'ghost', small: true, icon: 'trash', 'aria-label': `Remove ${u.name}` });
+        const remove = admin && !self ? button('Remove', { variant: 'ghost', small: true, icon: 'trash', 'aria-label': `Remove ${u.name}` }) : null;
         remove?.addEventListener('click', async () => {
           const ok = await confirmDialog({
             title: `Remove ${u.name}?`,

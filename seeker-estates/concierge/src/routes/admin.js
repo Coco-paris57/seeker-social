@@ -316,10 +316,11 @@ admin.post('/properties/:id/rotate-qr', (req, res) => {
   const p = propertyOr404(req.params.id);
   q.run('UPDATE properties SET qr_token = ? WHERE id = ?', newToken(9), p.id);
   audit(req.user.id, 'property.rotate_qr', `property ${p.id}`);
+  emitAdmin('properties');
   res.json({ property: propertyOut(propertyOr404(p.id), { full: true }) });
 });
 
-const QR_OPTIONS = { errorCorrectionLevel: 'Q', margin: 2, color: { dark: '#0B1F35', light: '#FFFFFF' } };
+const QR_OPTIONS = { errorCorrectionLevel: 'Q', margin: 2, color: { dark: '#0F3D2E', light: '#FFFFFF' } };
 const qrUrl = (p) => `${config.baseUrl}/g/${p.qr_token}`;
 const slug = (p) => (p.ref || `property-${p.id}`).toLowerCase().replace(/[^a-z0-9]+/g, '-');
 

@@ -156,10 +156,10 @@ export function propertiesView() {
   };
 }
 
-// Topics every property should cover. `test` looks through the property's entries.
-const text = (k) => `${k.question} ${k.answer}`.toLowerCase();
+// Topics every property should cover. `test` looks through the property's entries: by category,
+// or by the entry's topic line (a passing mention inside another answer does not count).
 const inCategory = (c) => (k) => k.category === c;
-const mentions = (re) => (k) => re.test(text(k));
+const mentions = (re) => (k) => re.test(k.question.toLowerCase());
 const CHECKLIST = [
   { label: 'Check-in', category: 'checkin', question: 'Check-in time and how to check in', test: inCategory('checkin') },
   { label: 'Access (door, keys)', category: 'access', question: 'Door code and keys', test: inCategory('access') },
@@ -285,7 +285,8 @@ export function propertyView({ id }) {
           })));
       },
     });
-    const rooms = p.rooms ? Object.entries({ bedrooms: 'bedrooms', bathrooms: 'bathrooms', maxOccupancy: 'guests maximum' }).filter(([k]) => p.rooms[k] != null).map(([k, label]) => `${p.rooms[k]} ${label}`).join(', ') : '';
+    const count = (n, one, many) => (n == null ? null : `${n} ${n === 1 ? one : many}`);
+    const rooms = p.rooms && [count(p.rooms.bedrooms, 'bedroom', 'bedrooms'), count(p.rooms.bathrooms, 'bathroom', 'bathrooms'), count(p.rooms.maxOccupancy, 'guest maximum', 'guests maximum')].filter(Boolean).join(', ');
     const section = (title, ...content) => h('section', { class: 'card section' }, h('h2', null, title), content);
 
     fill(body,

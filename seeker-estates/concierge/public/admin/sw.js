@@ -1,11 +1,11 @@
 // Seeker Concierge team app service worker: push notifications, and a small cache of the
 // app shell so the installed app opens without a connection. API calls are never cached.
 
-const CACHE = 'concierge-admin-v1';
+const CACHE = 'concierge-admin-v2';
 const SHELL = [
-  '/admin/', '/admin/app.css', '/admin/app.js', '/admin/lib.js', '/admin/state.js', '/admin/auth.js', '/admin/inbox.js',
+  '/admin/index.html', '/admin/app.css', '/admin/app.js', '/admin/lib.js', '/admin/state.js', '/admin/auth.js', '/admin/inbox.js',
   '/admin/conversations.js', '/admin/properties.js', '/admin/knowledge.js', '/admin/settings.js', '/admin/push.js',
-  '/admin/manifest.webmanifest', '/shared/tokens.css', '/shared/fonts.css', '/shared/logo.png', '/shared/logo-tile.png', '/shared/icon-192.png',
+  '/admin/manifest.webmanifest', '/shared/tokens.css', '/shared/fonts.css', '/shared/logo.svg', '/shared/mark-reversed.svg', '/shared/icon-192.png',
 ];
 const isShell = (url) => SHELL.includes(url.pathname) || url.pathname.startsWith('/shared/fonts/');
 
@@ -25,17 +25,21 @@ self.addEventListener('activate', (event) => {
 // Network first, so the team always runs the current app. The cache is only the offline fallback.
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
-  if (event.request.method !== 'GET' || url.origin !== self.location.origin || !isShell(url)) return;
+  if (event.request.method !== 'GET' || url.origin !== self.location.origin) return;
+  // Opening the app (any /admin/ address) is served by the one page.
+  const page = event.request.mode === 'navigate' && url.pathname.startsWith('/admin/');
+  if (!page && !isShell(url)) return;
+  const key = page ? '/admin/index.html' : url.pathname;
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        if (response.ok) {
+        if (response.ok && !response.redirected) {
           const copy = response.clone();
-          event.waitUntil(caches.open(CACHE).then((cache) => cache.put(url.pathname, copy)));
+          event.waitUntil(caches.open(CACHE).then((cache) => cache.put(key, copy)));
         }
         return response;
       })
-      .catch(async () => (await caches.match(url.pathname)) || Response.error()),
+      .catch(async () => (await caches.match(key)) || Response.error()),
   );
 });
 

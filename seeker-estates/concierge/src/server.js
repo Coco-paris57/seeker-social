@@ -58,8 +58,8 @@ export function createApp() {
       start_url: `/g/${req.params.token}`,
       scope: '/',
       display: 'standalone',
-      background_color: '#DCE8F2',
-      theme_color: '#0B1F35',
+      background_color: '#F6F1E7',
+      theme_color: '#0F3D2E',
       icons: [
         { src: '/shared/icon-192.png', sizes: '192x192', type: 'image/png' },
         { src: '/shared/icon-512.png', sizes: '512x512', type: 'image/png' },
@@ -73,7 +73,6 @@ export function createApp() {
   app.get('/g/:token', page('guest/index.html'));
   app.get('/stay', page('guest/index.html'));
   app.get('/privacy', page('guest/privacy.html'));
-  app.get('/admin', (req, res) => res.redirect('/admin/'));
   // The service worker must never be served stale, or updates to the team app stall.
   app.get('/admin/sw.js', (req, res) => res.set({ 'Cache-Control': 'no-cache', 'Service-Worker-Allowed': '/admin/' }).sendFile(path.join(PUBLIC, 'admin/sw.js')));
   app.use(express.static(PUBLIC, { index: 'index.html', maxAge: config.production ? '1h' : 0, setHeaders: (res, file) => { if (file.endsWith('.html')) res.set('Cache-Control', 'no-cache'); } }));

@@ -43,7 +43,7 @@ export function authView({ setup, onSignedIn, notice }) {
 
   return h('main', { class: 'auth' },
     h('div', { class: 'auth-card' },
-      h('img', { src: '/shared/logo.png', alt: 'Seeker Estates', class: 'auth-logo', width: 120, height: 120 }),
+      h('img', { src: '/shared/logo.svg', alt: 'Seeker Estates', class: 'auth-logo', width: 205, height: 66 }),
       h('h1', null, needsSetup ? 'Set up Seeker Concierge' : 'Seeker Concierge'),
       h('p', { class: 'muted' }, needsSetup
         ? 'Create the first administrator account. You can add the rest of the team afterwards in Settings.'

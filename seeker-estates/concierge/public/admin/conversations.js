@@ -11,8 +11,9 @@ function messageChips(m) {
   const chips = [];
   if (m.status === 'rejected') chips.push(chip('Rejected, not sent', { tone: 'danger', icon: 'x' }));
   if (m.kind === 'holding') chips.push(chip('Holding note', { icon: 'clock' }));
+  if (m.kind === 'urgent') chips.push(chip('Urgent reply, sent automatically', { tone: 'danger', icon: 'alert' }));
   if (m.kind === 'relay') chips.push(chip(m.authorName ? `Team answer from ${m.authorName}` : 'Team answer', { icon: 'user' }));
-  if (m.automatic) chips.push(chip('Sent automatically', { tone: 'navy', icon: 'bolt' }));
+  if (m.automatic && m.kind !== 'urgent') chips.push(chip('Sent automatically', { tone: 'brand', icon: 'bolt' }));
   if (m.edited) chips.push(chip(`Edited by ${m.authorName || 'the team'}`, { tone: 'warn', icon: 'edit' }));
   else if (m.role === 'assistant' && m.kind === 'answer' && m.status === 'sent' && !m.automatic && m.authorName) chips.push(chip(`Approved by ${m.authorName}`, { tone: 'ok', icon: 'check' }));
   if (m.deliveryError) chips.push(chip(`Not delivered: ${m.deliveryError}`, { tone: 'danger', icon: 'alert' }));
@@ -204,7 +205,7 @@ function threadPane(id, { onGone }) {
 
 function listItem(c, activeId) {
   const flags = [
-    c.botPaused && chip('Team handling', { tone: 'navy', icon: 'user' }),
+    c.botPaused && chip('Team handling', { tone: 'brand', icon: 'user' }),
     c.pendingDrafts > 0 && chip(`${c.pendingDrafts} to approve`, { tone: 'warn', icon: 'clock' }),
     c.openTickets > 0 && chip(`${c.openTickets} open ${c.openTickets === 1 ? 'request' : 'requests'}`, { tone: 'warn', icon: 'help' }),
   ].filter(Boolean);

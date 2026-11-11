@@ -23,7 +23,7 @@ export function posterHtml({ property, qrSvg, settings }) {
 <main class="card">
   <div class="frame">
     <header>
-      <img src="/shared/logo.png" alt="${esc(config.company.name)}" class="logo">
+      <img src="/shared/logo.svg" alt="${esc(config.company.name)}" class="logo">
       <span class="label">Guest assistance</span>
     </header>
     <h1>Need a hand during your stay?</h1>
