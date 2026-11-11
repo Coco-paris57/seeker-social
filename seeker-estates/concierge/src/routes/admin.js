@@ -9,12 +9,22 @@ import { answerTicket, approvalStats, approveDraft, closeTicket, previewTicketRe
 import { CATEGORIES } from '../llm.js';
 import { bus, emitAdmin, emitConversation, notifyTeam, vapidPublicKey } from '../notify.js';
 import { syncAll } from '../sync.js';
-import { clip, HttpError, newToken, rateLimiter } from '../util.js';
+import crypto from 'node:crypto';
+import { clip, failureLimiter, HttpError, newToken, rateLimiter } from '../util.js';
 import { iso, sse } from './shared.js';
 import { posterHtml } from '../poster.js';
 
 export const admin = express.Router();
-const loginLimit = rateLimiter(8, 15 * 60_000);
+const loginIpLimit = rateLimiter(40, 15 * 60_000); // all attempts per IP
+const loginFailures = failureLimiter(8, 15 * 60_000); // wrong passwords per IP and email
+const DUMMY_HASH = hashPassword(newToken()); // keeps response time the same for unknown emails
+const setBool = (v) => (typeof v === 'boolean' ? v : undefined);
+// Push services browsers actually use. Anything else is refused, so the server cannot be
+// pointed at an arbitrary address.
+const PUSH_HOSTS = /(^|\.)(fcm\.googleapis\.com|push\.apple\.com|push\.services\.mozilla\.com|notify\.windows\.com)$/;
+
+/** In production the first administrator needs the setup code printed in the server log. */
+export const setupToken = config.production ? process.env.SETUP_TOKEN || newToken(6) : '';
 
 // --- serialisers ------------------------------------------------------------------------
 
@@ -83,13 +93,18 @@ const knowledgeOut = (k) => ({
 // --- sign-in ----------------------------------------------------------------------------
 
 admin.get('/setup', (req, res) => {
-  res.json({ needsSetup: q.get('SELECT COUNT(*) AS n FROM users').n === 0 });
+  res.json({ needsSetup: q.get('SELECT COUNT(*) AS n FROM users').n === 0, setupCodeRequired: !!setupToken });
 });
 
 /** First run only: create the first administrator. */
 admin.post('/setup', (req, res) => {
   if (q.get('SELECT COUNT(*) AS n FROM users').n > 0) throw new HttpError(409, 'Setup is already complete. Please sign in.');
-  const id = createUser({ ...req.body, role: 'admin' });
+  if (!loginIpLimit(req.ip)) throw new HttpError(429, 'Too many attempts. Please wait 15 minutes.');
+  const given = String(req.body?.setupCode || '');
+  if (setupToken && !(given.length === setupToken.length && crypto.timingSafeEqual(Buffer.from(given), Buffer.from(setupToken)))) {
+    throw new HttpError(403, 'That setup code is not correct. It is printed in the server log when the service starts.');
+  }
+  const id = createUser({ email: req.body?.email, name: req.body?.name, password: req.body?.password, role: 'admin' });
   audit(id, 'setup');
   startTeamSession(res, id);
   res.status(201).json({ user: q.get('SELECT id, email, name, role FROM users WHERE id = ?', id) });
@@ -97,11 +112,15 @@ admin.post('/setup', (req, res) => {
 
 admin.post('/login', (req, res) => {
   const email = String(req.body?.email || '').trim().toLowerCase();
-  if (!loginLimit(req.ip) || !loginLimit(email)) throw new HttpError(429, 'Too many sign-in attempts. Please wait 15 minutes.');
+  const key = `${req.ip}|${email}`;
+  if (!loginIpLimit(req.ip) || loginFailures.blocked(key)) throw new HttpError(429, 'Too many sign-in attempts. Please wait 15 minutes.');
   const user = q.get('SELECT * FROM users WHERE email = ?', email);
-  if (!user || !verifyPassword(String(req.body?.password || ''), user.password_hash)) {
+  const ok = verifyPassword(String(req.body?.password || ''), user ? user.password_hash : DUMMY_HASH);
+  if (!user || !ok) {
+    loginFailures.fail(key);
     throw new HttpError(401, 'Email or password is not correct.');
   }
+  loginFailures.clear(key);
   startTeamSession(res, user.id);
   audit(user.id, 'login');
   res.json({ user: { id: user.id, email: user.email, name: user.name, role: user.role } });
@@ -144,14 +163,14 @@ function inbox() {
 admin.get('/inbox', (req, res) => res.json(inbox()));
 
 admin.post('/messages/:id/approve', async (req, res) => {
-  const { text, remember, scope } = req.body || {};
-  const out = await approveDraft(Number(req.params.id), req.user, { text, remember: !!remember, scope });
+  const { text, remember, scope, sensitive } = req.body || {};
+  const out = await approveDraft(Number(req.params.id), req.user, { text, remember: !!remember, scope, sensitive: setBool(sensitive) });
   res.json({ message: messageOut(out.message), knowledgeId: out.knowledgeId });
 });
 
 admin.post('/messages/:id/reject', async (req, res) => {
-  const { replyText, remember, scope } = req.body || {};
-  const out = await rejectDraft(Number(req.params.id), req.user, { replyText, remember: !!remember, scope });
+  const { replyText, remember, scope, sensitive } = req.body || {};
+  const out = await rejectDraft(Number(req.params.id), req.user, { replyText, remember: !!remember, scope, sensitive: setBool(sensitive) });
   res.json({ message: out.message ? messageOut(out.message) : null, knowledgeId: out.knowledgeId });
 });
 
@@ -175,9 +194,9 @@ admin.post('/tickets/:id/preview', async (req, res) => {
 });
 
 admin.post('/tickets/:id/answer', async (req, res) => {
-  const { answer, reply, remember, scope, verbatim, keepOpen } = req.body || {};
+  const { answer, reply, remember, scope, sensitive, verbatim, keepOpen } = req.body || {};
   if (String(reply || '').length > 4000) throw new HttpError(400, 'Messages can be up to 4000 characters.');
-  const out = await answerTicket(Number(req.params.id), req.user, { answer, reply, remember: !!remember, scope, verbatim: !!verbatim, close: !keepOpen });
+  const out = await answerTicket(Number(req.params.id), req.user, { answer, reply, remember: !!remember, scope, sensitive: setBool(sensitive), verbatim: !!verbatim, close: !keepOpen });
   res.json({ ticket: ticketOut(out.ticket), message: messageOut(out.message), knowledgeId: out.knowledgeId });
 });
 
@@ -423,6 +442,9 @@ admin.post('/password', (req, res) => {
   if (!verifyPassword(String(req.body?.current || ''), row.password_hash)) throw new HttpError(400, 'Your current password is not correct.');
   if (String(req.body?.next || '').length < 10) throw new HttpError(400, 'Passwords need at least 10 characters.');
   q.run('UPDATE users SET password_hash = ? WHERE id = ?', hashPassword(req.body.next), req.user.id);
+  // Sign out everywhere, then start a fresh session on this device.
+  q.run('DELETE FROM sessions WHERE user_id = ?', req.user.id);
+  startTeamSession(res, req.user.id);
   audit(req.user.id, 'user.password');
   res.json({ ok: true });
 });
@@ -438,7 +460,15 @@ admin.get('/push/key', (req, res) => res.json({ publicKey: vapidPublicKey() }));
 
 admin.post('/push/subscribe', (req, res) => {
   const sub = req.body?.subscription;
-  if (!sub?.endpoint || !/^https:\/\//.test(sub.endpoint) || !sub.keys?.p256dh || !sub.keys?.auth) throw new HttpError(400, 'That is not a valid push subscription.');
+  let host = '';
+  try {
+    const u = new URL(String(sub?.endpoint || ''));
+    if (u.protocol === 'https:') host = u.hostname;
+  } catch { /* not a URL */ }
+  if (!PUSH_HOSTS.test(host) || typeof sub.keys?.p256dh !== 'string' || typeof sub.keys?.auth !== 'string') throw new HttpError(400, 'That is not a valid push subscription.');
+  if (q.get('SELECT COUNT(*) AS n FROM push_subscriptions WHERE user_id = ?', req.user.id).n >= 10) {
+    q.run('DELETE FROM push_subscriptions WHERE endpoint = (SELECT endpoint FROM push_subscriptions WHERE user_id = ? ORDER BY created_at LIMIT 1)', req.user.id);
+  }
   q.run(
     'INSERT INTO push_subscriptions(endpoint, user_id, subscription) VALUES(?, ?, ?) ON CONFLICT(endpoint) DO UPDATE SET user_id = excluded.user_id, subscription = excluded.subscription',
     sub.endpoint, req.user.id, JSON.stringify({ endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth } }),

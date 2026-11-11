@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <title>Seeker Concierge</title>
+  <meta name="theme-color" content="#0B1F35">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/shared/icon-192.png">
+  <link rel="apple-touch-icon" href="/shared/apple-touch-icon.png">
+  <link rel="stylesheet" href="/guest/app.css">
+  <script type="module" src="/guest/app.js"></script>
+</head>
+<body>
+  <!-- Text here is the English default; app.js swaps in the guest's language via data-t attributes. -->
+  <div class="app" id="app">
+
+    <main class="screen" id="view-loading">
+      <p class="screen-note" role="status" data-t="loading">Loading</p>
+      <noscript><p class="screen-note">This chat needs JavaScript. Please contact Seeker Estates through your booking channel.</p></noscript>
+    </main>
+
+    <main class="screen" id="view-welcome" hidden>
+      <div class="card">
+        <img class="logo" src="/shared/logo.png" alt="Seeker Estates" width="120" height="120">
+        <h1 id="welcome-title" tabindex="-1">Welcome</h1>
+        <p class="area" id="welcome-area" hidden></p>
+        <p class="notice" id="welcome-notice" role="status" hidden></p>
+        <p class="lead" data-t="welcomeLead">Ask anything about your stay: check-in, WiFi, appliances, getting around, or report a problem.</p>
+        <p class="ai-notice" data-t="aiNotice">You are chatting with an AI assistant. The Seeker team can read this chat and replies in person whenever needed.</p>
+        <button class="btn btn-primary btn-wide" id="start" type="button" data-t="start">Start chat</button>
+        <p class="error" id="start-error" role="alert" hidden></p>
+        <p class="small" id="consent"></p>
+      </div>
+      <div class="quiet-info" data-info></div>
+    </main>
+
+    <main class="screen" id="view-dead" hidden>
+      <div class="card">
+        <img class="logo" src="/shared/logo.png" alt="Seeker Estates" width="120" height="120">
+        <h1 id="dead-title" tabindex="-1"></h1>
+        <p class="lead" id="dead-body"></p>
+        <button class="btn btn-primary btn-wide" id="dead-retry" type="button" data-t="tryAgain" hidden>Try again</button>
+      </div>
+      <div class="quiet-info"><p data-t="emergency">In an emergency call 999.</p></div>
+    </main>
+
+    <div class="chat" id="view-chat" hidden>
+      <header class="bar">
+        <img class="bar-logo" src="/shared/logo-tile.png" alt="" width="40" height="40">
+        <div class="bar-text">
+          <h1 id="chat-title">Seeker Concierge</h1>
+          <p id="chat-sub"></p>
+        </div>
+        <button class="icon-btn" id="menu-open" type="button" data-t-aria-label="menu" aria-label="Menu" aria-haspopup="dialog">
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </header>
+
+      <button class="strip strip-verify" id="verify-open" type="button" hidden>
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>
+        <span data-t="verifyPrompt">Verify your booking to get door codes and WiFi details</span>
+        <svg class="chevron" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <p class="strip strip-verified" id="verified-strip" hidden>
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span id="verified-text"></span>
+      </p>
+      <p class="strip strip-status" id="net-status" role="status" hidden></p>
+
+      <main class="scroll" id="scroll" tabindex="-1" aria-labelledby="messages-heading">
+        <h2 class="visually-hidden" id="messages-heading" data-t="messages">Messages</h2>
+        <section class="suggest" id="suggest" hidden aria-labelledby="suggest-title">
+          <h2 id="suggest-title" data-t="suggestionsTitle">How can we help?</h2>
+          <p data-t="suggestionsIntro">Choose a question or type your own.</p>
+          <ul id="suggest-list"></ul>
+        </section>
+        <ol class="messages" id="messages"></ol>
+        <p class="typing" id="typing" hidden>
+          <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span data-t="typing">The assistant is writing</span>
+        </p>
+      </main>
+      <button class="new-pill" id="new-pill" type="button" data-t="newMessages" hidden>New message</button>
+
+      <footer class="composer">
+        <form id="composer" autocomplete="off">
+          <label class="visually-hidden" for="input" data-t="composerLabel">Your message</label>
+          <textarea id="input" rows="1" enterkeyhint="enter" data-t-placeholder="placeholder" placeholder="Type your message" aria-describedby="composer-hint"></textarea>
+          <button class="send" id="send" type="submit" data-t-aria-label="send" aria-label="Send" disabled>
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </form>
+        <p class="composer-hint" id="composer-hint" role="status" hidden></p>
+        <p class="emergency-line" id="emergency-line"></p>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Screen readers hear incoming replies from here, not from the message list itself. -->
+  <div class="visually-hidden" id="announcer" aria-live="polite"></div>
+
+  <dialog id="menu" aria-labelledby="menu-title">
+    <div class="dialog-head">
+      <h2 id="menu-title" data-t="menu">Menu</h2>
+      <button class="icon-btn icon-btn-dark" type="button" data-close data-t-aria-label="close" aria-label="Close">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <p class="menu-verified" id="menu-verified" hidden></p>
+    <ul class="menu-list">
+      <li><button type="button" id="menu-verify" data-t="verifyTitle">Verify your booking</button></li>
+      <li><a href="/privacy" data-t="menuPrivacy">Privacy notice</a></li>
+      <li><button type="button" id="menu-leave" data-t="menuLeave">Leave chat on this device</button></li>
+      <li><button type="button" id="menu-delete" class="danger" data-t="menuDelete">Delete my chat</button></li>
+    </ul>
+    <div class="quiet-info" data-info></div>
+  </dialog>
+
+  <dialog id="verify" aria-labelledby="verify-title">
+    <form id="verify-form" novalidate>
+      <div class="dialog-head">
+        <h2 id="verify-title" data-t="verifyTitle">Verify your booking</h2>
+        <button class="icon-btn icon-btn-dark" type="button" data-close data-t-aria-label="close" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <p id="verify-intro"></p>
+      <label for="verify-name" data-t="lastName">Surname on the booking</label>
+      <input id="verify-name" name="lastName" type="text" autocomplete="family-name" autocapitalize="words" spellcheck="false" required maxlength="80" aria-describedby="verify-error">
+      <label for="verify-date" data-t="arrivalDate">Arrival date</label>
+      <input id="verify-date" name="arrivalDate" type="date" required aria-describedby="verify-error">
+      <p class="error" id="verify-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button class="btn" type="button" data-close data-t="cancel">Cancel</button>
+        <button class="btn btn-primary" id="verify-submit" type="submit" data-t="verifySubmit">Verify booking</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="confirm" aria-labelledby="confirm-title" aria-describedby="confirm-body">
+    <h2 id="confirm-title"></h2>
+    <p id="confirm-body"></p>
+    <p class="error" id="confirm-error" role="alert" hidden></p>
+    <div class="dialog-actions">
+      <button class="btn" type="button" data-close data-t="cancel">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok" type="button"></button>
+    </div>
+  </dialog>
+</body>
+</html>

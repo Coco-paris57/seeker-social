@@ -31,6 +31,17 @@ test('a guest message from Smoobu is answered back through Smoobu, once', async 
   assert.equal(q.get("SELECT COUNT(*) AS n FROM messages WHERE conversation_id = ? AND role = 'guest'", c.id).n, 1);
 });
 
+test('concurrent deliveries of the same message are processed once; a host message is never treated as guest text', async () => {
+  fake.messages = async () => [{ id: 9020, type: 1, message: 'washing machine?', htmlMessage: '' }, { id: 9021, type: 2, message: 'washing machine template from host', htmlMessage: '' }];
+  outbox.length = 0;
+  const e = { action: 'newMessage', data: { id: 9020, sender: 'guest', booking: { id: 501 } } };
+  await Promise.all([handleSmoobuEvent(e), handleSmoobuEvent(e)]);
+  assert.equal(outbox.length, 1);
+  await handleSmoobuEvent({ action: 'newMessage', data: { id: 9021, sender: 'guest', booking: { id: 501 } } });
+  assert.equal(outbox.length, 1);
+  fake.messages = async (bookingId) => (bookingId === 501 ? [{ id: 9001, type: 1, message: '', htmlMessage: '<p>How do I use the washing machine?</p>' }, { id: 9002, type: 2, message: 'Welcome!', htmlMessage: '' }] : []);
+});
+
 test('host messages, unknown bookings and a disabled inbox are ignored', async () => {
   outbox.length = 0;
   await handleSmoobuEvent({ action: 'newMessage', data: { id: 9002, sender: 'host', booking: { id: 501 } } });

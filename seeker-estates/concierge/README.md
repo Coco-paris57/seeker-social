@@ -65,7 +65,9 @@ Railway all work with the included `Dockerfile`; mount a volume at `/data`.
 
 1. Set the variables in `.env.example`. `BASE_URL` must be the final public address **before any
    QR code is printed**, because the code contains it.
-2. Deploy, open `/admin/`, create the administrator account, then add the team in Settings.
+2. Deploy, open `/admin/` and create the administrator account. The form asks for a setup code:
+   it is printed in the server log on first start (or set `SETUP_TOKEN` yourself). Then add the
+   team in Settings.
 3. Each team member opens `/admin/` on their phone and turns on notifications in Settings.
    On iPhone and iPad, add the app to the Home Screen first (Share, then Add to Home Screen):
    Apple only allows web push for installed web apps.
@@ -90,8 +92,9 @@ keep working alongside.
   email, phone, prices, payments. The assistant sees the guest's first name only.
 - Conversations are erased 90 days after the last message (Settings), guests can delete their own
   chat, and the team can erase any conversation. Team actions are written to an audit log.
-- One strictly necessary session cookie for guests; no analytics, no third-party requests (fonts
-  are served from this site), so no cookie banner is needed.
+- One strictly necessary session cookie for guests; no analytics, and guest devices make no
+  third-party requests (fonts are served from this site), so no cookie banner is needed.
+- The optional `NOTIFY_WEBHOOK_URL` alert carries only a title and a link, never guest text.
 - Team sign-in uses scrypt password hashes and httpOnly, SameSite=Strict cookies. The API is
   same-origin, JSON-only, rate limited, and served with a strict content security policy.
 - Before going live: add Anthropic and your hosting provider to your record of processors, and
@@ -107,5 +110,11 @@ keep working alongside.
   goes to the team as a question, so nothing is dropped.
 - Verification is surname + arrival date. Regenerate a property's QR code if it is ever shared
   publicly (Properties, Regenerate code).
+- Answers saved from the inbox are for verified guests only unless you untick that option, so a
+  private detail is not repeated to someone who has only scanned the QR code.
+- The general link `/stay` asks guests to verify their booking before they can write. The QR
+  link does not, so guests in the apartment can ask general questions straight away.
+- Abuse limits: per chat, per connection, and an overall hourly ceiling (`MAX_MESSAGES_PER_HOUR`,
+  default 600). Set `TRUST_PROXY` to match your host, or per-connection limits can be bypassed.
 - Notifications are web push. If a phone has not opened the app for a long time the browser may
   drop its subscription; the Settings screen shows the state and can send a test.

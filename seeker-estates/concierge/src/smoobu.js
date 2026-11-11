@@ -80,8 +80,14 @@ export class Smoobu {
     }
   }
   async messages(reservationId) {
-    const r = await this.request('GET', `/api/reservations/${reservationId}/messages`, { params: { pageSize: 100 } });
-    return r.messages || [];
+    // Oldest first, 25 per page: read every page (bounded) so the newest message is included.
+    const out = [];
+    for (let page = 1; page <= 40; page++) {
+      const r = await this.request('GET', `/api/reservations/${reservationId}/messages`, { params: { page } });
+      out.push(...(r.messages || []));
+      if (page >= (r.page_count || 1)) break;
+    }
+    return out;
   }
   sendMessageToGuest(reservationId, messageBody, subject) {
     const body = subject ? { subject, messageBody } : { messageBody };

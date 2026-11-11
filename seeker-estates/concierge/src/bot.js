@@ -24,7 +24,7 @@ export function stageOf(reservation, today = londonDate()) {
 export function accessReleased(conversation, reservation, settings, now = Date.now()) {
   if (!conversation.verified || !reservation || reservation.cancelled) return false;
   const opens = londonToUtc(reservation.arrival, reservation.check_in || '15:00') - settings.accessInfoHours * 3600_000;
-  const closes = londonToUtc(addDays(reservation.departure, 1), '00:00');
+  const closes = londonToUtc(reservation.departure, reservation.check_out || '11:00') + 3 * 3600_000; // short grace after checkout
   return now >= opens && now < closes;
 }
 
@@ -35,10 +35,15 @@ export function guestLabel(conversation) {
 /** Everything the model is allowed to see for this conversation. */
 export function buildContext(conversation, { latest = '', uptoMessageId = null } = {}) {
   const settings = getSettings();
-  const property = conversation.property_id ? q.get('SELECT * FROM properties WHERE id = ?', conversation.property_id) : null;
   const reservation = conversation.verified && conversation.reservation_id
     ? q.get('SELECT * FROM reservations WHERE id = ?', conversation.reservation_id)
     : null;
+  if (reservation && reservation.property_id !== conversation.property_id) {
+    // The booking was moved to another apartment: follow it.
+    q.run('UPDATE conversations SET property_id = ? WHERE id = ?', reservation.property_id, conversation.id);
+    conversation = { ...conversation, property_id: reservation.property_id };
+  }
+  const property = conversation.property_id ? q.get('SELECT * FROM properties WHERE id = ?', conversation.property_id) : null;
   const released = accessReleased(conversation, reservation, settings);
   const details = parseJson(property?.details);
 
@@ -177,17 +182,12 @@ function unanswered(conversationId) {
   );
 }
 
-/** A newer guest message replaces a draft still waiting for approval; its question is asked again. */
+/** A newer guest message replaces a draft still waiting for approval; the questions it covered are asked again. */
 function supersedeDrafts(conversationId) {
-  for (const draft of q.all("SELECT id FROM messages WHERE conversation_id = ? AND status = 'pending'", conversationId)) {
-    const floor = q.get(
-      "SELECT COALESCE(MAX(id), 0) AS id FROM messages WHERE conversation_id = ? AND role != 'guest' AND status = 'sent' AND id < ?",
-      conversationId, draft.id,
-    ).id;
-    q.run(
-      "UPDATE messages SET meta = json_remove(meta, '$.handled') WHERE conversation_id = ? AND role = 'guest' AND id > ? AND id < ?",
-      conversationId, floor, draft.id,
-    );
+  for (const draft of q.all("SELECT id, meta FROM messages WHERE conversation_id = ? AND status = 'pending'", conversationId)) {
+    for (const id of parseJson(draft.meta).covers || []) {
+      q.run("UPDATE messages SET meta = json_remove(meta, '$.handled') WHERE id = ? AND conversation_id = ? AND role = 'guest'", id, conversationId);
+    }
     q.run("UPDATE messages SET status = 'superseded' WHERE id = ?", draft.id);
     emitConversation(conversationId, 'draft', { messageId: draft.id });
   }
@@ -235,7 +235,13 @@ async function processConversation(conversationId) {
   if (decision.language && decision.language !== conversation.language) {
     q.run('UPDATE conversations SET language = ? WHERE id = ?', decision.language, conversation.id);
   }
-  const meta = { confidence: decision.confidence, category: decision.category, summary: decision.summary, guestMessageId: lastGuest.id };
+  const meta = { confidence: decision.confidence, category: decision.category, summary: decision.summary, guestMessageId: lastGuest.id, covers: pending.map((m) => m.id) };
+
+  // A team member may have taken over while the model was working.
+  if (q.get('SELECT bot_paused FROM conversations WHERE id = ?', conversation.id)?.bot_paused) {
+    await notifyTeam({ title: `${guestLabel(conversation)} · ${where}`, body: clip(latest, 140), url, tag: `conversation-${conversation.id}` });
+    return;
+  }
 
   // Learning mode: nothing the assistant wrote reaches a guest without approval. The one
   // exception is urgent safety guidance, which must not wait.
@@ -262,15 +268,23 @@ async function processConversation(conversationId) {
 
   // ask_team, maintenance, urgent: open a request for the team and acknowledge the guest.
   const type = decision.action === 'ask_team' ? 'question' : decision.action;
-  const ticketId = q.insert(
-    `INSERT INTO tickets(conversation_id, property_id, type, category, summary, question, guest_message_id)
-     VALUES(?, ?, ?, ?, ?, ?, ?)`,
-    conversation.id, conversation.property_id, type, decision.category, clip(decision.summary, 200),
-    decision.teamQuestion || latest, lastGuest.id,
-  );
+  // Follow-ups on the same matter join the open request instead of opening (and alerting) again.
+  const open = q.get("SELECT id FROM tickets WHERE conversation_id = ? AND type = ? AND status = 'open' ORDER BY id DESC LIMIT 1", conversation.id, type);
+  let ticketId;
+  if (open) {
+    ticketId = open.id;
+    q.run("UPDATE tickets SET question = substr(question || char(10) || char(10) || 'Follow-up: ' || ?, 1, 4000), guest_message_id = ? WHERE id = ?", decision.teamQuestion || latest, lastGuest.id, ticketId);
+  } else {
+    ticketId = q.insert(
+      `INSERT INTO tickets(conversation_id, property_id, type, category, summary, question, guest_message_id)
+       VALUES(?, ?, ?, ?, ?, ?, ?)`,
+      conversation.id, conversation.property_id, type, decision.category, clip(decision.summary, 200),
+      decision.teamQuestion || latest, lastGuest.id,
+    );
+  }
   if (!learning || type === 'urgent') {
     await sendMessage(conversation, 'bot', decision.reply, { kind: 'holding', meta: { ...meta, ticketId, auto: true } });
-  } else if (liveChat) {
+  } else if (liveChat && !(open && recentHolding(conversation.id, settings.holdingMinutes))) {
     await sendMessage(conversation, 'bot', holdingText(type, decision.language), { kind: 'holding', meta: { ticketId } });
   }
   emitConversation(conversation.id, 'ticket', { ticketId });
@@ -316,16 +330,18 @@ function holdingText(kind, language) {
 // ---------------------------------------------------------------------------------------
 // Team actions
 
-function saveKnowledge({ propertyId, category, question, answer, userId, source = 'learned' }) {
+// Learned answers are for verified guests only unless a team member says otherwise: the
+// category comes from the model, so it must not decide what unverified visitors can be told.
+function saveKnowledge({ propertyId, category, question, answer, userId, sensitive, source = 'learned' }) {
   const cat = llm.CATEGORIES.includes(category) ? category : 'other';
   return q.insert(
     'INSERT INTO knowledge(property_id, category, question, answer, sensitive, source, created_by) VALUES(?, ?, ?, ?, ?, ?, ?)',
-    propertyId ?? null, cat, clip(question, 500), answer.trim(), SENSITIVE_CATEGORIES.has(cat) ? 1 : 0, source, userId ?? null,
+    propertyId ?? null, cat, clip(question, 500), answer.trim(), sensitive === false ? 0 : 1, source, userId ?? null,
   );
 }
 
 /** Approve a drafted reply, optionally edited. remember saves the final text as knowledge. */
-export async function approveDraft(messageId, user, { text, remember = false, scope = 'property' } = {}) {
+export async function approveDraft(messageId, user, { text, remember = false, scope = 'property', sensitive } = {}) {
   const draft = q.get("SELECT * FROM messages WHERE id = ? AND status = 'pending'", messageId);
   if (!draft) throw new HttpError(409, 'This draft has already been handled or replaced by a newer one.');
   const conversation = q.get('SELECT * FROM conversations WHERE id = ?', draft.conversation_id);
@@ -340,7 +356,7 @@ export async function approveDraft(messageId, user, { text, remember = false, sc
     const guest = meta.guestMessageId ? q.get('SELECT body FROM messages WHERE id = ?', meta.guestMessageId) : null;
     knowledgeId = saveKnowledge({
       propertyId: scope === 'global' ? null : conversation.property_id,
-      category: meta.category, question: meta.summary || guest?.body || 'Guest question', answer: finalText, userId: user.id,
+      category: meta.category, question: meta.summary || guest?.body || 'Guest question', answer: finalText, userId: user.id, sensitive,
     });
   }
   audit(user.id, edited ? 'draft.approve_edited' : 'draft.approve', `message ${draft.id}`);
@@ -350,7 +366,7 @@ export async function approveDraft(messageId, user, { text, remember = false, sc
 }
 
 /** Reject a draft. If the team writes their own reply it is sent in its place. */
-export async function rejectDraft(messageId, user, { replyText, remember = false, scope = 'property' } = {}) {
+export async function rejectDraft(messageId, user, { replyText, remember = false, scope = 'property', sensitive } = {}) {
   const draft = q.get("SELECT * FROM messages WHERE id = ? AND status = 'pending'", messageId);
   if (!draft) throw new HttpError(409, 'This draft has already been handled or replaced by a newer one.');
   const conversation = q.get('SELECT * FROM conversations WHERE id = ?', draft.conversation_id);
@@ -365,7 +381,7 @@ export async function rejectDraft(messageId, user, { replyText, remember = false
     if (remember) {
       knowledgeId = saveKnowledge({
         propertyId: scope === 'global' ? null : conversation.property_id,
-        category: meta.category, question: meta.summary || 'Guest question', answer: replyText, userId: user.id,
+        category: meta.category, question: meta.summary || 'Guest question', answer: replyText, userId: user.id, sensitive,
       });
     }
   }
@@ -376,7 +392,19 @@ export async function rejectDraft(messageId, user, { replyText, remember = false
  * The team answers a request. The assistant words the reply for the guest (or sends the
  * team's words as written), and the answer can be saved so the assistant knows it next time.
  */
-export async function answerTicket(ticketId, user, { answer, reply: reviewed, remember = false, scope = 'property', verbatim = false, close = true } = {}) {
+const answering = new Set(); // requests being answered right now, so a double tap cannot send twice
+
+export async function answerTicket(ticketId, user, opts = {}) {
+  if (answering.has(ticketId)) throw new HttpError(409, 'This request is already being answered.');
+  answering.add(ticketId);
+  try {
+    return await answerTicketOnce(ticketId, user, opts);
+  } finally {
+    answering.delete(ticketId);
+  }
+}
+
+async function answerTicketOnce(ticketId, user, { answer, reply: reviewed, remember = false, scope = 'property', sensitive, verbatim = false, close = true } = {}) {
   const ticket = q.get('SELECT * FROM tickets WHERE id = ?', ticketId);
   if (!ticket) throw new HttpError(404, 'Request not found.');
   if (ticket.status === 'closed') throw new HttpError(409, 'This request is already closed.');
@@ -404,7 +432,7 @@ export async function answerTicket(ticketId, user, { answer, reply: reviewed, re
   if (remember && !knowledgeId) {
     knowledgeId = saveKnowledge({
       propertyId: scope === 'global' ? null : ticket.property_id,
-      category: ticket.category, question: ticket.question, answer: text, userId: user.id,
+      category: ticket.category, question: ticket.question, answer: text, userId: user.id, sensitive,
     });
   }
   q.run(

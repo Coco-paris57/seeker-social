@@ -1,0 +1,16 @@
+{
+  "name": "Seeker Concierge",
+  "short_name": "Concierge",
+  "description": "Seeker Estates team app: approve the assistant's replies and answer guest requests.",
+  "id": "/admin/",
+  "start_url": "/admin/",
+  "scope": "/admin/",
+  "display": "standalone",
+  "background_color": "#F3F7FA",
+  "theme_color": "#0B1F35",
+  "icons": [
+    { "src": "/shared/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/shared/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/shared/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

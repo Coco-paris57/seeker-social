@@ -5,7 +5,7 @@ import { config } from '../config.js';
 import { q, getSettings } from '../db.js';
 import { currentConversation, endGuestSession, requireGuest, startGuestSession } from '../auth.js';
 import { accessReleased, handleGuestMessage, stageOf } from '../bot.js';
-import { bus, emitConversation } from '../notify.js';
+import { bus, emitConversation, notifyTeam } from '../notify.js';
 import { addDays, HttpError, londonDate, normaliseName, rateLimiter } from '../util.js';
 import { iso, sse } from './shared.js';
 
@@ -14,7 +14,15 @@ export const guest = express.Router();
 const sessionLimit = rateLimiter(20, 60 * 60_000); // new chats per IP per hour
 const verifyLimit = rateLimiter(6, 15 * 60_000); // booking checks per chat (and per IP) per 15 minutes
 const verifyIpLimit = rateLimiter(20, 15 * 60_000);
-const messageLimit = rateLimiter(30, 5 * 60_000); // messages per chat per 5 minutes
+const messageLimit = rateLimiter(20, 5 * 60_000); // messages per chat per 5 minutes
+const messageHourLimit = rateLimiter(60, 60 * 60_000); // and per hour
+const messageIpLimit = rateLimiter(60, 5 * 60_000); // messages per IP per 5 minutes
+// Ceiling on assistant work across all web chats, so a flood cannot run up model costs.
+const globalLimit = rateLimiter(parseInt(process.env.MAX_MESSAGES_PER_HOUR, 10) || 600, 60 * 60_000);
+const streams = new Map(); // open live-update connections per chat and per IP
+const MAX_STREAMS_PER_CHAT = 4;
+const MAX_STREAMS_PER_IP = 40;
+let floodAlertAt = 0;
 export const MAX_MESSAGE = 2000;
 
 function publicProperty(p) {
@@ -112,9 +120,10 @@ guest.post('/verify', requireGuest, (req, res) => {
     `SELECT * FROM reservations WHERE arrival = ? AND cancelled = 0 AND departure >= ? ${c.property_id ? 'AND property_id = ?' : ''}`,
     ...(c.property_id ? [arrival, addDays(today, -30), c.property_id] : [arrival, addDays(today, -30)]),
   );
+  // Surname only. Where the channel gave no separate surname, the last word of the full name.
   const match = rows.filter((r) => {
-    const names = [r.last_name, ...String(r.guest_name || '').split(/\s+/)].map(normaliseName).filter((n) => n.length >= 2);
-    return names.includes(surname);
+    const last = normaliseName(r.last_name) || normaliseName(String(r.guest_name || '').trim().split(/\s+/).pop());
+    return last.length >= 2 && last === surname;
   });
   if (match.length !== 1) {
     // Same answer whether nothing matched or the match was ambiguous: nothing to learn by guessing.
@@ -136,7 +145,19 @@ guest.post('/messages', requireGuest, (req, res) => {
   const text = String(req.body?.text || '').trim();
   if (!text) throw new HttpError(400, 'Please type a message.');
   if (text.length > MAX_MESSAGE) throw new HttpError(400, `Messages can be up to ${MAX_MESSAGE} characters.`);
-  if (!messageLimit(`c${c.id}`)) throw new HttpError(429, 'You are sending messages very quickly. Please wait a moment.');
+  // The general link has no property until the booking is verified, and the assistant has
+  // nothing to answer from. This also keeps anonymous visitors from triggering model calls.
+  if (!c.property_id) throw new HttpError(403, 'Please verify your booking first, so we know which property you are asking about.');
+  if (!messageLimit(`c${c.id}`) || !messageHourLimit(`c${c.id}`) || !messageIpLimit(req.ip)) {
+    throw new HttpError(429, 'You are sending messages very quickly. Please wait a moment.');
+  }
+  if (!globalLimit('all')) {
+    if (Date.now() - floodAlertAt > 3600_000) {
+      floodAlertAt = Date.now();
+      notifyTeam({ title: 'Unusually high message volume', body: 'The guest chat has reached its hourly message ceiling. New messages are being turned away for now.', url: '/admin/#/conversations', tag: 'flood', urgent: true });
+    }
+    throw new HttpError(503, 'We are receiving a lot of messages right now. Please try again in a few minutes, or contact us through your booking channel.');
+  }
   const id = q.insert("INSERT INTO messages(conversation_id, role, body, sent_at) VALUES(?, 'guest', ?, strftime('%Y-%m-%d %H:%M:%f', 'now'))", c.id, text);
   q.run("UPDATE conversations SET last_message_at = datetime('now'), status = 'open' WHERE id = ?", c.id);
   emitConversation(c.id, 'message', { messageId: id });
@@ -148,7 +169,15 @@ guest.post('/messages', requireGuest, (req, res) => {
 /** Live updates: 'message' (fetch new messages), 'typing', 'conversation' (state changed). */
 guest.get('/stream', requireGuest, (req, res) => {
   const channel = `conversation:${req.conversation.id}`;
-  const send = sse(req, res, () => bus.off(channel, onEvent));
+  const keys = [`c${req.conversation.id}`, `ip${req.ip}`];
+  if ((streams.get(keys[0]) || 0) >= MAX_STREAMS_PER_CHAT || (streams.get(keys[1]) || 0) >= MAX_STREAMS_PER_IP) {
+    throw new HttpError(429, 'Too many open connections.');
+  }
+  for (const k of keys) streams.set(k, (streams.get(k) || 0) + 1);
+  const send = sse(req, res, () => {
+    bus.off(channel, onEvent);
+    for (const k of keys) streams.get(k) > 1 ? streams.set(k, streams.get(k) - 1) : streams.delete(k);
+  });
   const onEvent = (e) => {
     if (['message', 'typing', 'conversation'].includes(e.type)) send(e.type, e.type === 'typing' ? { on: !!e.on } : {});
   };

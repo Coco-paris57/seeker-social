@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { config, ROOT } from './config.js';
 import { q, getSettings } from './db.js';
 import { guest } from './routes/guest.js';
-import { admin } from './routes/admin.js';
+import { admin, setupToken } from './routes/admin.js';
 import { webhooks } from './routes/webhooks.js';
 import { runRetention } from './retention.js';
 import { syncAll } from './sync.js';
@@ -93,7 +93,7 @@ async function main() {
   const app = createApp();
   app.listen(config.port, () => {
     console.log(`Seeker Concierge on ${config.baseUrl} (model: ${config.llmMode === 'claude' ? config.model : 'mock'}, Smoobu: ${config.smoobuMode}${config.smoobuInbox ? ' + inbox' : ''})`);
-    if (q.get('SELECT COUNT(*) AS n FROM users').n === 0) console.log(`First run: open ${config.baseUrl}/admin/ to create the administrator account.`);
+    if (q.get('SELECT COUNT(*) AS n FROM users').n === 0) console.log(`First run: open ${config.baseUrl}/admin/ to create the administrator account.${setupToken ? ` Setup code: ${setupToken}` : ''}`);
   });
   const sync = () => syncAll().then((r) => console.log(`Smoobu sync: ${r.properties} properties, ${r.reservations} reservations`)).catch((e) => console.error(`Smoobu sync failed: ${e.message}`));
   if (config.smoobuMode === 'live') {

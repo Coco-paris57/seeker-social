@@ -36,14 +36,21 @@ export async function handleSmoobuEvent(event) {
 export async function importGuestMessage(bookingId, messageId) {
   const api = smoobu();
   if (!api || !Number.isInteger(bookingId) || !Number.isInteger(messageId)) return;
-  if (q.get('SELECT 1 FROM smoobu_seen WHERE message_id = ?', messageId)) return;
-  if (!q.get('SELECT 1 FROM reservations WHERE id = ?', bookingId)) await syncReservation(bookingId);
-  const reservation = q.get('SELECT * FROM reservations WHERE id = ?', bookingId);
-  if (!reservation) return;
-  const message = (await api.messages(bookingId)).find((m) => m.id === messageId);
-  const text = message && (String(message.message || '').trim() || plain(message.htmlMessage));
-  if (!text) return;
-  q.run('INSERT OR IGNORE INTO smoobu_seen(message_id) VALUES(?)', messageId);
+  // Claim the message before any await, so concurrent deliveries cannot both process it.
+  if (q.run('INSERT OR IGNORE INTO smoobu_seen(message_id) VALUES(?)', messageId).changes === 0) return;
+  let reservation;
+  let text;
+  try {
+    if (!q.get('SELECT 1 FROM reservations WHERE id = ?', bookingId)) await syncReservation(bookingId);
+    reservation = q.get('SELECT * FROM reservations WHERE id = ? AND cancelled = 0', bookingId);
+    const message = reservation && (await api.messages(bookingId)).find((m) => m.id === messageId);
+    // Type 1 is a message from the guest; type 2 is one we sent. The webhook's own "sender" is not trusted.
+    text = message?.type === 1 ? String(message.message || '').trim() || plain(message.htmlMessage) : '';
+  } catch (e) {
+    q.run('DELETE FROM smoobu_seen WHERE message_id = ?', messageId); // let a retry try again
+    throw e;
+  }
+  if (!reservation || !text) return;
 
   let conversation = q.get("SELECT * FROM conversations WHERE channel = 'smoobu' AND reservation_id = ?", bookingId);
   if (!conversation) {

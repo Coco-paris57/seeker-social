@@ -67,7 +67,8 @@ export async function notifyTeam(payload) {
       fetch(config.notifyWebhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: `${payload.urgent ? 'URGENT: ' : ''}${payload.title}\n${payload.body}\n${config.baseUrl}${payload.url || '/admin/'}` }),
+        // Title and link only: guest names and message text stay on this service.
+        body: JSON.stringify({ text: `${payload.urgent ? 'URGENT: ' : ''}${payload.title}\n${config.baseUrl}${payload.url || '/admin/'}` }),
         signal: AbortSignal.timeout(10_000),
       }).catch((e) => console.warn(`Notify webhook failed: ${e.message}`)),
     );

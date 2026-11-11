@@ -38,7 +38,7 @@ dark grounds), `/shared/icon-192.png`, `/shared/icon-512.png`, `/shared/icon-mas
 | `GET /me` | | `{ conversation, messages, about }`. `401` when there is no chat on this device. |
 | `POST /verify` | `{ lastName, arrivalDate: 'YYYY-MM-DD' }` | `{ conversation }` now verified. `404` no match (same message for every failure), `429` too many attempts, `400` bad input. |
 | `GET /messages?after=<id>` | | `{ messages }` with id greater than `after`. |
-| `POST /messages` | `{ text }` (1 to `maxMessageLength` chars) | `202 { message }`. The reply arrives later through the stream. `429` when sending too fast. |
+| `POST /messages` | `{ text }` (1 to `maxMessageLength` chars) | `202 { message }`. The reply arrives later through the stream. `403` when the chat has no property yet (opened from `/stay` and not verified: the guest must verify first). `429` when sending too fast, `503` when the service is overloaded (show the message). |
 | `GET /stream` | Server-sent events | Events: `message` (call `GET /messages?after=`), `typing` with data `{on: boolean}`, `conversation` (call `GET /me`). Reconnect and refetch on error. |
 | `POST /erase` | `{}` | `{ ok }`. Deletes the chat and all its messages; cookie cleared. |
 | `POST /leave` | `{}` | `{ ok }`. Clears the cookie only. |
@@ -59,12 +59,12 @@ Sign-in:
 
 | Call | Body | Returns |
 |---|---|---|
-| `GET /setup` | | `{ needsSetup }`: true when no team member exists yet. |
-| `POST /setup` | `{ email, name, password }` (10+ chars) | `201 { user }`, signed in as administrator. Only works while `needsSetup`. |
+| `GET /setup` | | `{ needsSetup, setupCodeRequired }`. `needsSetup` is true when no team member exists yet. `setupCodeRequired` is true in production: the form must also ask for the setup code printed in the server log. |
+| `POST /setup` | `{ email, name, password, setupCode? }` (password 10+ chars; `403` on a wrong code) | `201 { user }`, signed in as administrator. Only works while `needsSetup`. |
 | `POST /login` | `{ email, password }` | `{ user }`. `401` wrong details, `429` too many attempts. |
 | `POST /logout` | `{}` | `{ ok }` |
 | `GET /me` | | `{ user: {id, email, name, role: 'admin'|'agent'}, llmMode: 'claude'|'mock', smoobuMode: 'live'|'off', smoobuInbox: boolean, baseUrl, categories: string[] }` or `401`. |
-| `POST /password` | `{ current, next }` | `{ ok }` |
+| `POST /password` | `{ current, next }` | `{ ok }`. Signs out every other device. |
 
 Everything below needs a signed-in session (`401` otherwise). Calls marked (admin) need role
 `admin` (`403` otherwise).
@@ -83,12 +83,12 @@ Objects:
 | Call | Body / query | Returns |
 |---|---|---|
 | `GET /inbox` | | `{ approvals: [{ draft: message, conversation, guestMessage, recentGuestMessages: string[] }], tickets: ticket[] (not closed; urgent first, then maintenance, then questions), counts: { approvals, tickets, urgent, total } }` |
-| `POST /messages/:id/approve` | `{ text?: string, remember?: boolean, scope?: 'property'|'global' }` | `{ message, knowledgeId }`. Sends the draft (with `text` if edited). `remember` saves the final text to the knowledge base. `409` if already handled or replaced by a newer draft. |
-| `POST /messages/:id/reject` | `{ replyText?: string, remember?, scope? }` | `{ message|null, knowledgeId }`. Discards the draft; `replyText` is sent as a team message instead. |
+| `POST /messages/:id/approve` | `{ text?: string, remember?: boolean, scope?: 'property'|'global', sensitive?: boolean }` | `{ message, knowledgeId }`. Sends the draft (with `text` if edited). `remember` saves the final text to the knowledge base; **`sensitive` defaults to true** (verified guests only), so send `sensitive: false` for answers any visitor may be told. The same `sensitive` field applies to reject and to answering a request. `409` if already handled or replaced by a newer draft. |
+| `POST /messages/:id/reject` | `{ replyText?: string, remember?, scope?, sensitive? }` | `{ message|null, knowledgeId }`. Discards the draft; `replyText` is sent as a team message instead. |
 | `GET /tickets?status=open\|closed\|all` | | `{ tickets }` |
 | `GET /tickets/:id` | | `{ ticket }` |
 | `POST /tickets/:id/preview` | `{ answer }` | `{ reply, worded }`. How the assistant would word the team's answer for the guest, in the guest's language. Nothing is sent. `worded: false` means the model was unavailable and `reply` is the answer unchanged. |
-| `POST /tickets/:id/answer` | `{ answer, reply?: string, remember?: boolean, scope?: 'property'|'global', verbatim?: boolean, keepOpen?: boolean }` | `{ ticket, message, knowledgeId }`. `answer` is what the team told the assistant (this is what `remember` saves to the knowledge base). `reply` is the exact text to send to the guest, normally the previewed wording after any edits; without it the assistant words the answer itself and sends it (`verbatim: true` sends `answer` as written, as a team message). Closes the ticket unless `keepOpen` (useful for maintenance: update now, close when fixed). **Team app flow: in learning mode always preview first and send with `reply`, so a person has seen every word; in auto mode a one-step send is fine.** |
+| `POST /tickets/:id/answer` | `{ answer, reply?: string, remember?: boolean, scope?: 'property'|'global', sensitive?: boolean, verbatim?: boolean, keepOpen?: boolean }` | `{ ticket, message, knowledgeId }`. `answer` is what the team told the assistant (this is what `remember` saves to the knowledge base). `reply` is the exact text to send to the guest, normally the previewed wording after any edits; without it the assistant words the answer itself and sends it (`verbatim: true` sends `answer` as written, as a team message). Closes the ticket unless `keepOpen` (useful for maintenance: update now, close when fixed). **Team app flow: in learning mode always preview first and send with `reply`, so a person has seen every word; in auto mode a one-step send is fine.** |
 | `POST /tickets/:id/close` | `{}` | `{ ticket }` |
 | `GET /conversations?propertyId=&q=` | | `{ conversations }` newest first (max 100). |
 | `GET /conversations/:id` | | `{ conversation, messages, tickets }` (messages include pending drafts and rejected ones). |

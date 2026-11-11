@@ -62,7 +62,7 @@ test('unknown question: the team is asked, the answer is relayed and remembered'
   const team = await signIn(srv.base);
   const ticket = (await team('GET', '/api/admin/inbox')).json.tickets.find((t) => t.question.includes('cot'));
   assert.equal(ticket.type, 'question');
-  const a = await team('POST', `/api/admin/tickets/${ticket.id}/answer`, { answer: 'Yes, a travel cot is in the bedroom wardrobe.', remember: true });
+  const a = await team('POST', `/api/admin/tickets/${ticket.id}/answer`, { answer: 'Yes, a travel cot is in the bedroom wardrobe.', remember: true, sensitive: false });
   assert.equal(a.status, 200);
   assert.equal(a.json.ticket.status, 'closed');
   assert.match((await guest('GET', '/api/guest/me')).json.messages.at(-1).text, /travel cot/);

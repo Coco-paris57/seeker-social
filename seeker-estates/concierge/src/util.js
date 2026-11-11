@@ -62,6 +62,25 @@ export function rateLimiter(limit, windowMs) {
   };
 }
 
+/** Counts failures only (e.g. wrong passwords), so correct attempts are never locked out by others. */
+export function failureLimiter(limit, windowMs) {
+  const fails = new Map();
+  const live = (key) => {
+    const e = fails.get(key);
+    if (e && e.reset < Date.now()) fails.delete(key);
+    return fails.get(key);
+  };
+  return {
+    blocked: (key) => (live(key)?.count || 0) >= limit,
+    fail: (key) => {
+      const e = live(key);
+      if (e) e.count += 1;
+      else fails.set(key, { count: 1, reset: Date.now() + windowMs });
+    },
+    clear: (key) => fails.delete(key),
+  };
+}
+
 export class HttpError extends Error {
   constructor(status, message) {
     super(message);
