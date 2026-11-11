@@ -28,7 +28,7 @@ dark grounds), `/shared/icon-192.png`, `/shared/icon-512.png`, `/shared/icon-mas
 `conversation` object:
 `{ id, verified, property: {name, area}|null, guestFirstName|null, stay: {arrival, departure, checkIn, checkOut}|null, stage: 'unknown'|'before_arrival'|'during_stay'|'after_stay', accessReleased, teamHasTakenOver }`
 
-`message` object: `{ id, role: 'guest'|'assistant'|'team', text, kind: 'answer'|'holding'|'relay', at }`.
+`message` object: `{ id, role: 'guest'|'assistant'|'team', text, kind: 'answer'|'holding'|'urgent'|'relay', at }`.
 `text` is plain text with newlines (render with `white-space: pre-wrap`, never as HTML).
 
 | Call | Body / query | Returns |
@@ -37,9 +37,9 @@ dark grounds), `/shared/icon-192.png`, `/shared/icon-512.png`, `/shared/icon-mas
 | `POST /session` | `{ qrToken?: string, consent: true }` | `201 { conversation, messages: [], about }`. Starts a chat and sets the cookie. `400` without consent. |
 | `GET /me` | | `{ conversation, messages, about }`. `401` when there is no chat on this device. |
 | `POST /verify` | `{ lastName, arrivalDate: 'YYYY-MM-DD' }` | `{ conversation }` now verified. `404` no match (same message for every failure), `429` too many attempts, `400` bad input. |
-| `GET /messages?after=<id>` | | `{ messages }` with id greater than `after`. |
+| `GET /messages` | | `{ messages }`, the whole chat in display order. Refetch it on every `message` event: an approved answer can have a lower id than a note already on screen, so do not page by id. |
 | `POST /messages` | `{ text }` (1 to `maxMessageLength` chars) | `202 { message }`. The reply arrives later through the stream. `403` when the chat has no property yet (opened from `/stay` and not verified: the guest must verify first). `429` when sending too fast, `503` when the service is overloaded (show the message). |
-| `GET /stream` | Server-sent events | Events: `message` (call `GET /messages?after=`), `typing` with data `{on: boolean}`, `conversation` (call `GET /me`). Reconnect and refetch on error. |
+| `GET /stream` | Server-sent events | Events: `message` (call `GET /messages`), `typing` with data `{on: boolean}`, `conversation` (call `GET /me`). Reconnect and refetch on error. |
 | `POST /erase` | `{}` | `{ ok }`. Deletes the chat and all its messages; cookie cleared. |
 | `POST /leave` | `{}` | `{ ok }`. Clears the cookie only. |
 
@@ -72,7 +72,7 @@ Everything below needs a signed-in session (`401` otherwise). Calls marked (admi
 Objects:
 
 - `conversation`: `{ id, propertyId, propertyName, guestName, verified, channel: 'web'|'smoobu', language, botPaused, stage, stay: {arrival, departure, checkIn, checkOut, channel, smoobuId}|null, createdAt, lastMessageAt, lastMessage: {role, text}|null, pendingDrafts, openTickets }`
-- `message`: `{ id, conversationId, role: 'guest'|'assistant'|'team', text, status: 'sent'|'pending'|'rejected', kind: 'answer'|'holding'|'relay', at, sentAt, confidence: 'high'|'medium'|'low'|null, category, summary, automatic, edited, original, ticketId, deliveryError, authorName }`.
+- `message`: `{ id, conversationId, role: 'guest'|'assistant'|'team', text, status: 'sent'|'pending'|'rejected', kind: 'answer'|'holding'|'urgent'|'relay', at, sentAt, confidence: 'high'|'medium'|'low'|null, category, summary, automatic, edited, original, ticketId, deliveryError, authorName }`.
   `pending` = a draft waiting for approval (not yet seen by the guest). `automatic` = sent without
   approval in auto mode. `edited`/`original` = a team member changed the draft before sending.
 - `ticket` (a request to the team): `{ id, type: 'question'|'maintenance'|'urgent', category, summary, question, status: 'open'|'answered'|'closed', answer, createdAt, answeredAt, answeredByName, savedToKnowledge, conversationId, propertyId, propertyName, guestName, guestVerified, guestMessage }`

@@ -152,7 +152,7 @@ export function propertiesView() {
   return {
     el,
     // Stats move as drafts are approved elsewhere.
-    onEvent(type) { if (type === 'properties' || type === 'draft') load(); },
+    onEvent(type) { if (['properties', 'draft', 'reconnect'].includes(type)) load(); },
   };
 }
 

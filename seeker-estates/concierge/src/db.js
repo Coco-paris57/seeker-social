@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS messages (
   role TEXT NOT NULL,              -- 'guest' | 'bot' | 'team'
   body TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'sent',  -- 'sent' | 'pending' | 'rejected' | 'superseded'
-  kind TEXT NOT NULL DEFAULT 'answer',  -- 'answer' | 'holding' | 'relay'
+  kind TEXT NOT NULL DEFAULT 'answer',  -- 'answer' | 'holding' | 'urgent' | 'relay'
   meta TEXT NOT NULL DEFAULT '{}',
   created_by INTEGER,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),

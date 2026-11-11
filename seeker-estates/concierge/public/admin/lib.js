@@ -64,6 +64,11 @@ export function h(tag, props, ...children) {
     else if (key in el && !key.startsWith('aria')) el[key] = value;
     else el.setAttribute(key, value === true ? '' : value);
   }
+  return add(el, ...children);
+}
+
+/** Append children, skipping null and false (so `condition && node` is safe). */
+export function add(el, ...children) {
   el.append(...children.flat().filter((c) => c != null && c !== false));
   return el;
 }
@@ -236,14 +241,24 @@ export const stayDate = (ymd) => stayFmt.format(new Date(`${ymd}T00:00:00Z`));
 // --- toasts -------------------------------------------------------------------------------
 
 /**
+ * Where toasts go. A modal dialog covers the page and makes it inert, so while one is open
+ * its toasts live inside it; they move to the page when it closes.
+ */
+function toastRegion() {
+  const dialog = document.querySelector('dialog[open]');
+  if (!dialog) return document.getElementById('toasts');
+  return dialog.querySelector('.dialog-toasts') || dialog.appendChild(h('div', { class: 'dialog-toasts', 'aria-live': 'polite' }));
+}
+
+/**
  * Brief message at the edge of the screen, announced to screen readers.
  * kind: info, ok, error, urgent. `sticky` stays until dismissed. `action`: { label, onClick }.
  */
 export function toast(message, { kind = 'info', title, action, sticky = false } = {}) {
-  const region = document.getElementById('toasts');
+  const region = toastRegion();
   const el = h('div', { class: `toast toast-${kind}`, role: kind === 'error' || kind === 'urgent' ? 'alert' : null });
   const close = () => el.remove();
-  el.append(
+  add(el,
     icon({ ok: 'check', error: 'alert', urgent: 'alert', info: 'info' }[kind], 20),
     h('div', { class: 'toast-text' }, title && h('strong', null, title), h('span', null, message)),
     action && h('button', { type: 'button', class: 'toast-action', onclick: () => { close(); action.onClick(); } }, action.label),
@@ -278,6 +293,7 @@ export function openDialog({ title, build, wide = false }) {
       h('div', { class: 'dialog-body' }, build(close)),
     );
     dialog.addEventListener('close', () => {
+      document.getElementById('toasts').append(...dialog.querySelectorAll('.toast'));
       dialog.remove();
       if (opener?.isConnected) opener.focus();
       resolve(result);

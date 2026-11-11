@@ -1,6 +1,6 @@
 // Inbox: drafts waiting for approval and requests from the assistant (urgent, maintenance,
 // questions). The approval and request cards are also used inside a conversation thread.
-import { api, ApiError, autoGrow, busy, button, check, chip, confirmDialog, fill, guestLabel, h, icon, loadError, loading, openDialog, pageHeader, reconcile, showError, TICKET_TYPES, timeEl, toast, uid } from './lib.js';
+import { add, api, ApiError, autoGrow, busy, button, check, chip, confirmDialog, fill, guestLabel, h, icon, loadError, loading, openDialog, pageHeader, reconcile, showError, TICKET_TYPES, timeEl, toast, uid } from './lib.js';
 import { inbox } from './state.js';
 
 const CONFIDENCE = {
@@ -115,7 +115,7 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
   });
 
   const confidence = CONFIDENCE[draft.confidence];
-  card.append(
+  add(card,
     !inThread && h('header', { class: 'card-head' },
       h('div', { class: 'card-title' },
         h('strong', null, property || 'No property'),
@@ -203,7 +203,7 @@ export function ticketCard(ticket, { isOpen = false, onToggle = () => {}, showCh
     onToggle(open);
   });
 
-  body.append(
+  add(body,
     ticket.guestMessage && h('div', { class: 'quote' }, h('p', { class: 'label' }, 'Guest wrote'), h('p', { class: 'pre' }, ticket.guestMessage)),
     ticket.question && h('div', { class: 'ask' }, h('p', { class: 'label' }, icon('bot', 16), 'The assistant asks'), h('p', { class: 'pre' }, ticket.question)),
     ticket.answer && h('div', { class: 'quote' },

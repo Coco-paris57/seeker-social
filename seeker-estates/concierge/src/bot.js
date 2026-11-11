@@ -283,7 +283,8 @@ async function processConversation(conversationId) {
     );
   }
   if (!learning || type === 'urgent') {
-    await sendMessage(conversation, 'bot', decision.reply, { kind: 'holding', meta: { ...meta, ticketId, auto: true } });
+    // Urgent replies carry safety instructions, so they are marked for the chat to emphasise.
+    await sendMessage(conversation, 'bot', decision.reply, { kind: type === 'urgent' ? 'urgent' : 'holding', meta: { ...meta, ticketId, auto: true } });
   } else if (liveChat && !(open && recentHolding(conversation.id, settings.holdingMinutes))) {
     await sendMessage(conversation, 'bot', holdingText(type, decision.language), { kind: 'holding', meta: { ticketId } });
   }

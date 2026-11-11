@@ -97,11 +97,11 @@ function translatePage() {
 /** Emergency line, urgent contact and team hours, wherever a [data-info] block appears. */
 function renderInfo() {
   const about = state.about;
-  const lines = [t('emergency')];
-  if (about?.emergencyContact) lines.push(t('emergencyContact', { contact: about.emergencyContact }));
-  if (about?.officeHours) lines.push(t('officeHours', { hours: about.officeHours }));
+  const urgent = [t('emergency')];
+  if (about?.emergencyContact) urgent.push(t('emergencyContact', { contact: about.emergencyContact }));
+  const lines = about?.officeHours ? [...urgent, t('officeHours', { hours: about.officeHours })] : urgent;
   for (const block of document.querySelectorAll('[data-info]')) block.replaceChildren(...lines.map((line) => el('p', '', line)));
-  $('emergency-line').textContent = lines.slice(0, 2).join(' ');
+  $('emergency-line').textContent = urgent.join(' '); // always on screen under the composer
 }
 
 // Dates follow the browser's full locale (en-GB and en-US differ), not just the UI language.
@@ -128,6 +128,7 @@ async function boot() {
   state.about = welcome.about;
   state.property = welcome.property;
   renderInfo();
+  linkManifest();
   if (welcome.hasSession) {
     try {
       return openChat(await api('GET', '/me'));
@@ -136,6 +137,15 @@ async function boot() {
     }
   }
   showWelcome();
+}
+
+/** Installing to the home screen should reopen this apartment's chat. */
+function linkManifest() {
+  if (!qrToken || document.querySelector('link[rel="manifest"]')) return;
+  const manifest = document.createElement('link');
+  manifest.rel = 'manifest';
+  manifest.href = `/g/${encodeURIComponent(qrToken)}/manifest.webmanifest`;
+  document.head.append(manifest);
 }
 
 function showWelcome(notice) {
@@ -187,8 +197,8 @@ function openChat({ conversation, messages, about }) {
   renderMessages(true);
   state.loaded = true;
   connect();
-  // On a phone, focusing the composer would throw the keyboard over the suggestions.
-  (touch ? $('scroll') : $('input')).focus();
+  // On a phone, focusing a field would throw the keyboard over the screen the guest has not read yet.
+  (touch ? $('scroll') : mustVerify() ? $('verify-name') : $('input')).focus();
 }
 
 function endChat(notice) {
@@ -217,11 +227,27 @@ function renderConversation() {
       : c.guestFirstName || '';
     verified = detail ? `${t('verified')}: ${detail}` : t('verified');
   }
-  $('verify-open').hidden = c.verified;
+  const gated = mustVerify();
+  $('verify-open').hidden = c.verified || gated;
   $('verified-strip').hidden = !c.verified;
   $('verified-text').textContent = verified;
   setText($('menu-verified'), verified);
-  $('menu-verify').parentElement.hidden = c.verified;
+  $('menu-verify').parentElement.hidden = c.verified || gated;
+
+  // The one verify form lives in the dialog, or in the page itself while it is the required step.
+  const form = $('verify-form');
+  const home = gated ? $('gate') : $('verify');
+  if (form.parentElement !== home) home.append(form);
+  $('gate').hidden = !gated;
+  $('composer').hidden = gated;
+  $('verify-intro').textContent = `${gated ? `${t('gateIntro')} ` : ''}${t('verifyIntro', { hours: state.about.accessInfoHours })}`;
+  $('suggest').hidden = gated || state.messages.length + state.outbox.length > 0;
+}
+
+/** A chat opened from the general link has no property until the booking is verified, and
+    the server accepts no messages until then. */
+function mustVerify() {
+  return !state.conversation.property;
 }
 
 /** Message text as plain text nodes, with http(s) URLs turned into links. Never innerHTML. */
@@ -244,7 +270,7 @@ function textWithLinks(text) {
 }
 
 function messageNode(m) {
-  const item = el('li', `msg msg-${m.role}${m.kind === 'holding' ? ' msg-holding' : ''}`);
+  const item = el('li', `msg msg-${m.role}${m.kind === 'holding' ? ' msg-holding' : m.kind === 'urgent' ? ' msg-urgent' : ''}`);
   const meta = el('p', 'msg-meta');
   const who = m.role === 'guest' ? t('roleYou') : m.role === 'team' ? t('roleTeam') : t('roleAssistant');
   meta.append(el('span', m.role === 'guest' ? 'visually-hidden' : 'msg-who', who));
@@ -298,7 +324,7 @@ function renderMessages(forceBottom = false) {
     const node = nodes.get(item.key);
     if (list.children[index] !== node) list.insertBefore(node, list.children[index] || null);
   });
-  $('suggest').hidden = items.length > 0;
+  $('suggest').hidden = items.length > 0 || mustVerify();
   if (pinned) scrollToBottom();
   return pinned;
 }
@@ -353,8 +379,10 @@ async function send(text, retryEntry) {
   } catch (error) {
     if (sessionGone(error)) return;
     entry.status = 'failed';
-    entry.error = error.status === 429 ? t('tooFast') : error.status === 0 ? t('offline') : error.status === 400 && error.message ? error.message : t('genericError');
+    // 400 (too long), 403 (verify first) and 503 (busy) carry a sentence written for the guest.
+    entry.error = error.status === 429 ? t('tooFast') : error.status === 0 ? t('offline') : ([400, 403, 503].includes(error.status) && error.message) || t('genericError');
     renderMessages(true);
+    if (error.status === 403) refreshAll(); // the chat lost its property: show the verify step
   }
 }
 
@@ -427,6 +455,7 @@ function setStreamUp(up) {
 }
 
 function openStream() {
+  stream?.close(); // never two at once: the server caps open streams per chat
   stream = new EventSource('/api/guest/stream');
   stream.addEventListener('open', () => {
     setStreamUp(true);
@@ -481,7 +510,6 @@ function wireDialogs() {
 
 function openVerify() {
   $('menu').close();
-  $('verify-intro').textContent = t('verifyIntro', { hours: state.about.accessInfoHours });
   setText($('verify-error'), '');
   $('verify').showModal();
   $('verify-name').focus();
@@ -622,13 +650,6 @@ function wire() {
   });
 }
 
-if (qrToken) {
-  // Installing to the home screen should reopen this apartment's chat.
-  const manifest = document.createElement('link');
-  manifest.rel = 'manifest';
-  manifest.href = `/g/${encodeURIComponent(qrToken)}/manifest.webmanifest`;
-  document.head.append(manifest);
-}
 translatePage();
 renderInfo();
 wire();
