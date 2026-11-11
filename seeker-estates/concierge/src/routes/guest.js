@@ -40,7 +40,7 @@ function describe(conversation) {
     verified: !!conversation.verified,
     property: publicProperty(property),
     guestFirstName: reservation?.first_name || null,
-    stay: reservation && { arrival: reservation.arrival, departure: reservation.departure, checkIn: reservation.check_in, checkOut: reservation.check_out },
+    stay: reservation && { arrival: reservation.arrival, departure: reservation.departure, checkIn: reservation.check_in, checkOut: reservation.check_out, checkinLink: reservation.cancelled ? null : reservation.checkin_link || null, checkinCompleted: !!reservation.checkin_done },
     stage: stageOf(reservation),
     accessReleased: accessReleased(conversation, reservation, settings),
     teamHasTakenOver: !!conversation.bot_paused,

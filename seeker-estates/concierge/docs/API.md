@@ -27,7 +27,7 @@ Plus Jakarta Sans), `/shared/logo.svg` (wordmark for light grounds), `/shared/lo
 `{ company, botName, officeHours, emergencyContact|null, retentionDays, accessInfoHours, privacyEmail|null, maxMessageLength }`
 
 `conversation` object:
-`{ id, verified, property: {name, area}|null, guestFirstName|null, stay: {arrival, departure, checkIn, checkOut}|null, stage: 'unknown'|'before_arrival'|'during_stay'|'after_stay', accessReleased, teamHasTakenOver }`
+`{ id, verified, property: {name, area}|null, guestFirstName|null, stay: {arrival, departure, checkIn, checkOut, checkinLink|null, checkinCompleted}|null, stage: 'unknown'|'before_arrival'|'during_stay'|'after_stay', accessReleased, teamHasTakenOver }`
 
 `message` object: `{ id, role: 'guest'|'assistant'|'team', text, kind: 'answer'|'holding'|'urgent'|'relay', at }`.
 `text` is plain text with newlines (render with `white-space: pre-wrap`, never as HTML).
@@ -72,7 +72,7 @@ Everything below needs a signed-in session (`401` otherwise). Calls marked (admi
 
 Objects:
 
-- `conversation`: `{ id, propertyId, propertyName, guestName, verified, channel: 'web'|'smoobu', language, botPaused, stage, stay: {arrival, departure, checkIn, checkOut, channel, smoobuId}|null, createdAt, lastMessageAt, lastMessage: {role, text}|null, pendingDrafts, openTickets }`
+- `conversation`: `{ id, propertyId, propertyName, guestName, verified, channel: 'web'|'smoobu', language, botPaused, stage, stay: {arrival, departure, checkIn, checkOut, channel, smoobuId, checkinLink|null, checkinCompleted}|null, createdAt, lastMessageAt, lastMessage: {role, text}|null, pendingDrafts, openTickets }`
 - `message`: `{ id, conversationId, role: 'guest'|'assistant'|'team', text, status: 'sent'|'pending'|'rejected', kind: 'answer'|'holding'|'urgent'|'relay', at, sentAt, confidence: 'high'|'medium'|'low'|null, category, summary, automatic, edited, original, ticketId, deliveryError, authorName }`.
   `pending` = a draft waiting for approval (not yet seen by the guest). `automatic` = sent without
   approval in auto mode. `edited`/`original` = a team member changed the draft before sending.
@@ -107,7 +107,7 @@ Objects:
 | `POST /knowledge` | `{ propertyId?: number|null, category, question, answer, sensitive?: boolean }` | `201 { knowledge }`. `sensitive` defaults to true for `access` and `wifi`. |
 | `PATCH /knowledge/:id` | any of the same fields | `{ knowledge }` |
 | `DELETE /knowledge/:id` | | `{ ok }` |
-| `GET /settings` | | `{ settings: { defaultMode, botName, accessInfoHours, retentionDays, emergencyContact, officeHours, holdingMinutes } }` |
+| `GET /settings` | | `{ settings: { defaultMode, botName, accessInfoHours, retentionDays, emergencyContact, officeHours, holdingMinutes, checkinPortalNote } }` |
 | `PATCH /settings` (admin) | any of those | `{ settings }` |
 | `GET /users` | | `{ users: [{ id, email, name, role, createdAt, notifications: boolean }] }` |
 | `POST /users` (admin) | `{ email, name, password, role: 'admin'|'agent' }` | `201 { user }` |

@@ -43,6 +43,13 @@ Door codes, key-safe details and WiFi passwords are marked *sensitive*. They are
 verified guests, from 48 hours before check-in (configurable) until checkout. Before that the
 assistant is never given them, so it cannot leak them.
 
+**Online check-in (ChargeAutomation).** ChargeAutomation writes each guest's online check-in
+link and its status into the Smoobu booking note, and the sync picks both up. For anything about
+check-in, door codes, WiFi or the deposit, the assistant sends a verified guest their own link
+and explains what appears there and when (Settings, "Online check-in page"). ChargeAutomation
+keeps deciding when details are released; the assistant only points to the page. The link is
+never sent to the AI model: the model writes a placeholder and the app puts the link in.
+
 A team member can take over any chat (the assistant pauses) and hand it back later.
 
 ## Run it locally

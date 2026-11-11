@@ -41,6 +41,16 @@ export function upsertProperty(apartment, detail = {}) {
   );
 }
 
+/**
+ * ChargeAutomation writes the guest's online check-in link and status into the Smoobu booking note
+ * ("CA_PRE_ARRIVAL_LINK : https://app.chargeautomation.com/securelink/...", "CA Online check-in Completed").
+ */
+export function checkinFromNotice(notice) {
+  const text = String(notice || '');
+  const link = text.match(/https:\/\/app\.chargeautomation\.com\/[A-Za-z0-9\/_-]+/)?.[0] || null;
+  return { link, done: /online check-?in completed/i.test(text) };
+}
+
 export function upsertReservation(b) {
   if (!b?.id || !b.apartment?.id || !b.arrival || !b.departure) return;
   if (b['is-blocked-booking']) return; // owner blocks are not guests
@@ -48,18 +58,20 @@ export function upsertReservation(b) {
   if (!property) return;
   const first = b.firstname || '';
   const last = b.lastname || '';
+  const checkin = checkinFromNotice(b.notice);
   q.run(
     `INSERT INTO reservations(id, property_id, first_name, last_name, guest_name, arrival, departure,
-       check_in, check_out, adults, children, channel, language, cancelled, synced_at)
-     VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+       check_in, check_out, adults, children, channel, language, cancelled, checkin_link, checkin_done, synced_at)
+     VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
      ON CONFLICT(id) DO UPDATE SET property_id = excluded.property_id, first_name = excluded.first_name,
        last_name = excluded.last_name, guest_name = excluded.guest_name, arrival = excluded.arrival,
        departure = excluded.departure, check_in = excluded.check_in, check_out = excluded.check_out,
        adults = excluded.adults, children = excluded.children, channel = excluded.channel,
-       language = excluded.language, cancelled = excluded.cancelled, synced_at = excluded.synced_at`,
+       language = excluded.language, cancelled = excluded.cancelled, checkin_link = excluded.checkin_link,
+       checkin_done = excluded.checkin_done, synced_at = excluded.synced_at`,
     b.id, property.id, first, last, b['guest-name'] || `${first} ${last}`.trim(), b.arrival, b.departure,
     b['check-in'] || null, b['check-out'] || null, b.adults ?? null, b.children ?? null,
-    b.channel?.name || null, b.language || null, b.type === 'cancellation' ? 1 : 0,
+    b.channel?.name || null, b.language || null, b.type === 'cancellation' ? 1 : 0, checkin.link, checkin.done ? 1 : 0,
   );
 }
 

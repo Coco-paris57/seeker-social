@@ -50,7 +50,7 @@ function conversationOut(c) {
     id: c.id, propertyId: c.property_id, propertyName: property ? property.display_name || property.name : null,
     guestName: c.guest_name || null, verified: !!c.verified, channel: c.channel, language: c.language,
     botPaused: !!c.bot_paused, stage: stageOf(c.verified ? reservation : null),
-    stay: reservation && c.verified ? { arrival: reservation.arrival, departure: reservation.departure, checkIn: reservation.check_in, checkOut: reservation.check_out, channel: reservation.channel, smoobuId: reservation.id } : null,
+    stay: reservation && c.verified ? { arrival: reservation.arrival, departure: reservation.departure, checkIn: reservation.check_in, checkOut: reservation.check_out, channel: reservation.channel, smoobuId: reservation.id, checkinLink: reservation.checkin_link || null, checkinCompleted: !!reservation.checkin_done } : null,
     createdAt: iso(c.created_at), lastMessageAt: iso(c.last_message_at),
     lastMessage: last ? { role: last.role === 'bot' ? 'assistant' : last.role, text: clip(last.body, 160) } : null,
     pendingDrafts: q.get("SELECT COUNT(*) AS n FROM messages WHERE conversation_id = ? AND status = 'pending'", c.id).n,
@@ -410,7 +410,7 @@ admin.patch('/settings', requireAdmin, (req, res) => {
       if (!Number.isFinite(value) || value < min || value > max) throw new HttpError(400, `${key} must be between ${min} and ${max}.`);
       value = Math.round(value);
     } else {
-      value = clip(value, 200);
+      value = clip(value, key === 'checkinPortalNote' ? 800 : 200);
       if (key === 'botName' && !value) throw new HttpError(400, 'The assistant needs a name.');
     }
     setSetting(key, value);

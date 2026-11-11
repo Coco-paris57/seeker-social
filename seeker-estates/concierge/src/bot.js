@@ -9,6 +9,15 @@ import { addDays, clip, londonDate, londonToUtc, HttpError } from './util.js';
 
 export const SENSITIVE_CATEGORIES = new Set(['access', 'wifi']);
 
+// The guest's online check-in link is private to their booking. The model is given this
+// placeholder instead and the real link is put in when a message is written or sent.
+export const CHECKIN_LINK = '[CHECKIN_LINK]';
+const withLink = (text, link) => (link ? String(text).split(CHECKIN_LINK).join(link) : String(text).split(CHECKIN_LINK).join('your online check-in link'));
+const withoutLink = (text, link) => (link ? String(text).split(link).join(CHECKIN_LINK) : String(text));
+const checkinLinkOf = (conversation) => (conversation.verified && conversation.reservation_id
+  ? q.get('SELECT checkin_link FROM reservations WHERE id = ? AND cancelled = 0', conversation.reservation_id)?.checkin_link || null
+  : null);
+
 export function propertyMode(property, settings = getSettings()) {
   return property?.mode || settings.defaultMode;
 }
@@ -61,7 +70,7 @@ export function buildContext(conversation, { latest = '', uptoMessageId = null }
       ...(uptoMessageId ? [conversation.id, uptoMessageId] : [conversation.id]),
     )
     .reverse()
-    .map((m) => ({ role: m.role === 'guest' ? 'guest' : m.role === 'team' ? 'team' : 'assistant', text: m.body }));
+    .map((m) => ({ role: m.role === 'guest' ? 'guest' : m.role === 'team' ? 'team' : 'assistant', text: withoutLink(m.body, reservation?.checkin_link) }));
 
   const now = new Date();
   return {
@@ -70,6 +79,7 @@ export function buildContext(conversation, { latest = '', uptoMessageId = null }
     officeHours: settings.officeHours,
     emergencyContact: settings.emergencyContact,
     accessHours: settings.accessInfoHours,
+    checkinPortalNote: settings.checkinPortalNote,
     today: londonDate(now),
     time: new Intl.DateTimeFormat('en-GB', { timeZone: config.timezone, hour: '2-digit', minute: '2-digit', weekday: 'long' }).format(now),
     verified: !!conversation.verified,
@@ -100,6 +110,8 @@ export function buildContext(conversation, { latest = '', uptoMessageId = null }
       children: reservation.children ?? undefined,
       booked_through: reservation.channel || undefined,
       cancelled: reservation.cancelled ? true : undefined,
+      online_checkin_link: reservation.checkin_link && !reservation.cancelled ? CHECKIN_LINK : undefined,
+      online_checkin_completed: reservation.checkin_link ? !!reservation.checkin_done : undefined,
     },
     knowledge,
     openTickets: q
@@ -221,6 +233,7 @@ async function processConversation(conversationId) {
   let decision;
   try {
     decision = await llm.decide(buildContext(conversation, { latest, uptoMessageId: pending[0].id }));
+    decision.reply = withLink(decision.reply, checkinLinkOf(conversation));
   } catch (e) {
     // The model is unavailable or declined. Never leave a guest without an answer: hand to the team.
     console.error(`Model error in conversation ${conversation.id}: ${e.message}`);
@@ -421,7 +434,7 @@ async function answerTicketOnce(ticketId, user, { answer, reply: reviewed, remem
     worded = true;
   } else if (!verbatim) {
     try {
-      reply = await llm.compose(buildContext(conversation, { latest: '' }), ticket, text);
+      reply = withLink(await llm.compose(buildContext(conversation, { latest: '' }), ticket, withoutLink(text, checkinLinkOf(conversation))), checkinLinkOf(conversation));
       worded = true;
     } catch (e) {
       console.error(`Compose failed for ticket ${ticket.id}: ${e.message}`); // fall back to the team's own words
@@ -455,7 +468,8 @@ export async function previewTicketReply(ticketId, answer) {
   if (!text) throw new HttpError(400, 'Please write an answer.');
   const conversation = q.get('SELECT * FROM conversations WHERE id = ?', ticket.conversation_id);
   try {
-    return { reply: await llm.compose(buildContext(conversation, { latest: '' }), ticket, text), worded: true };
+    const link = checkinLinkOf(conversation);
+    return { reply: withLink(await llm.compose(buildContext(conversation, { latest: '' }), ticket, withoutLink(text, link)), link), worded: true };
   } catch (e) {
     console.error(`Compose failed for ticket ${ticket.id}: ${e.message}`);
     return { reply: text, worded: false };

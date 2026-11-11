@@ -44,6 +44,7 @@ function assistantSection() {
       accessInfoHours: number(settings.accessInfoHours, 0, 336),
       retentionDays: number(settings.retentionDays, 7, 730),
       holdingMinutes: number(settings.holdingMinutes, 1, 240),
+      checkinPortalNote: h('textarea', { rows: 4, maxLength: 800, disabled: !admin }, settings.checkinPortalNote),
     };
     const save = button('Save settings', { variant: 'primary', type: 'submit' });
     const form = h('form', { class: 'form form-grid' },
@@ -55,6 +56,7 @@ function assistantSection() {
       field('Release access details (hours before check-in)', inputs.accessInfoHours, { hint: 'Door codes and WiFi are given to verified guests from this point. 0 to 336.' }),
       field('Keep conversations (days)', inputs.retentionDays, { hint: 'Chats are erased this long after the last message. 7 to 730.' }),
       field('Holding note window (minutes)', inputs.holdingMinutes, { hint: 'The "checking with the team" note is not repeated within this time. 1 to 240.' }),
+      h('div', { class: 'span-2' }, field('Online check-in page (ChargeAutomation)', inputs.checkinPortalNote, { hint: 'What guests find on their online check-in page and when. The assistant sends each verified guest their own link and explains this.' })),
       admin && h('div', { class: 'span-2 actions' }, save));
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
