@@ -12,7 +12,8 @@ const int = (v, d) => (Number.isFinite(parseInt(v, 10)) ? parseInt(v, 10) : d);
 export const config = {
   port: int(env.PORT, 8787),
   // Public address of this service, used in QR codes and links. No trailing slash.
-  baseUrl: (env.BASE_URL || `http://localhost:${int(env.PORT, 8787)}`).replace(/\/+$/, ''),
+  // On Render the service's own address is provided as RENDER_EXTERNAL_URL.
+  baseUrl: (env.BASE_URL || env.RENDER_EXTERNAL_URL || `http://localhost:${int(env.PORT, 8787)}`).replace(/\/+$/, ''),
   dataDir: path.resolve(ROOT, env.DATA_DIR || 'data'),
   production: env.NODE_ENV === 'production',
 

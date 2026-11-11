@@ -6,8 +6,7 @@ COPY src ./src
 COPY public ./public
 COPY scripts ./scripts
 ENV NODE_ENV=production PORT=8787 DATA_DIR=/data
-RUN mkdir -p /data && chown node:node /data
 VOLUME /data
 EXPOSE 8787
-USER node
+# Runs as the image's default user so it can write to a host-mounted disk at /data.
 CMD ["node", "--disable-warning=ExperimentalWarning", "src/server.js"]

@@ -63,7 +63,9 @@ It is one Node process with a SQLite file, so it needs a host with a **persisten
 **https** (required for push notifications and the camera-to-link QR flow). Fly.io, Render and
 Railway all work with the included `Dockerfile`; mount a volume at `/data`.
 
-1. Set the variables in `.env.example`. `BASE_URL` must be the final public address **before any
+0. Easiest route: on Render choose New, Blueprint and pick this repository. `render.yaml` at the
+   repo root creates the service, the disk and the settings, and asks only for the keys.
+1. Otherwise set the variables in `.env.example` yourself. `BASE_URL` must be the final public address **before any
    QR code is printed**, because the code contains it.
 2. Deploy, open `/admin/` and create the administrator account. The form asks for a setup code:
    it is printed in the server log on first start (or set `SETUP_TOKEN` yourself). Then add the

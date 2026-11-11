@@ -1,0 +1,37 @@
+# One-click setup for the guest concierge on Render (render.com > New > Blueprint).
+# Render asks for the values marked "sync: false" when the service is created.
+services:
+  - type: web
+    name: seeker-concierge
+    runtime: docker
+    rootDir: seeker-estates/concierge
+    plan: starter
+    region: frankfurt
+    healthCheckPath: /healthz
+    disk:
+      name: concierge-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIR
+        value: /data
+      - key: TRUST_PROXY
+        value: "1"
+      - key: SMOOBU_INBOX
+        value: "off"
+      - key: COMPANY_NAME
+        value: Seeker Estates LTD
+      - key: SETUP_TOKEN
+        generateValue: true
+      - key: SMOOBU_WEBHOOK_TOKEN
+        generateValue: true
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: SMOOBU_API_KEY
+        sync: false
+      - key: SMOOBU_API_SECRET
+        sync: false
+      - key: PRIVACY_EMAIL
+        sync: false
