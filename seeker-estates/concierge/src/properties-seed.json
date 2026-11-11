@@ -1,0 +1,135 @@
+{
+ "_about": "Starting facts per Smoobu apartment id, from build/properties.py and revenue/data/id_map.json. Used once when a property is first synced; edit properties in the admin interface afterwards.",
+ "properties": {
+  "3320302": {
+   "ref": "P01",
+   "postcode": "E14 8NT",
+   "area": "Canary Wharf",
+   "station": "Canary Wharf (Jubilee/Elizabeth)",
+   "type": "2-bed",
+   "sleeps": 5,
+   "nearby": "ExCeL 12 min \u00b7 O2 9 min",
+   "notes": "21st floor, lift to 20th, river + City view, balcony, no parking"
+  },
+  "2999946": {
+   "ref": "P02",
+   "postcode": "W10 6JE",
+   "area": "Ladbroke Grove",
+   "station": "Ladbroke Grove",
+   "type": "1-bed",
+   "sleeps": 4,
+   "nearby": "Portobello Rd 5 min",
+   "notes": "1st floor, new bathroom, new balcony, no lift, no parking"
+  },
+  "3562176": {
+   "ref": "P04",
+   "postcode": "IG11 7ZH",
+   "area": "Barking",
+   "station": "Barking",
+   "type": "2-bed",
+   "sleeps": 6,
+   "nearby": "ExCeL 12 min \u00b7 O2 9 min",
+   "notes": "5th floor, lift, balcony, Canary Wharf view, no parking"
+  },
+  "3166592": {
+   "ref": "P05",
+   "postcode": "NW8 9QE",
+   "area": "St John's Wood",
+   "station": "St John's Wood",
+   "type": "5-bed",
+   "sleeps": 8,
+   "nearby": "Abbey Road crossing \u00b7 Lord's \u00b7 Regent's Park",
+   "notes": "1st-floor entry, over 4 floors, no lift, 2 bath + WC, no parking"
+  },
+  "3288517": {
+   "ref": "P06",
+   "postcode": "W1U 5AL",
+   "area": "Marylebone",
+   "station": "Baker Street",
+   "type": "2-bed",
+   "sleeps": 6,
+   "nearby": "Marylebone Village \u00b7 Regent's Park \u00b7 Oxford St",
+   "notes": "2nd floor, no lift, no parking, street view"
+  },
+  "3288427": {
+   "ref": "P07",
+   "postcode": "SE18 6TL",
+   "area": "Woolwich",
+   "station": "Woolwich Arsenal (Elizabeth)",
+   "type": "1-bed",
+   "sleeps": 4,
+   "nearby": "Woolwich Works \u00b7 O2 via Elizabeth line",
+   "notes": "Ground floor, terrace, modern, by the river, no parking"
+  },
+  "3318167": {
+   "ref": "P08",
+   "postcode": "N1 2RF",
+   "area": "Islington",
+   "station": "Angel / Highbury & Islington",
+   "type": "2-bed",
+   "sleeps": 5,
+   "nearby": "Upper St \u00b7 Ally Pally 25 min \u00b7 Emirates",
+   "notes": "Ground floor, bedroom on 1st, terrace, no parking"
+  },
+  "3318172": {
+   "ref": "P09",
+   "postcode": "SE10 8EQ",
+   "area": "Greenwich",
+   "station": "Greenwich / Cutty Sark",
+   "type": "1-bed",
+   "sleeps": 4,
+   "nearby": "Greenwich village \u00b7 O2 \u00b7 Cutty Sark",
+   "notes": "1st floor, lift, balcony, no parking"
+  },
+  "3318177": {
+   "ref": "P10",
+   "postcode": "W5 1AY",
+   "area": "Ealing / Hanger Lane",
+   "station": "Hanger Lane",
+   "type": "1-bed",
+   "sleeps": 4,
+   "nearby": "Wembley Stadium",
+   "notes": "Ground floor, lift, modern, no parking"
+  },
+  "3064196": {
+   "ref": "P11",
+   "postcode": "NW1 9NN",
+   "area": "Camden",
+   "station": "Camden Road / Camden Town",
+   "type": "2-bed",
+   "sleeps": 6,
+   "nearby": "Camden Market \u00b7 Roundhouse \u00b7 KOKO",
+   "notes": "Basement flat, patio, no lift, no parking"
+  },
+  "2699998": {
+   "ref": "P12",
+   "postcode": "E3 4RZ",
+   "area": "Mile End",
+   "station": "Mile End",
+   "type": "2-bed",
+   "sleeps": 6,
+   "nearby": "Victoria Park \u00b7 Olympic Park",
+   "notes": "4th floor, lift, balcony, Canary Wharf view, no parking"
+  },
+  "3064856": {
+   "ref": "P13",
+   "postcode": "W12 7BT",
+   "area": "Shepherd's Bush",
+   "station": "Shepherd's Bush",
+   "type": "2-bed",
+   "sleeps": 6,
+   "nearby": "Westfield \u00b7 Notting Hill \u00b7 Loftus Rd",
+   "notes": "4th floor, lift to 3rd, large terrace, no parking"
+  },
+  "3267077": {
+   "ref": "P14",
+   "postcode": "NW1 8XY",
+   "area": "Primrose Hill",
+   "station": "Chalk Farm / Camden Town",
+   "type": "1-bed",
+   "sleeps": 4,
+   "nearby": "Primrose Hill \u00b7 Regent's Park \u00b7 Zoo",
+   "notes": "Ground-floor house over 4 floors, roof terrace, 1 parking space"
+  }
+ }
+}

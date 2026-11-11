@@ -1,0 +1,102 @@
+// Copies apartments and reservations from Smoobu into the local database.
+// Only the fields the concierge needs are kept: no email, phone, price or payment data.
+import fs from 'node:fs';
+import path from 'node:path';
+import { q, parseJson } from './db.js';
+import { ROOT } from './config.js';
+import { smoobu } from './smoobu.js';
+import { addDays, londonDate, newToken } from './util.js';
+
+const seed = parseJson(fs.readFileSync(path.join(ROOT, 'src/properties-seed.json'), 'utf8'), {}).properties || {};
+
+export function upsertProperty(apartment, detail = {}) {
+  const loc = detail.location || {};
+  const details = JSON.stringify({
+    rooms: detail.rooms || null,
+    amenities: detail.amenities || [],
+    latitude: loc.latitude ?? null,
+    longitude: loc.longitude ?? null,
+    city: loc.city || null,
+  });
+  const address = [loc.street, loc.zip, loc.city].filter(Boolean).join(', ') || null;
+  const existing = q.get('SELECT id FROM properties WHERE smoobu_id = ?', apartment.id);
+  if (existing) {
+    q.run(
+      `UPDATE properties SET name = ?, details = ?, address = COALESCE(?, address),
+       postcode = COALESCE(postcode, ?), updated_at = datetime('now') WHERE id = ?`,
+      apartment.name, details, address, loc.zip || null, existing.id,
+    );
+    return existing.id;
+  }
+  const s = seed[String(apartment.id)] || {};
+  const notes = [s.type && `${s.type}, sleeps ${s.sleeps}`, s.notes, s.nearby && `Nearby: ${s.nearby}`].filter(Boolean).join('. ');
+  return q.insert(
+    `INSERT INTO properties(smoobu_id, ref, name, display_name, area, postcode, address, station, notes, details, qr_token)
+     VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    apartment.id, s.ref || null, apartment.name, s.area ? `${s.area} apartment` : apartment.name,
+    s.area || loc.city || null, s.postcode || loc.zip || null, address, s.station || null, notes || null,
+    details, newToken(9),
+  );
+}
+
+export function upsertReservation(b) {
+  if (!b?.id || !b.apartment?.id || !b.arrival || !b.departure) return;
+  if (b['is-blocked-booking']) return; // owner blocks are not guests
+  const property = q.get('SELECT id FROM properties WHERE smoobu_id = ?', b.apartment.id);
+  if (!property) return;
+  const first = b.firstname || '';
+  const last = b.lastname || '';
+  q.run(
+    `INSERT INTO reservations(id, property_id, first_name, last_name, guest_name, arrival, departure,
+       check_in, check_out, adults, children, channel, language, cancelled, synced_at)
+     VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+     ON CONFLICT(id) DO UPDATE SET property_id = excluded.property_id, first_name = excluded.first_name,
+       last_name = excluded.last_name, guest_name = excluded.guest_name, arrival = excluded.arrival,
+       departure = excluded.departure, check_in = excluded.check_in, check_out = excluded.check_out,
+       adults = excluded.adults, children = excluded.children, channel = excluded.channel,
+       language = excluded.language, cancelled = excluded.cancelled, synced_at = excluded.synced_at`,
+    b.id, property.id, first, last, b['guest-name'] || `${first} ${last}`.trim(), b.arrival, b.departure,
+    b['check-in'] || null, b['check-out'] || null, b.adults ?? null, b.children ?? null,
+    b.channel?.name || null, b.language || null, b.type === 'cancellation' ? 1 : 0,
+  );
+}
+
+export async function syncProperties() {
+  const api = smoobu();
+  if (!api) return { properties: 0 };
+  const { apartments = [] } = await api.apartments();
+  for (const a of apartments) {
+    let detail = {};
+    try {
+      detail = await api.apartment(a.id);
+    } catch (e) {
+      console.warn(`Smoobu apartment ${a.id}: ${e.message}`);
+    }
+    upsertProperty(a, detail);
+  }
+  return { properties: apartments.length };
+}
+
+export async function syncReservations() {
+  const api = smoobu();
+  if (!api) return { reservations: 0 };
+  const today = londonDate();
+  const bookings = await api.reservations(addDays(today, -35), addDays(today, 180));
+  for (const b of bookings) upsertReservation(b);
+  // Guest names are not needed once a stay is long over.
+  q.run('DELETE FROM reservations WHERE departure < ?', addDays(today, -120));
+  return { reservations: bookings.length };
+}
+
+export async function syncAll() {
+  const p = await syncProperties();
+  const r = await syncReservations();
+  return { ...p, ...r };
+}
+
+/** Refresh a single booking, e.g. after a Smoobu webhook. */
+export async function syncReservation(id) {
+  const api = smoobu();
+  if (!api) return;
+  upsertReservation(await api.reservation(id));
+}
