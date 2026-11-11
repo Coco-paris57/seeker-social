@@ -120,10 +120,13 @@ guest.post('/verify', requireGuest, (req, res) => {
     `SELECT * FROM reservations WHERE arrival = ? AND cancelled = 0 AND departure >= ? ${c.property_id ? 'AND property_id = ?' : ''}`,
     ...(c.property_id ? [arrival, addDays(today, -30), c.property_id] : [arrival, addDays(today, -30)]),
   );
-  // Surname only. Where the channel gave no separate surname, the last word of the full name.
+  // The surname is what counts. Guests often type their full name, so that is accepted too
+  // (either order). A first name alone never matches.
   const match = rows.filter((r) => {
+    const first = normaliseName(r.first_name);
     const last = normaliseName(r.last_name) || normaliseName(String(r.guest_name || '').trim().split(/\s+/).pop());
-    return last.length >= 2 && last === surname;
+    if (last.length < 2) return false;
+    return [last, first + last, last + first, normaliseName(r.guest_name)].includes(surname);
   });
   if (match.length !== 1) {
     // Same answer whether nothing matched or the match was ambiguous: nothing to learn by guessing.

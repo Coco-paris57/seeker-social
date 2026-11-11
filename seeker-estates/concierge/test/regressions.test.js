@@ -18,6 +18,16 @@ test('a first name does not verify a booking', async () => {
   assert.equal((await guest('POST', '/api/guest/verify', { lastName: 'Lopez', arrivalDate: ctx.arrival })).status, 200);
 });
 
+test('typing the full name instead of just the surname also verifies', async () => {
+  q.run("INSERT INTO reservations(id, property_id, first_name, last_name, guest_name, arrival, departure) VALUES(503, ?, 'Glenn', 'Steiger', 'Glenn Steiger', ?, ?)", ctx.propertyId, ctx.arrival, ctx.arrival);
+  for (const typed of ['Glenn Steiger', 'steiger glenn', ' STEIGER ']) {
+    const guest = await openChat(srv.base);
+    assert.equal((await guest('POST', '/api/guest/verify', { lastName: typed, arrivalDate: ctx.arrival })).status, 200, typed);
+  }
+  const guest = await openChat(srv.base);
+  assert.equal((await guest('POST', '/api/guest/verify', { lastName: 'Glenn', arrivalDate: ctx.arrival })).status, 404);
+});
+
 test('remembered answers are for verified guests unless the team says otherwise', async () => {
   const { buildContext } = await import('../src/bot.js');
   const guest = await openChat(srv.base);
