@@ -204,12 +204,12 @@
 
 ### MEDIUM
 
-**M1. Push freshness at 07:18Z: no Smoobu or Channex listing is over 24 h yet, but eleven are due to go stale during the morning unless the daily push runs** (live `get_listing_data`)
+**M1. Push freshness at 07:28Z: no Smoobu or Channex listing is over 24 h yet. The daily cycle is running: P09 and the P11 Vrbo copy re-pushed at 07:21Z and 07:25Z. Nine listings are due by 08:22-09:27Z** (live `get_listing_data` at 07:18Z and 07:28Z)
 
 | Listing | Last push (Z) | Over 24 h from |
 |---|---|---|
-| P09 3318172 | 10 Nov 07:27:40 | 07:27Z today |
-| P11 Vrbo `_7fd3…` | 10 Nov 08:02:22 | 08:02Z |
+| P09 3318172 | 10 Nov 07:27:40 -> **pushed 11 Nov 07:21:36Z** (re-read 07:28Z) | fresh |
+| P11 Vrbo `_7fd3…` | 10 Nov 08:02:22 -> **pushed 11 Nov 07:25:49Z** | fresh |
 | P08 3318167 | 10 Nov 08:22:42 | 08:22Z (fully booked to the 13 Nov handback) |
 | P13 Vrbo `_3d48…` | 10 Nov 08:30:49 | 08:30Z |
 | P11 3064196 | 10 Nov 09:27:10 (refreshed 16:28:54, not pushed: C1) | 09:27Z |
@@ -220,7 +220,8 @@
 
 - **Fresh:** P12 16:30:08Z (P12 Vrbo 16:29:30Z), P02 00:23:39Z, P03 Channex 03:29:18Z, P07 03:59:04Z, P01 04:47:56Z, P10 05:13:55Z (all 11 Nov except the P12 pair).
 - **Stale with push on:** P02 Vrbo `_ca1c…`, last push **24 Feb 2026**, `last_refreshed_at` null.
-- Check: `last_date_pushed` on P09 after 07:28Z, and on the 09:27Z group after 09:30Z.
+- At 07:28Z, P11 3064196 (09:27:10Z) and P20 (09:27:29Z) were still not re-pushed.
+- Check: `last_date_pushed` on the 09:27Z group after 09:30Z, especially P11 (C1) and P20 (H1).
 
 **M2. Floor and ceiling, next 180 nights** (Smoobu open nights 11 Nov-9 May vs PriceLabs min/max; `an2.py`; `kpi_pack` `bounds` = first 60 days)
 - **P14: 65 of 180 open nights (36.1%) at £450 = min.** `kpi_pack` gives 61.7% of 60. Special setup: numbers only.
@@ -280,5 +281,5 @@ Data gaps:
 5. The 1.10 x Booking.com / Smoobu ratio on P11 8-14 Dec has not been checked against the Smoobu channel price setting.
 6. Live overrides were read for P11, P12, P05, P20, P13 3064856, P09 and P04. P09 still has 12 Nov min 2 (`updated_at` 5 Nov 10:56:24Z); P04's 9 Nov DSOs are unchanged. For P06, P13 3090701, P14 and the blocked listings, "unchanged" rests on `get_user_logs` (0 entries since 10 Nov 06:00Z) plus the raw prices. Customization changes are not covered by `get_user_logs`: NOT CHECKED for P04, P12, P13 and P14 today.
 7. `kpi_pack` `market_percentiles` is null, and `bounds` is missing for P01-P03 and P07-P10. Market gaps use the 10 Nov `market.csv`.
-8. P20 21-24 Nov and P11 prices after the next refresh/push: NOT CHECKED (see the end-of-run push check below).
+8. P20 21-24 Nov and P11 prices after the next refresh/push: NOT CHECKED. At 07:28Z neither listing had re-pushed.
 9. Who extended the P01 block to 18-20 Dec, and who set the P09 11 Nov and P11 10-14 Nov blocks: UNKNOWN.
