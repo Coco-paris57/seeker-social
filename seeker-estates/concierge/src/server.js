@@ -75,7 +75,12 @@ export function createApp() {
   app.get('/privacy', page('guest/privacy.html'));
   // The service worker must never be served stale, or updates to the team app stall.
   app.get('/admin/sw.js', (req, res) => res.set({ 'Cache-Control': 'no-cache', 'Service-Worker-Allowed': '/admin/' }).sendFile(path.join(PUBLIC, 'admin/sw.js')));
-  app.use(express.static(PUBLIC, { index: 'index.html', maxAge: config.production ? '1h' : 0, setHeaders: (res, file) => { if (file.endsWith('.html')) res.set('Cache-Control', 'no-cache'); } }));
+  // Pages, scripts and styles are always re-checked with the server, so an update shows at once.
+  // Fonts and images change rarely and may be kept for a day.
+  app.use(express.static(PUBLIC, {
+    index: 'index.html',
+    setHeaders: (res, file) => res.set('Cache-Control', /\.(woff2|png|svg)$/.test(file) ? 'public, max-age=86400' : 'no-cache'),
+  }));
   app.use((req, res) => res.status(404).type('text').send('Not found'));
 
   // eslint-disable-next-line no-unused-vars

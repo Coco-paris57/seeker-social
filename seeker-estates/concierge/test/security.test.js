@@ -106,3 +106,10 @@ test('pages are served: team app, guest chat, privacy notice', async () => {
     assert.ok((await res.text()).includes(marker), url);
   }
 });
+
+test('app code is always re-checked with the server, so updates show immediately', async () => {
+  for (const url of ['/admin/settings.js', '/admin/app.css', '/guest/app.js', '/shared/tokens.css']) {
+    assert.equal((await fetch(srv.base + url)).headers.get('cache-control'), 'no-cache', url);
+  }
+  assert.match((await fetch(`${srv.base}/shared/logo.svg`)).headers.get('cache-control'), /max-age=86400/);
+});
