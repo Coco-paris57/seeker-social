@@ -6,6 +6,7 @@ import { q, parseJson } from './db.js';
 import { ROOT } from './config.js';
 import { smoobu } from './smoobu.js';
 import { addDays, londonDate, newToken } from './util.js';
+import { describeStations, nearbyStations } from './places.js';
 
 const seed = parseJson(fs.readFileSync(path.join(ROOT, 'src/properties-seed.json'), 'utf8'), {}).properties || {};
 
@@ -19,12 +20,13 @@ export function upsertProperty(apartment, detail = {}) {
     city: loc.city || null,
   });
   const address = [loc.street, loc.zip, loc.city].filter(Boolean).join(', ') || null;
-  const existing = q.get('SELECT id FROM properties WHERE smoobu_id = ?', apartment.id);
+  const existing = q.get('SELECT id, details FROM properties WHERE smoobu_id = ?', apartment.id);
   if (existing) {
+    const stations = parseJson(existing.details).stations;
     q.run(
       `UPDATE properties SET name = ?, details = ?, address = COALESCE(?, address),
        postcode = COALESCE(postcode, ?), updated_at = datetime('now') WHERE id = ?`,
-      apartment.name, details, address, loc.zip || null, existing.id,
+      apartment.name, stations ? JSON.stringify({ ...JSON.parse(details), stations }) : details, address, loc.zip || null, existing.id,
     );
     return existing.id;
   }
@@ -61,6 +63,20 @@ export function upsertReservation(b) {
   );
 }
 
+/** Look up nearby stations for properties that have coordinates but no stations yet. */
+export async function fillStations({ fetchImpl } = {}) {
+  let filled = 0;
+  for (const p of q.all('SELECT id, station, details FROM properties')) {
+    const details = parseJson(p.details);
+    if (details.stations?.length || details.latitude == null || details.longitude == null) continue;
+    const stations = await nearbyStations(Number(details.latitude), Number(details.longitude), { fetchImpl });
+    if (!stations.length) continue;
+    q.run('UPDATE properties SET details = ?, station = COALESCE(NULLIF(station, \'\'), ?) WHERE id = ?', JSON.stringify({ ...details, stations }), describeStations(stations.slice(0, 2)), p.id);
+    filled += 1;
+  }
+  return filled;
+}
+
 export async function syncProperties() {
   const api = smoobu();
   if (!api) return { properties: 0 };
@@ -74,6 +90,7 @@ export async function syncProperties() {
     }
     upsertProperty(a, detail);
   }
+  await fillStations();
   return { properties: apartments.length };
 }
 

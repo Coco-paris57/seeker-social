@@ -83,6 +83,7 @@ export function buildContext(conversation, { latest = '', uptoMessageId = null }
       // The full street address identifies the flat, so it is kept for verified guests.
       address: conversation.verified ? property.address : undefined,
       nearest_station: property.station,
+      nearby_stations: details.stations?.length ? details.stations.map((s) => ({ name: s.name, lines: s.lines, approx_walk_minutes: s.walkMinutes })) : undefined,
       notes: property.notes,
       bedrooms: details.rooms?.bedrooms ?? undefined,
       bathrooms: details.rooms?.bathrooms ?? undefined,
