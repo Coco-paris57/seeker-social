@@ -114,3 +114,19 @@ test('the Settings switch connects Smoobu, and channel replies wait for approval
   await handleSmoobuEvent({ action: 'newMessage', data: { id: 9033, sender: 'guest', booking: { id: 501 } } });
   assert.equal(outbox.length, 2);
 });
+
+test('a photo sent on the booking channel arrives empty: the team is told where to see it and no draft is written', async () => {
+  const { sent } = await import('../src/notify.js');
+  const team = await signIn(srv.base);
+  await team('PATCH', '/api/admin/settings', { channelInbox: true });
+  fake.messages = async () => [{ id: 9040, type: 1, message: '', htmlMessage: '' }];
+  outbox.length = 0;
+  const before = (await team('GET', '/api/admin/inbox')).json.counts.total;
+  await handleSmoobuEvent({ action: 'newMessage', data: { id: 9040, sender: 'guest', booking: { id: 501 } } });
+  assert.equal(outbox.length, 0);
+  assert.equal((await team('GET', '/api/admin/inbox')).json.counts.total, before);
+  assert.match(sent.at(-1).title, /Photo or file from a guest/);
+  const c = q.get("SELECT id FROM conversations WHERE channel = 'smoobu' AND reservation_id = 501");
+  const last = (await team('GET', `/api/admin/conversations/${c.id}`)).json.messages.filter((m) => m.role === 'guest').at(-1);
+  assert.match(last.text, /cannot be shown here/);
+});
