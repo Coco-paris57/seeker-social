@@ -14,26 +14,44 @@ let unauthorizedHandler = () => {};
 /** Called once by the app: what to do when any call says the session has ended. */
 export const onUnauthorized = (fn) => { unauthorizedHandler = fn; };
 
-/** Call the team API. Throws ApiError with a sentence that is safe to show. */
-export async function api(path, { method = 'GET', body, quiet401 = false } = {}) {
-  const write = method !== 'GET';
+/** Send one request to the team API and read its JSON. Throws ApiError with a sentence that is safe to show. */
+async function request(path, init, { quiet401 = false, fallback = {} } = {}) {
   let res;
   try {
-    res = await fetch(`/api/admin${path}`, {
-      method,
-      credentials: 'same-origin',
-      headers: write ? { 'Content-Type': 'application/json' } : {},
-      body: write ? JSON.stringify(body ?? {}) : undefined,
-    });
+    res = await fetch(`/api/admin${path}`, { credentials: 'same-origin', ...init });
   } catch {
     throw new ApiError(0, 'No connection. Check your signal and try again.');
   }
   const data = await res.json().catch(() => null);
   if (!res.ok) {
     if (res.status === 401 && !quiet401) unauthorizedHandler();
-    throw new ApiError(res.status, data?.error || 'Something went wrong. Please try again.');
+    throw new ApiError(res.status, data?.error || fallback[res.status] || 'Something went wrong. Please try again.');
   }
   return data;
+}
+
+/** Call the team API. Throws ApiError with a sentence that is safe to show. */
+export function api(path, { method = 'GET', body, quiet401 = false } = {}) {
+  const write = method !== 'GET';
+  return request(path, {
+    method,
+    headers: write ? { 'Content-Type': 'application/json' } : {},
+    body: write ? JSON.stringify(body ?? {}) : undefined,
+  }, { quiet401 });
+}
+
+/**
+ * Upload one picture for the knowledge base: the file itself is the request body.
+ * Resolves with its `file` ({ token, kind, url }); errors are reported the same way as `api()`.
+ */
+export async function uploadPicture(blob) {
+  const data = await request('/uploads', { method: 'POST', headers: { 'Content-Type': blob.type }, body: blob }, {
+    fallback: {
+      413: 'This picture is too large. Try a smaller one.',
+      415: 'This kind of file cannot be used. Try a JPEG or PNG picture.',
+    },
+  });
+  return data.file;
 }
 
 /**
@@ -117,6 +135,8 @@ const ICONS = {
   clock: ['M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z', 'M12 6v6l4 2'],
   bot: ['M12 8V4H8', 'M6 8h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2z', 'M2 14h2', 'M20 14h2', 'M15 13v2', 'M9 13v2'],
   info: ['M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z', 'M12 16v-4', 'M12 8h.01'],
+  image: ['M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z', 'M8.5 7a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z', 'M21 15l-5-5L5 21'],
+  video: ['M23 7l-7 5 7 5z', 'M3 5h11a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z'],
 };
 
 /** A decorative inline SVG icon. Always pair it with visible or visually-hidden text. */
@@ -316,6 +336,47 @@ export function confirmDialog({ title, message, details, confirmLabel, danger = 
         button(confirmLabel, { variant: danger ? 'danger' : 'primary', onclick: () => close(true) })),
     ],
   }).then((v) => v === true);
+}
+
+// --- pictures and videos ------------------------------------------------------------------
+
+/** Show one picture larger, in a dialog. `src` is a file's url (or a local preview). */
+export function openPicture(src, label) {
+  return openDialog({
+    title: label,
+    wide: true,
+    build: () => [h('img', { class: 'picture-large', src, alt: label })],
+  });
+}
+
+/** Only ever link to a web address, whatever was stored. */
+const safeLink = (url) => /^https?:\/\//i.test(String(url || ''));
+
+/**
+ * Pictures and videos of a message, request or knowledge entry, plus its video links.
+ * `files` are `{ token, kind, url }`. Pictures are fixed-size thumbnails that open larger;
+ * videos play in place. `label` is the alt text ("Photo from the guest"), `caption` an
+ * optional line above, `small` gives the compact size used in lists. Returns null when
+ * there is nothing to show.
+ */
+export function attachmentsView(files, { links, label = 'Photo from the guest', videoLabel = 'Video from the guest', caption, small = false } = {}) {
+  const shown = (files || []).filter((f) => f?.url);
+  const webLinks = (links || []).filter((l) => safeLink(l?.url));
+  if (!shown.length && !webLinks.length) return null;
+  const pictures = shown.filter((f) => f.kind !== 'video').length;
+  let n = 0;
+  const item = (f) => {
+    if (f.kind === 'video') return h('li', null, h('video', { class: 'attach-video', src: f.url, controls: true, preload: 'metadata', playsInline: true, 'aria-label': videoLabel }));
+    const alt = pictures > 1 ? `${label} ${++n}` : label;
+    const size = small ? 64 : 96;
+    return h('li', null, h('button', { type: 'button', class: 'attach-thumb', 'aria-label': `${alt}, open larger`, onclick: () => openPicture(f.url, alt) },
+      h('img', { src: f.url, alt, loading: 'lazy', decoding: 'async', width: size, height: size })));
+  };
+  return h('div', { class: small ? 'attachments attachments-small' : 'attachments' },
+    caption && h('p', { class: 'label' }, caption),
+    shown.length ? h('ul', { class: 'attach-list' }, shown.map(item)) : null,
+    webLinks.map((l) => h('a', { class: 'attach-link', href: l.url, target: '_blank', rel: 'noopener noreferrer' },
+      icon('video', 16), h('span', null, l.label ? `Watch the video: ${l.label}` : 'Watch the video'), h('span', { class: 'visually-hidden' }, ' (opens in a new tab)'))));
 }
 
 // --- shared wording -----------------------------------------------------------------------

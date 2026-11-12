@@ -1,6 +1,6 @@
 // Inbox: drafts waiting for approval and requests from the assistant (urgent, maintenance,
 // questions). The approval and request cards are also used inside a conversation thread.
-import { add, api, ApiError, autoGrow, busy, button, check, chip, confirmDialog, fill, guestLabel, h, icon, loadError, loading, openDialog, pageHeader, reconcile, showError, TICKET_TYPES, timeEl, toast, uid } from './lib.js';
+import { add, api, ApiError, attachmentsView, autoGrow, busy, button, check, chip, confirmDialog, fill, guestLabel, h, icon, loadError, loading, openDialog, pageHeader, reconcile, showError, TICKET_TYPES, timeEl, toast, uid } from './lib.js';
 import { inbox } from './state.js';
 
 const CONFIDENCE = {
@@ -115,6 +115,8 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
   });
 
   const confidence = CONFIDENCE[draft.confidence];
+  // What the guest sent with their words: the photo of the leak next to the message about it.
+  const guestFiles = attachmentsView(item.guestAttachments);
   add(card,
     !inThread && h('header', { class: 'card-head' },
       h('div', { class: 'card-title' },
@@ -122,14 +124,17 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
         h('span', { class: 'muted' }, guestLabel(conversation.guestName)),
         conversation.verified && chip('Verified', { tone: 'ok', icon: 'shield' })),
       h('div', { class: 'card-meta' }, timeEl(draft.at), h('a', { href: `#/conversations/${conversation.id}` }, 'Open chat'))),
-    !inThread && asked.length > 0 && h('div', { class: 'quote' },
-      h('p', { class: 'label' }, 'Guest asked'),
-      asked.map((text, i) => h('p', { class: i < asked.length - 1 ? 'pre earlier' : 'pre' }, text))),
+    !inThread && (asked.length > 0 || guestFiles) && h('div', { class: 'quote' },
+      h('p', { class: 'label' }, asked.length ? 'Guest asked' : 'Guest sent'),
+      asked.map((text, i) => h('p', { class: i < asked.length - 1 ? 'pre earlier' : 'pre' }, text)),
+      guestFiles),
     h('div', { class: 'draft' },
       h('div', { class: 'draft-head' },
         h('label', { htmlFor: textId, class: 'label' }, 'Drafted reply (edit if needed)'),
         confidence ? chip(confidence.label, confidence) : null),
       textarea,
+      // Pictures and the video link of the knowledge entry the answer came from.
+      attachmentsView(draft.attachments, { links: draft.links, label: 'Picture from the knowledge base', caption: 'Shown to the guest with this reply' }),
       remember.el),
     h('div', { class: 'actions' }, approve, reject, reset),
   );
@@ -203,8 +208,12 @@ export function ticketCard(ticket, { isOpen = false, onToggle = () => {}, showCh
     onToggle(open);
   });
 
+  const ticketFiles = attachmentsView(ticket.attachments);
   add(body,
-    ticket.guestMessage && h('div', { class: 'quote' }, h('p', { class: 'label' }, 'Guest wrote'), h('p', { class: 'pre' }, ticket.guestMessage)),
+    (ticket.guestMessage || ticketFiles) && h('div', { class: 'quote' },
+      h('p', { class: 'label' }, ticket.guestMessage ? 'Guest wrote' : 'Guest sent'),
+      ticket.guestMessage && h('p', { class: 'pre' }, ticket.guestMessage),
+      ticketFiles),
     ticket.question && h('div', { class: 'ask' }, h('p', { class: 'label' }, icon('bot', 16), 'The assistant asks'), h('p', { class: 'pre' }, ticket.question)),
     ticket.answer && h('div', { class: 'quote' },
       h('p', { class: 'label' }, `Team answer${ticket.answeredByName ? ` from ${ticket.answeredByName}` : ''}`, ticket.answeredAt && ' · ', timeEl(ticket.answeredAt)),

@@ -1,5 +1,5 @@
 // Conversations: searchable list and the thread view (take over, reply, erase).
-import { api, autoGrow, busy, button, chip, confirmDialog, fill, guestLabel, h, icon, loadError, loading, reconcile, showError, stayDate, fullTime, timeEl, toast, uid } from './lib.js';
+import { api, attachmentsView, autoGrow, busy, button, chip, confirmDialog, fill, guestLabel, h, icon, loadError, loading, reconcile, showError, stayDate, fullTime, timeEl, toast, uid } from './lib.js';
 import { approvalCard, ticketCard } from './inbox.js';
 
 const STAGES = { before_arrival: 'Before arrival', during_stay: 'During stay', after_stay: 'After stay' };
@@ -31,7 +31,8 @@ function messageEl(m, conversation, onChange) {
   const chips = messageChips(m);
   return h('li', { class: `msg msg-${m.role}${m.status === 'rejected' ? ' msg-rejected' : ''}` },
     h('p', { class: 'msg-who' }, h('strong', null, who), ' ', timeEl(m.sentAt || m.at)),
-    h('div', { class: 'bubble' }, h('p', { class: 'pre' }, m.text)),
+    m.text && h('div', { class: 'bubble' }, h('p', { class: 'pre' }, m.text)),
+    attachmentsView(m.attachments, { links: m.links, label: m.role === 'guest' ? 'Photo from the guest' : 'Picture from the knowledge base' }),
     chips.length ? h('p', { class: 'msg-chips' }, chips) : null,
     m.edited && m.original && h('details', { class: 'original' }, h('summary', null, 'Show the original draft'), h('p', { class: 'pre' }, m.original)));
 }
