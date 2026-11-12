@@ -11,7 +11,8 @@ const state = {
   property: null, // from /welcome, before a chat exists
   conversation: null,
   messages: [], // delivered messages, in server order
-  outbox: [], // guest messages not yet accepted: { localId, text, status: 'sending'|'failed', error }
+  outbox: [], // guest messages not yet accepted: { localId, text, files, status: 'sending'|'failed', error }
+  tray: [], // files chosen for the next message: { id, kind, preview, token, status: 'uploading'|'ready' }
   loaded: false, // first message list rendered (later arrivals are announced)
   closing: false, // "Delete my chat" or "Leave chat" is in progress
 };
@@ -280,7 +281,10 @@ function messageNode(m) {
   meta.append(time);
   const bubble = el('p', 'bubble');
   bubble.append(textWithLinks(m.text));
-  item.append(meta, bubble);
+  item.append(meta);
+  if (m.text) item.append(bubble);
+  const files = filesNode(m);
+  if (files) item.append(files);
   // A request to verify carries its own button until the booking is verified.
   if (m.kind === 'verify' && !state.conversation.verified) {
     const verify = el('button', 'btn btn-primary msg-action', t('verifySubmit'));
@@ -291,9 +295,52 @@ function messageNode(m) {
   return item;
 }
 
+/** Pictures (tap to enlarge), videos and video links that belong to a message. */
+function filesNode(m) {
+  if (!m.attachments?.length && !m.links?.length) return null;
+  const wrap = el('div', 'msg-files-wrap');
+  if (m.attachments?.length) {
+    const row = el('div', 'msg-files');
+    for (const f of m.attachments) {
+      if (f.kind === 'image') {
+        const thumb = el('button', 'thumb');
+        thumb.type = 'button';
+        const img = el('img');
+        img.src = f.url;
+        img.alt = t('photoAlt');
+        img.loading = 'lazy';
+        thumb.append(img);
+        thumb.addEventListener('click', () => {
+          $('viewer-img').src = f.url;
+          $('viewer').showModal();
+        });
+        row.append(thumb);
+      } else {
+        const video = el('video');
+        video.src = f.url;
+        video.controls = true;
+        video.preload = 'metadata';
+        video.playsInline = true;
+        video.setAttribute('aria-label', t('videoLabel'));
+        row.append(video);
+      }
+    }
+    wrap.append(row);
+  }
+  for (const l of m.links || []) {
+    if (!/^https:\/\//.test(l.url)) continue;
+    const a = el('a', 'msg-link', `${t('watchVideo')}${l.label ? `: ${l.label}` : ''}`);
+    a.href = l.url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    wrap.append(a);
+  }
+  return wrap;
+}
+
 function outboxNode(entry) {
   const item = el('li', `msg msg-guest msg-${entry.status}`);
-  const bubble = el('p', 'bubble', entry.text);
+  const bubble = el('p', 'bubble', entry.text || t('filesCount', { n: entry.files.length }));
   item.append(el('span', 'visually-hidden', t('roleYou')), bubble);
   if (entry.status === 'sending') {
     item.append(el('p', 'msg-meta', t('sending')));
@@ -302,7 +349,7 @@ function outboxNode(entry) {
     failed.setAttribute('role', 'alert');
     const retry = el('button', 'link-btn', t('retry'));
     retry.type = 'button';
-    retry.addEventListener('click', () => send(entry.text, entry));
+    retry.addEventListener('click', () => send(entry.text, entry.files, entry));
     failed.append(`${t('notSent')} ${entry.error} `, retry);
     item.append(failed);
   }
@@ -375,13 +422,13 @@ function applyMessages(list) {
 
 let localIds = 0;
 
-async function send(text, retryEntry) {
-  const entry = retryEntry || { localId: ++localIds, text, status: 'sending', error: '' };
+async function send(text, files = [], retryEntry) {
+  const entry = retryEntry || { localId: ++localIds, text, files, status: 'sending', error: '' };
   entry.status = 'sending';
   if (!retryEntry) state.outbox.push(entry);
   renderMessages(true);
   try {
-    const { message } = await api('POST', '/messages', { text: entry.text });
+    const { message } = await api('POST', '/messages', { text: entry.text, attachments: entry.files });
     state.outbox = state.outbox.filter((other) => other !== entry);
     if (!state.messages.some((m) => m.id === message.id)) state.messages.push(message);
     renderMessages(true);
@@ -401,19 +448,139 @@ function resizeInput() {
   input.style.height = `${input.scrollHeight + 2}px`; // CSS max-height caps it; +2 for the border
   const max = state.about?.maxMessageLength || 2000;
   const length = input.value.length;
-  $('send').disabled = !input.value.trim() || length > max;
-  setText($('composer-hint'), length >= max ? t('tooLong', { n: max }) : length > max * 0.9 ? t('charsLeft', { n: max - length }) : '');
+  const ready = state.tray.some((f) => f.status === 'ready');
+  const busy = state.tray.some((f) => f.status === 'uploading');
+  $('send').disabled = busy || (!input.value.trim() && !ready) || length > max;
+  setText($('composer-hint'), length >= max ? t('tooLong', { n: max }) : length > max * 0.9 ? t('charsLeft', { n: max - length }) : state.fileNote || '');
 }
 
 function submitComposer(event) {
   event.preventDefault();
   const input = $('input');
   const text = input.value.trim();
-  if (!text || text.length > state.about.maxMessageLength) return;
+  const ready = state.tray.filter((f) => f.status === 'ready');
+  if (state.tray.some((f) => f.status === 'uploading')) return;
+  if ((!text && !ready.length) || text.length > state.about.maxMessageLength) return;
   input.value = '';
+  state.fileNote = '';
+  clearTray();
   resizeInput();
   input.focus();
-  send(text);
+  send(text, ready.map((f) => f.token));
+}
+
+// --- Chat: photos and videos ---------------------------------------------------------------
+
+let trayIds = 0;
+
+function clearTray() {
+  for (const f of state.tray) if (f.preview) URL.revokeObjectURL(f.preview);
+  state.tray = [];
+  renderTray();
+}
+
+function renderTray() {
+  const tray = $('tray');
+  tray.replaceChildren(...state.tray.map((f) => {
+    const item = el('li');
+    if (f.kind === 'image') {
+      const img = el('img');
+      img.src = f.preview;
+      img.alt = t('photoAlt');
+      item.append(img);
+    } else {
+      item.append(el('span', 'tray-video', t('videoLabel')));
+    }
+    if (f.status === 'uploading') item.append(el('span', 'tray-busy', t('uploading')));
+    const remove = el('button', 'tray-remove');
+    remove.type = 'button';
+    remove.setAttribute('aria-label', t('removeFile'));
+    remove.textContent = '\u00d7';
+    remove.addEventListener('click', () => {
+      if (f.preview) URL.revokeObjectURL(f.preview);
+      state.tray = state.tray.filter((other) => other !== f);
+      renderTray();
+    });
+    item.append(remove);
+    return item;
+  }));
+  tray.hidden = state.tray.length === 0;
+  $('attach').disabled = state.tray.length >= (state.about?.uploads?.maxFiles || 4);
+  resizeInput(); // also refreshes whether Send is available
+}
+
+/** Scale a photo down and save it as JPEG, so uploads are quick and every phone format works. */
+async function shrinkPhoto(file) {
+  let source;
+  try {
+    source = await createImageBitmap(file);
+  } catch {
+    source = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  }
+  const width = source.width || source.naturalWidth;
+  const height = source.height || source.naturalHeight;
+  const scale = Math.min(1, 1600 / Math.max(width, height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(width * scale);
+  canvas.height = Math.round(height * scale);
+  canvas.getContext('2d').drawImage(source, 0, 0, canvas.width, canvas.height);
+  return new Promise((resolve, reject) => canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('encode'))), 'image/jpeg', 0.85));
+}
+
+function fileProblem(text) {
+  state.fileNote = text; // shown under the composer until the next file or message
+  resizeInput();
+  announce(text);
+}
+
+async function addFiles(list) {
+  const limits = state.about.uploads || { maxFiles: 4, maxImageBytes: 8388608, maxVideoBytes: 41943040 };
+  for (const file of list) {
+    if (state.tray.length >= limits.maxFiles) {
+      fileProblem(t('tooManyFiles', { n: limits.maxFiles }));
+      break;
+    }
+    const isVideo = file.type.startsWith('video/');
+    if (!isVideo && !file.type.startsWith('image/') && !/\.(heic|heif)$/i.test(file.name)) {
+      fileProblem(t('fileType'));
+      continue;
+    }
+    if (isVideo && file.size > limits.maxVideoBytes) {
+      fileProblem(t('fileTooBig'));
+      continue;
+    }
+    const entry = { id: ++trayIds, kind: isVideo ? 'video' : 'image', preview: '', token: '', status: 'uploading' };
+    let body = file;
+    if (!isVideo) {
+      try {
+        body = await shrinkPhoto(file);
+      } catch {
+        fileProblem(t('fileType'));
+        continue;
+      }
+      entry.preview = URL.createObjectURL(body);
+    }
+    state.tray.push(entry);
+    renderTray();
+    try {
+      const res = await fetch('/api/guest/uploads', { method: 'POST', headers: { 'Content-Type': body.type || 'application/octet-stream' }, body, credentials: 'same-origin' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw Object.assign(new Error(data.error || ''), { status: res.status });
+      entry.token = data.file.token;
+      entry.status = 'ready';
+      state.fileNote = '';
+    } catch (error) {
+      state.tray = state.tray.filter((other) => other !== entry);
+      if (sessionGone(error)) return;
+      fileProblem(error.status === 413 ? t('fileTooBig') : error.status === 415 ? t('fileType') : ([403, 429].includes(error.status) && error.message) || t('uploadFailed'));
+    }
+    renderTray();
+  }
 }
 
 // --- Chat: live updates --------------------------------------------------------------------
@@ -642,6 +809,11 @@ function wire() {
   });
 
   $('menu-open').addEventListener('click', () => $('menu').showModal());
+  $('attach').addEventListener('click', () => $('file').click());
+  $('file').addEventListener('change', (event) => {
+    addFiles([...event.target.files]);
+    event.target.value = ''; // so the same file can be chosen again
+  });
   $('verify-open').addEventListener('click', openVerify);
   $('menu-verify').addEventListener('click', openVerify);
   $('verify-form').addEventListener('submit', submitVerify);

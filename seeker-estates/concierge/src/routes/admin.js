@@ -14,6 +14,8 @@ import crypto from 'node:crypto';
 import { clip, failureLimiter, HttpError, newToken, rateLimiter } from '../util.js';
 import { iso, sse } from './shared.js';
 import { posterHtml } from '../poster.js';
+import { adminFile, getFile, MAX_IMAGE, modelImages, saveUpload, sendFile, sweepFiles } from '../media.js';
+import { describePictures } from '../llm.js';
 
 export const admin = express.Router();
 const loginIpLimit = rateLimiter(40, 15 * 60_000); // all attempts per IP
@@ -39,6 +41,7 @@ function messageOut(m, names = userNames()) {
     confidence: meta.confidence || null, category: meta.category || null, summary: meta.summary || null,
     automatic: !!meta.auto, edited: !!meta.edited, original: meta.original || null, ticketId: meta.ticketId || null,
     deliveryError: meta.deliveryError || null,
+    attachments: (m.role === 'guest' ? q.all('SELECT token, kind FROM files WHERE message_id = ?', m.id) : meta.attachments || []).map((a) => adminFile(a)), links: meta.links || [],
     authorName: names[m.created_by] || names[meta.approvedBy] || names[meta.answeredBy] || null,
   };
 }
@@ -69,6 +72,8 @@ function ticketOut(t, names = userNames()) {
     savedToKnowledge: !!t.knowledge_id, conversationId: t.conversation_id, propertyId: t.property_id,
     propertyName: property ? property.display_name || property.name : null,
     guestName: c?.guest_name || null, guestVerified: !!c?.verified, guestMessage: guest?.body || null,
+    // Photos and videos the guest sent in this chat up to the message that raised the request.
+    attachments: t.guest_message_id ? q.all('SELECT token, kind FROM files WHERE conversation_id = ? AND message_id IS NOT NULL AND message_id <= ? ORDER BY message_id DESC LIMIT 8', t.conversation_id, t.guest_message_id).map(adminFile) : [],
   };
 }
 
@@ -89,6 +94,8 @@ function propertyOut(p, { full = false } = {}) {
 const knowledgeOut = (k) => ({
   id: k.id, propertyId: k.property_id, category: k.category, question: k.question, answer: k.answer,
   sensitive: !!k.sensitive, source: k.source, updatedAt: iso(k.updated_at),
+  videoUrl: k.video_url || null, pictureNotes: k.media_notes || '',
+  pictures: q.all("SELECT token, kind FROM files WHERE knowledge_id = ? ORDER BY created_at, token", k.id).map(adminFile),
 });
 
 // --- sign-in ----------------------------------------------------------------------------
@@ -151,7 +158,7 @@ function inbox() {
       .all("SELECT body FROM messages WHERE conversation_id = ? AND role = 'guest' AND id < ? ORDER BY id DESC LIMIT 3", m.conversation_id, m.id)
       .reverse()
       .map((g) => g.body);
-    return { draft: messageOut(m, names), conversation: conversationOut(c), guestMessage: meta.guestMessageId ? q.get('SELECT body FROM messages WHERE id = ?', meta.guestMessageId)?.body || null : null, recentGuestMessages: guestMessages };
+    return { guestAttachments: q.all('SELECT token, kind FROM files WHERE conversation_id = ? AND message_id IN (SELECT value FROM json_each(?))', m.conversation_id, JSON.stringify(meta.covers || [])).map(adminFile), draft: messageOut(m, names), conversation: conversationOut(c), guestMessage: meta.guestMessageId ? q.get('SELECT body FROM messages WHERE id = ?', meta.guestMessageId)?.body || null : null, recentGuestMessages: guestMessages };
   });
   const order = "CASE type WHEN 'urgent' THEN 0 WHEN 'maintenance' THEN 1 ELSE 2 END";
   const tickets = q.all(`SELECT * FROM tickets WHERE status != 'closed' ORDER BY ${order}, id`).map((t) => ticketOut(t, names));
@@ -265,6 +272,7 @@ admin.post('/conversations/:id/takeover', (req, res) => {
 admin.delete('/conversations/:id', (req, res) => {
   const c = conversationOr404(req.params.id);
   q.run('DELETE FROM conversations WHERE id = ?', c.id);
+  sweepFiles();
   audit(req.user.id, 'conversation.erase', `conversation ${c.id}`);
   emitConversation(c.id, 'conversation');
   res.json({ ok: true });
@@ -365,14 +373,44 @@ function knowledgeInput(b, existing = {}) {
   if (!question || !answer) throw new HttpError(400, 'Please fill in both the topic and the answer.');
   if (question.length > 500 || answer.length > 6000) throw new HttpError(400, 'That entry is too long.');
   const sensitive = 'sensitive' in b ? !!b.sensitive : existing.sensitive !== undefined ? !!existing.sensitive : SENSITIVE_CATEGORIES.has(category);
-  return { category, question, answer, sensitive: sensitive ? 1 : 0 };
+  let videoUrl = 'videoUrl' in b ? String(b.videoUrl || '').trim() : existing.video_url || '';
+  if (videoUrl) {
+    try {
+      const u = new URL(videoUrl);
+      if (u.protocol !== 'https:') throw new Error('not https');
+      videoUrl = u.href;
+    } catch {
+      throw new HttpError(400, 'The video link must be a full web address starting with https://');
+    }
+    if (videoUrl.length > 500) throw new HttpError(400, 'That video link is too long.');
+  }
+  const mediaNotes = clip('pictureNotes' in b ? b.pictureNotes : existing.media_notes || '', 2000);
+  return { category, question, answer, sensitive: sensitive ? 1 : 0, videoUrl: videoUrl || null, mediaNotes: mediaNotes || null };
+}
+
+/** Set an entry's pictures to exactly this list of uploaded files (at most 6). */
+function setPictures(knowledgeId, tokens, user) {
+  if (!Array.isArray(tokens)) return;
+  const wanted = [...new Set(tokens.map(String))].slice(0, 6);
+  for (const token of wanted) {
+    const f = getFile(token);
+    // Only pictures this team uploaded for the knowledge base, never a guest's file.
+    if (!f || f.kind !== 'image' || f.conversation_id || (f.knowledge_id && f.knowledge_id !== knowledgeId)) throw new HttpError(400, 'One of the pictures could not be attached. Please upload it again.');
+    q.run('UPDATE files SET knowledge_id = ? WHERE token = ?', knowledgeId, token);
+  }
+  for (const f of q.all('SELECT token FROM files WHERE knowledge_id = ?', knowledgeId)) {
+    if (!wanted.includes(f.token)) q.run('DELETE FROM files WHERE token = ?', f.token);
+  }
+  sweepFiles();
+  audit(user.id, 'knowledge.pictures', `knowledge ${knowledgeId}: ${wanted.length} picture(s)`);
 }
 
 admin.post('/knowledge', (req, res) => {
   const b = req.body || {};
   const propertyId = b.propertyId ? propertyOr404(b.propertyId).id : null;
   const k = knowledgeInput(b);
-  const id = q.insert("INSERT INTO knowledge(property_id, category, question, answer, sensitive, source, created_by) VALUES(?, ?, ?, ?, ?, 'team', ?)", propertyId, k.category, k.question, k.answer, k.sensitive, req.user.id);
+  const id = q.insert("INSERT INTO knowledge(property_id, category, question, answer, sensitive, video_url, media_notes, source, created_by) VALUES(?, ?, ?, ?, ?, ?, ?, 'team', ?)", propertyId, k.category, k.question, k.answer, k.sensitive, k.videoUrl, k.mediaNotes, req.user.id);
+  setPictures(id, b.pictures, req.user);
   audit(req.user.id, 'knowledge.create', `knowledge ${id}`);
   res.status(201).json({ knowledge: knowledgeOut(q.get('SELECT * FROM knowledge WHERE id = ?', id)) });
 });
@@ -382,13 +420,48 @@ admin.patch('/knowledge/:id', (req, res) => {
   if (!existing) throw new HttpError(404, 'Entry not found.');
   const k = knowledgeInput(req.body || {}, existing);
   const propertyId = 'propertyId' in (req.body || {}) ? (req.body.propertyId ? propertyOr404(req.body.propertyId).id : null) : existing.property_id;
-  q.run("UPDATE knowledge SET property_id = ?, category = ?, question = ?, answer = ?, sensitive = ?, updated_at = datetime('now') WHERE id = ?", propertyId, k.category, k.question, k.answer, k.sensitive, existing.id);
+  q.run("UPDATE knowledge SET property_id = ?, category = ?, question = ?, answer = ?, sensitive = ?, video_url = ?, media_notes = ?, updated_at = datetime('now') WHERE id = ?", propertyId, k.category, k.question, k.answer, k.sensitive, k.videoUrl, k.mediaNotes, existing.id);
+  setPictures(existing.id, req.body?.pictures, req.user);
   audit(req.user.id, 'knowledge.update', `knowledge ${existing.id}`);
   res.json({ knowledge: knowledgeOut(q.get('SELECT * FROM knowledge WHERE id = ?', existing.id)) });
 });
 
+/** Upload a picture for the knowledge base. The request body is the file itself. */
+admin.post('/uploads', express.raw({ type: 'image/*', limit: MAX_IMAGE }), (req, res) => {
+  if (!Buffer.isBuffer(req.body) || !req.body.length) throw new HttpError(400, 'No picture was received.');
+  const f = saveUpload(req.body, { userId: req.user.id, allow: ['image'] });
+  res.status(201).json({ file: adminFile(f) });
+});
+
+/** Any stored picture or video, for the team app. */
+admin.get('/files/:token', (req, res) => {
+  const f = getFile(req.params.token);
+  if (!f) throw new HttpError(404, 'That file is no longer available.');
+  sendFile(res, f);
+});
+
+/**
+ * Ask the model to read pictures of an appliance or device and draft guest instructions.
+ * Nothing is saved: the team member reviews the draft in the entry form.
+ */
+admin.post('/knowledge/describe', async (req, res) => {
+  const tokens = Array.isArray(req.body?.pictures) ? req.body.pictures.slice(0, 6) : [];
+  const files = tokens.map(getFile).filter((f) => f && f.kind === 'image' && !f.conversation_id);
+  if (!files.length) throw new HttpError(400, 'Add at least one picture first.');
+  const images = await modelImages(files);
+  if (!images.length) throw new HttpError(400, 'Those pictures could not be read. Please upload them again.');
+  const property = req.body?.propertyId ? q.get('SELECT display_name, name FROM properties WHERE id = ?', Number(req.body.propertyId)) : null;
+  try {
+    res.json(await describePictures(images, { topic: clip(req.body?.topic || '', 200), propertyName: property ? property.display_name || property.name : '' }));
+  } catch (e) {
+    console.error(`Describe pictures failed: ${e.message}`);
+    throw new HttpError(502, 'The assistant could not read the pictures just now. Please try again, or write the instructions by hand.');
+  }
+});
+
 admin.delete('/knowledge/:id', (req, res) => {
   q.run('DELETE FROM knowledge WHERE id = ?', Number(req.params.id));
+  sweepFiles();
   audit(req.user.id, 'knowledge.delete', `knowledge ${req.params.id}`);
   res.json({ ok: true });
 });

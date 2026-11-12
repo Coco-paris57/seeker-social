@@ -8,6 +8,8 @@ import { accessReleased, afterVerification, handleGuestMessage, stageOf } from '
 import { bus, emitConversation, notifyTeam } from '../notify.js';
 import { addDays, HttpError, londonDate, normaliseName, rateLimiter } from '../util.js';
 import { iso, sse } from './shared.js';
+import { getFile, guestFile, MAX_VIDEO, saveUpload, sendFile, sweepFiles } from '../media.js';
+import { parseJson } from '../db.js';
 
 export const guest = express.Router();
 
@@ -24,6 +26,9 @@ const MAX_STREAMS_PER_CHAT = 4;
 const MAX_STREAMS_PER_IP = 40;
 let floodAlertAt = 0;
 export const MAX_MESSAGE = 2000;
+export const MAX_ATTACHMENTS = 4;
+const uploadLimit = rateLimiter(12, 10 * 60_000); // files per chat per 10 minutes
+const uploadIpLimit = rateLimiter(40, 10 * 60_000);
 
 function publicProperty(p) {
   return p ? { name: p.display_name || p.name, area: p.area } : null;
@@ -49,8 +54,18 @@ function describe(conversation) {
 
 function guestMessages(conversationId, after = 0) {
   return q
-    .all("SELECT id, role, body, kind, created_at, sent_at FROM messages WHERE conversation_id = ? AND id > ? AND (role = 'guest' OR status = 'sent') ORDER BY COALESCE(sent_at, created_at), id", conversationId, after)
-    .map((m) => ({ id: m.id, role: m.role === 'bot' ? 'assistant' : m.role, text: m.body, kind: m.kind, at: iso(m.sent_at || m.created_at) }));
+    .all("SELECT id, role, body, kind, meta, created_at, sent_at FROM messages WHERE conversation_id = ? AND id > ? AND (role = 'guest' OR status = 'sent') ORDER BY COALESCE(sent_at, created_at), id", conversationId, after)
+    .map(messageOut);
+}
+
+/** A message as the guest sees it, with any pictures, videos and video links. */
+function messageOut(m) {
+  const meta = parseJson(m.meta);
+  const files = m.role === 'guest' ? q.all('SELECT token, kind FROM files WHERE message_id = ?', m.id) : meta.attachments || [];
+  return {
+    id: m.id, role: m.role === 'bot' ? 'assistant' : m.role, text: m.body, kind: m.kind, at: iso(m.sent_at || m.created_at),
+    attachments: files.map(guestFile), links: (meta.links || []).map((l) => ({ url: l.url, label: l.label })),
+  };
 }
 
 function about() {
@@ -64,6 +79,7 @@ function about() {
     accessInfoHours: s.accessInfoHours,
     privacyEmail: config.company.privacyEmail || null,
     maxMessageLength: MAX_MESSAGE,
+    uploads: { maxFiles: MAX_ATTACHMENTS, maxImageBytes: 8 * 1024 * 1024, maxVideoBytes: MAX_VIDEO },
   };
 }
 
@@ -147,7 +163,12 @@ guest.get('/messages', requireGuest, (req, res) => {
 guest.post('/messages', requireGuest, (req, res) => {
   const c = req.conversation;
   const text = String(req.body?.text || '').trim();
-  if (!text) throw new HttpError(400, 'Please type a message.');
+  const tokens = Array.isArray(req.body?.attachments) ? [...new Set(req.body.attachments.map(String))] : [];
+  if (tokens.length > MAX_ATTACHMENTS) throw new HttpError(400, `You can send up to ${MAX_ATTACHMENTS} files with one message.`);
+  // Only files this guest uploaded in this chat and has not sent yet.
+  const files = tokens.map(getFile);
+  if (files.some((f) => !f || f.conversation_id !== c.id || f.message_id)) throw new HttpError(400, 'One of the files could not be attached. Please add it again.');
+  if (!text && !files.length) throw new HttpError(400, 'Please type a message.');
   if (text.length > MAX_MESSAGE) throw new HttpError(400, `Messages can be up to ${MAX_MESSAGE} characters.`);
   // The general link has no property until the booking is verified, and the assistant has
   // nothing to answer from. This also keeps anonymous visitors from triggering model calls.
@@ -163,11 +184,37 @@ guest.post('/messages', requireGuest, (req, res) => {
     throw new HttpError(503, 'We are receiving a lot of messages right now. Please try again in a few minutes, or contact us through your booking channel.');
   }
   const id = q.insert("INSERT INTO messages(conversation_id, role, body, sent_at) VALUES(?, 'guest', ?, strftime('%Y-%m-%d %H:%M:%f', 'now'))", c.id, text);
+  for (const f of files) q.run('UPDATE files SET message_id = ? WHERE token = ?', id, f.token);
+  if (files.length) q.run("UPDATE messages SET meta = json_set(meta, '$.attachments', json(?)) WHERE id = ?", JSON.stringify(files.map((f) => ({ token: f.token, kind: f.kind }))), id);
   q.run("UPDATE conversations SET last_message_at = datetime('now'), status = 'open' WHERE id = ?", c.id);
   emitConversation(c.id, 'message', { messageId: id });
   handleGuestMessage(c.id); // replies arrive over the stream
-  const m = q.get('SELECT * FROM messages WHERE id = ?', id);
-  res.status(202).json({ message: { id: m.id, role: 'guest', text: m.body, kind: m.kind, at: iso(m.sent_at) } });
+  res.status(202).json({ message: messageOut(q.get('SELECT * FROM messages WHERE id = ?', id)) });
+});
+
+/** Upload a photo or video to send with the next message. The request body is the file itself. */
+guest.post('/uploads', requireGuest, express.raw({ type: ['image/*', 'video/*'], limit: MAX_VIDEO }), (req, res) => {
+  const c = req.conversation;
+  if (!c.property_id) throw new HttpError(403, 'Please verify your booking first, so we know which property you are asking about.');
+  if (!uploadLimit(`c${c.id}`) || !uploadIpLimit(req.ip)) throw new HttpError(429, 'You have sent a lot of files. Please wait a few minutes.');
+  if (!Buffer.isBuffer(req.body) || !req.body.length) throw new HttpError(400, 'No file was received.');
+  const f = saveUpload(req.body, { conversationId: c.id });
+  res.status(201).json({ file: guestFile(f) });
+});
+
+/**
+ * A picture or video in this chat: one the guest sent, or one the team attached to a knowledge
+ * entry that has been shown in this chat. Nothing else can be fetched.
+ */
+guest.get('/files/:token', requireGuest, (req, res) => {
+  const f = getFile(req.params.token);
+  const c = req.conversation;
+  const shown = f && f.knowledge_id && q.get(
+    "SELECT 1 FROM messages m, json_each(m.meta, '$.attachments') a WHERE m.conversation_id = ? AND m.status = 'sent' AND json_extract(a.value, '$.token') = ?",
+    c.id, f.token,
+  );
+  if (!f || !(f.conversation_id === c.id || shown)) throw new HttpError(404, 'That file is no longer available.');
+  sendFile(res, f);
 });
 
 /** Live updates: 'message' (fetch new messages), 'typing', 'conversation' (state changed). */
@@ -192,6 +239,7 @@ guest.get('/stream', requireGuest, (req, res) => {
 guest.post('/erase', requireGuest, (req, res) => {
   const id = req.conversation.id;
   q.run('DELETE FROM conversations WHERE id = ?', id);
+  sweepFiles(); // their photos and videos go too
   q.run("INSERT INTO audit(action, detail) VALUES('guest.erase', ?)", `conversation ${id}`);
   endGuestSession(res);
   emitConversation(id, 'conversation');

@@ -6,6 +6,7 @@ import * as llm from './llm.js';
 import { emitConversation, notifyTeam } from './notify.js';
 import { smoobu } from './smoobu.js';
 import { addDays, clip, londonDate, londonToUtc, HttpError } from './util.js';
+import { modelImages } from './media.js';
 
 export const SENSITIVE_CATEGORIES = new Set(['access', 'wifi']);
 
@@ -41,6 +42,29 @@ export function guestLabel(conversation) {
   return conversation.guest_name || 'Guest';
 }
 
+/** "[sent 1 photo]" for the transcript, so the model knows a message came with pictures. */
+function attachmentNote(m) {
+  const list = parseJson(m.meta).attachments || [];
+  if (!list.length) return '';
+  const photos = list.filter((a) => a.kind === 'image').length;
+  const videos = list.length - photos;
+  const parts = [photos && `${photos} photo${photos > 1 ? 's' : ''}`, videos && `${videos} video${videos > 1 ? 's' : ''}`].filter(Boolean).join(' and ');
+  return ` [${m.role === 'guest' ? 'sent' : 'shown'} ${parts}]`;
+}
+
+/** Pictures and video link of the knowledge entries an answer used, to show with the message. */
+function mediaFor(knowledgeIds, allowed) {
+  const ids = [...new Set(knowledgeIds || [])].filter((id) => allowed.has(id)).slice(0, 3);
+  const attachments = [];
+  const links = [];
+  for (const id of ids) {
+    for (const f of q.all("SELECT token, kind FROM files WHERE knowledge_id = ? ORDER BY created_at, token LIMIT 6", id)) attachments.push({ token: f.token, kind: f.kind });
+    const k = q.get('SELECT question, video_url FROM knowledge WHERE id = ?', id);
+    if (k?.video_url) links.push({ url: k.video_url, label: k.question });
+  }
+  return { ...(attachments.length ? { attachments: attachments.slice(0, 8) } : {}), ...(links.length ? { links } : {}) };
+}
+
 /** Everything the model is allowed to see for this conversation. */
 export function buildContext(conversation, { latest = '', uptoMessageId = null } = {}) {
   const settings = getSettings();
@@ -61,16 +85,22 @@ export function buildContext(conversation, { latest = '', uptoMessageId = null }
     : q.all('SELECT * FROM knowledge WHERE property_id IS NULL ORDER BY id');
   const knowledge = rows
     .filter((k) => !k.sensitive || released)
-    .map((k) => ({ id: k.id, applies_to: k.property_id ? 'this property' : 'all properties', category: k.category, question: k.question, answer: k.answer }));
+    .map((k) => ({
+      id: k.id, applies_to: k.property_id ? 'this property' : 'all properties', category: k.category, question: k.question, answer: k.answer,
+      // Pictures and a video the team attached. The guest is shown them when this id is listed in knowledge_ids.
+      pictures: q.get("SELECT COUNT(*) AS n FROM files WHERE knowledge_id = ? AND kind = 'image'", k.id).n || undefined,
+      what_the_pictures_show: k.media_notes || undefined,
+      has_video: k.video_url ? true : undefined,
+    }));
 
   const history = q
     .all(
-      `SELECT role, body FROM messages WHERE conversation_id = ? AND (role = 'guest' OR status = 'sent')
+      `SELECT id, role, body, meta FROM messages WHERE conversation_id = ? AND (role = 'guest' OR status = 'sent')
        ${uptoMessageId ? 'AND id < ?' : ''} ORDER BY id DESC LIMIT 30`,
       ...(uptoMessageId ? [conversation.id, uptoMessageId] : [conversation.id]),
     )
     .reverse()
-    .map((m) => ({ role: m.role === 'guest' ? 'guest' : m.role === 'team' ? 'team' : 'assistant', text: withoutLink(m.body, reservation?.checkin_link) }));
+    .map((m) => ({ role: m.role === 'guest' ? 'guest' : m.role === 'team' ? 'team' : 'assistant', text: withoutLink(m.body, reservation?.checkin_link) + attachmentNote(m) }));
 
   const now = new Date();
   return {
@@ -232,9 +262,16 @@ async function processConversation(conversationId) {
 
   emitConversation(conversation.id, 'typing', { on: true });
   let decision;
+  let media = {};
   try {
-    decision = await llm.decide(buildContext(conversation, { latest, uptoMessageId: pending[0].id }));
+    const context = buildContext(conversation, { latest, uptoMessageId: pending[0].id });
+    // Photos and videos sent with these messages go to the model as pictures.
+    const sent = pending.flatMap((m) => q.all('SELECT * FROM files WHERE message_id = ?', m.id));
+    context.images = await modelImages(sent);
+    context.unreadable = sent.length > 0 && context.images.length === 0;
+    decision = await llm.decide(context);
     decision.reply = withLink(decision.reply, checkinLinkOf(conversation));
+    media = decision.action === 'answer' ? mediaFor(decision.knowledgeIds, new Set(context.knowledge.map((k) => k.id))) : {};
   } catch (e) {
     // The model is unavailable or declined. Never leave a guest without an answer: hand to the team.
     console.error(`Model error in conversation ${conversation.id}: ${e.message}`);
@@ -250,7 +287,7 @@ async function processConversation(conversationId) {
   if (decision.language && decision.language !== conversation.language) {
     q.run('UPDATE conversations SET language = ? WHERE id = ?', decision.language, conversation.id);
   }
-  const meta = { confidence: decision.confidence, category: decision.category, summary: decision.summary, guestMessageId: lastGuest.id, covers: pending.map((m) => m.id) };
+  const meta = { confidence: decision.confidence, category: decision.category, summary: decision.summary, guestMessageId: lastGuest.id, covers: pending.map((m) => m.id), ...media };
 
   // A team member may have taken over while the model was working.
   if (q.get('SELECT bot_paused FROM conversations WHERE id = ?', conversation.id)?.bot_paused) {

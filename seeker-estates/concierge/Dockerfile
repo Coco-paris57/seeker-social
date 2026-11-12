@@ -1,4 +1,6 @@
 FROM node:22-slim
+# ffmpeg lets the assistant look at videos guests send (a few still frames).
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev

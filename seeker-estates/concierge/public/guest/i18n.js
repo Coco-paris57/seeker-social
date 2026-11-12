@@ -2,6 +2,18 @@
 // from navigator.language. The assistant itself replies in whatever language the guest writes in.
 
 const en = {
+  attach: 'Add a photo or video',
+  removeFile: 'Remove file',
+  uploading: 'Uploading',
+  fileTooBig: 'That file is too large. Photos up to 8 MB, videos up to 40 MB.',
+  fileType: 'That file could not be read. Please send a photo or a short video.',
+  tooManyFiles: 'You can send up to {n} files at a time.',
+  uploadFailed: 'The file could not be uploaded. Please try again.',
+  watchVideo: 'Watch the video',
+  photoAlt: 'Photo',
+  videoLabel: 'Video',
+  viewerTitle: 'Photo',
+  filesCount: '{n} file(s) attached',
   loading: 'Loading',
   welcomeTitle: 'Welcome to {name}',
   welcomeTitleGeneric: 'Welcome',
@@ -76,6 +88,18 @@ const en = {
 };
 
 const fr = {
+  attach: 'Ajouter une photo ou une vidéo',
+  removeFile: 'Retirer le fichier',
+  uploading: 'Envoi en cours',
+  fileTooBig: "Ce fichier est trop volumineux. Photos jusqu'à 8 Mo, vidéos jusqu'à 40 Mo.",
+  fileType: "Ce fichier n'a pas pu être lu. Envoyez une photo ou une courte vidéo.",
+  tooManyFiles: "Vous pouvez envoyer jusqu'à {n} fichiers à la fois.",
+  uploadFailed: "Le fichier n'a pas pu être envoyé. Veuillez réessayer.",
+  watchVideo: 'Voir la vidéo',
+  photoAlt: 'Photo',
+  videoLabel: 'Vidéo',
+  viewerTitle: 'Photo',
+  filesCount: '{n} fichier(s) joint(s)',
   loading: 'Chargement',
   welcomeTitle: 'Bienvenue à {name}',
   welcomeTitleGeneric: 'Bienvenue',
@@ -150,6 +174,18 @@ const fr = {
 };
 
 const es = {
+  attach: 'Añadir una foto o un vídeo',
+  removeFile: 'Quitar archivo',
+  uploading: 'Subiendo',
+  fileTooBig: 'El archivo es demasiado grande. Fotos hasta 8 MB, vídeos hasta 40 MB.',
+  fileType: 'No se ha podido leer el archivo. Envíe una foto o un vídeo corto.',
+  tooManyFiles: 'Puede enviar hasta {n} archivos a la vez.',
+  uploadFailed: 'No se ha podido subir el archivo. Inténtelo de nuevo.',
+  watchVideo: 'Ver el vídeo',
+  photoAlt: 'Foto',
+  videoLabel: 'Vídeo',
+  viewerTitle: 'Foto',
+  filesCount: '{n} archivo(s) adjunto(s)',
   loading: 'Cargando',
   welcomeTitle: 'Bienvenido a {name}',
   welcomeTitleGeneric: 'Bienvenido',
@@ -224,6 +260,18 @@ const es = {
 };
 
 const de = {
+  attach: 'Foto oder Video hinzufügen',
+  removeFile: 'Datei entfernen',
+  uploading: 'Wird hochgeladen',
+  fileTooBig: 'Die Datei ist zu groß. Fotos bis 8 MB, Videos bis 40 MB.',
+  fileType: 'Die Datei konnte nicht gelesen werden. Bitte senden Sie ein Foto oder ein kurzes Video.',
+  tooManyFiles: 'Sie können bis zu {n} Dateien gleichzeitig senden.',
+  uploadFailed: 'Die Datei konnte nicht hochgeladen werden. Bitte versuchen Sie es erneut.',
+  watchVideo: 'Video ansehen',
+  photoAlt: 'Foto',
+  videoLabel: 'Video',
+  viewerTitle: 'Foto',
+  filesCount: '{n} Datei(en) angehängt',
   loading: 'Wird geladen',
   welcomeTitle: 'Willkommen in {name}',
   welcomeTitleGeneric: 'Willkommen',
@@ -298,6 +346,18 @@ const de = {
 };
 
 const it = {
+  attach: 'Aggiungi una foto o un video',
+  removeFile: 'Rimuovi file',
+  uploading: 'Caricamento',
+  fileTooBig: 'Il file è troppo grande. Foto fino a 8 MB, video fino a 40 MB.',
+  fileType: 'Non è stato possibile leggere il file. Invii una foto o un breve video.',
+  tooManyFiles: 'Può inviare fino a {n} file alla volta.',
+  uploadFailed: 'Non è stato possibile caricare il file. Riprovi.',
+  watchVideo: 'Guarda il video',
+  photoAlt: 'Foto',
+  videoLabel: 'Video',
+  viewerTitle: 'Foto',
+  filesCount: '{n} file allegato/i',
   loading: 'Caricamento',
   welcomeTitle: 'Benvenuti a {name}',
   welcomeTitleGeneric: 'Benvenuti',

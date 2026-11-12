@@ -119,6 +119,20 @@ CREATE TABLE IF NOT EXISTS audit (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE TABLE IF NOT EXISTS smoobu_seen (message_id INTEGER PRIMARY KEY);
+CREATE TABLE IF NOT EXISTS files (
+  token TEXT PRIMARY KEY,          -- random; also the file name on disk
+  kind TEXT NOT NULL,              -- 'image' | 'video'
+  mime TEXT NOT NULL,
+  ext TEXT NOT NULL,
+  size INTEGER NOT NULL,
+  conversation_id INTEGER REFERENCES conversations(id) ON DELETE CASCADE,  -- sent by a guest
+  message_id INTEGER,              -- the guest message it was sent with
+  knowledge_id INTEGER REFERENCES knowledge(id) ON DELETE CASCADE,         -- attached by the team
+  created_by INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS files_knowledge ON files(knowledge_id);
+CREATE INDEX IF NOT EXISTS files_message ON files(message_id);
 `;
 
 export function openDb(file) {
@@ -129,6 +143,8 @@ export function openDb(file) {
   // Columns added after the first release. Existing databases get them here.
   const has = (table, column) => db.prepare(`PRAGMA table_info(${table})`).all().some((c) => c.name === column);
   if (!has('reservations', 'checkin_link')) db.exec('ALTER TABLE reservations ADD COLUMN checkin_link TEXT');
+  if (!has('knowledge', 'video_url')) db.exec('ALTER TABLE knowledge ADD COLUMN video_url TEXT');
+  if (!has('knowledge', 'media_notes')) db.exec('ALTER TABLE knowledge ADD COLUMN media_notes TEXT');
   if (!has('reservations', 'checkin_done')) db.exec('ALTER TABLE reservations ADD COLUMN checkin_done INTEGER NOT NULL DEFAULT 0');
   return db;
 }

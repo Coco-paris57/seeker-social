@@ -50,6 +50,16 @@ and explains what appears there and when (Settings, "Online check-in page"). Cha
 keeps deciding when details are released; the assistant only points to the page. The link is
 never sent to the AI model: the model writes a placeholder and the app puts the link in.
 
+**Pictures and videos.**
+- *Knowledge base:* the team can add up to six pictures and a video link to an entry (the TV
+  remote, the washing machine panel). Guests get them under the answer. "Write instructions from
+  the pictures" has the assistant read the pictures, identify the brand and model, and draft the
+  how-to for the team to check before saving.
+- *Guests* can send photos and short videos (up to 4 per message; photos are scaled down in the
+  browser, videos up to 40 MB). The assistant looks at photos directly and at a few still frames
+  of a video (needs `ffmpeg`, included in the Docker image), and the team sees them next to the
+  request. Files live on the data disk under `uploads/` and are erased with the chat.
+
 A team member can take over any chat (the assistant pauses) and hand it back later.
 
 ## Run it locally
@@ -118,7 +128,8 @@ Smoobu's and ChargeAutomation's own automated messages keep working alongside.
 
 ## Limits to know about
 
-- Text only: guests cannot send photos yet.
+- Videos take disk space: a 1 GB disk holds roughly 25 full-size videos until their chats are
+  erased. Increase the disk in Render if guests send many.
 - The assistant states only what is in the knowledge base. A thin knowledge base means many
   questions for the team in the first weeks; that is the learning process working.
 - If Claude is unreachable or declines a message, the guest gets a holding reply and the message

@@ -35,7 +35,10 @@ export function createApp() {
     res.set('Cache-Control', 'no-store');
     // State-changing calls must be JSON. A cross-site form cannot send that without a CORS
     // preflight, which this server never approves.
-    if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && !req.is('application/json')) {
+    // The exception is a picture or video upload, sent as the file itself. Browsers will not
+    // send those content types cross-site without a preflight either.
+    const upload = req.method === 'POST' && /\/uploads$/.test(req.path) && /^(image|video)\//.test(req.headers['content-type'] || '');
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && !req.is('application/json') && !upload) {
       return res.status(415).json({ error: 'Requests must be sent as JSON.' });
     }
     next();

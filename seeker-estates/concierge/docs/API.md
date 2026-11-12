@@ -128,3 +128,48 @@ event): `{ title, body, url, tag, urgent }`. `url` is a path such as `/admin/#/i
 
 `POST /api/webhooks/smoobu/<SMOOBU_WEBHOOK_TOKEN>` receives Smoobu events (reservation changes and,
 with `SMOOBU_INBOX=on`, guest messages from Airbnb, Booking.com and email).
+
+## Pictures and videos
+
+Uploads send **the file itself as the request body** (not JSON, not a form), with its real
+`Content-Type` (`image/jpeg`, `image/png`, `image/webp`, `video/mp4`, `video/quicktime`,
+`video/webm`). The server checks the bytes and refuses anything else with `415`; too large is
+`413`. Phone formats browsers cannot show (HEIC) must be converted to JPEG in the browser first
+(draw to a canvas). Pictures should be scaled down in the browser to about 1600 px on the long
+side and saved as JPEG before upload: it keeps uploads fast and under the limits.
+
+`file` object: `{ token, kind: 'image'|'video', url }`. `url` is a same-origin path to use as
+`<img src>` / `<video src>`; it needs the session cookie, so it only works inside the app.
+
+Guest:
+
+| Call | Body | Returns |
+|---|---|---|
+| `POST /api/guest/uploads` | the file | `201 { file }`. Image up to 8 MB, video up to 40 MB. `403` before a `/stay` chat is verified, `429` after 12 files in 10 minutes. |
+| `POST /api/guest/messages` | `{ text, attachments?: token[] }` | Up to 4 files per message; `text` may be empty when there is at least one file. A file can be sent once. |
+| `GET /api/guest/files/:token` | | The file. Only files of this chat. |
+
+Every guest `message` now has `attachments: file[]` and `links: [{ url, label }]`. On a guest
+message, attachments are what they sent. On an assistant message, they are pictures the team
+attached to the knowledge entry the answer came from, and `links` holds its video link: show
+pictures under the text (tap to enlarge) and each link as "Watch the video: <label>" opening in
+a new tab with `rel="noopener noreferrer"`. `about.uploads` gives `{ maxFiles, maxImageBytes, maxVideoBytes }`.
+
+Team:
+
+| Call | Body | Returns |
+|---|---|---|
+| `POST /api/admin/uploads` | the picture (images only) | `201 { file }`. Not yet attached to anything; attach it by listing its token in `pictures` when saving the entry. Unattached uploads are removed after a day. |
+| `GET /api/admin/files/:token` | | Any stored file (guest photos and videos, knowledge pictures). |
+| `POST /api/admin/knowledge/describe` | `{ pictures: token[], topic?: string, propertyId?: number }` | `{ identified, instructions, toCheck }`. The assistant looks at the pictures (a TV remote, a washing machine panel), works out the brand and model, and drafts guest instructions. Nothing is saved: put `instructions` into the answer box for the team member to review and edit, show `identified` as context and `toCheck` as a visible warning. Takes 10 to 30 seconds. `502` if the model is unavailable. In demo mode it returns a placeholder. |
+
+`knowledge` objects now include `pictures: file[]`, `videoUrl: string|null` and `pictureNotes: string`.
+`POST /knowledge` and `PATCH /knowledge/:id` accept `pictures: token[]` (the complete list, at
+most 6; pictures left out are deleted), `videoUrl` (an `https://` address, e.g. YouTube or a
+Dropbox link; empty string clears it) and `pictureNotes` (what the pictures show, for the
+assistant; `identified` from describe is a good default).
+
+Team `message` objects now include `attachments: file[]` and `links`. `ticket` objects include
+`attachments: file[]` (photos and videos the guest sent in that chat), and each inbox approval
+includes `guestAttachments: file[]`. Show them wherever the guest's words are shown: the team
+needs to see the photo of the leak next to the message about the leak.

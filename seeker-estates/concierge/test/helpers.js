@@ -1,5 +1,10 @@
 // Each test file gets its own in-memory database and a server on a random port.
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
 process.env.DB_FILE = ':memory:';
+process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'concierge-test-'));
 process.env.LLM_MODE = 'mock';
 process.env.SMOOBU_MODE = 'off';
 process.env.SMOOBU_WEBHOOK_TOKEN = 'test-webhook-token';
@@ -20,7 +25,8 @@ export async function startServer() {
 /** A tiny HTTP client that keeps cookies, like a browser tab. */
 export function client(base) {
   const jar = new Map();
-  return async function call(method, url, body) {
+  const cookies = () => [...jar].map(([k, v]) => `${k}=${v}`).join('; ');
+  const call = async function call(method, url, body) {
     const res = await fetch(base + url, {
       method,
       headers: { ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...(jar.size ? { Cookie: [...jar].map(([k, v]) => `${k}=${v}`).join('; ') } : {}) },
@@ -37,6 +43,8 @@ export function client(base) {
     try { json = JSON.parse(text); } catch { /* not JSON */ }
     return { status: res.status, json, text, headers: res.headers };
   };
+  call.cookies = cookies;
+  return call;
 }
 
 export function seed({ mode = null, arrivalOffset = 0 } = {}) {
