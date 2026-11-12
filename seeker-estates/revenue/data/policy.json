@@ -29,11 +29,11 @@
   "P05": "St John's Wood (Abbey Rd): 4 bedrooms, 5 beds including a sofa bed (Corentin, 18 Oct 2026). PriceLabs shows 4 bedrooms since 19 Oct 2026; benchmark against 4-bed listings."
  },
  "channel_pricing": {
-  "booking_markup": 0.15,
-  "booking_markup_note": "Smoobu Booking.com markup changed +30% -> +15% on 24 Oct 2026 (Corentin), global. Before: +30% for ~11 months. Extranet calendars synced before the change still showed ~1.3x on 24 Oct. Booking.com overwrite (full resync) done 24 Oct 13:38 (Corentin).",
+  "booking_markup": 0.0,
+  "booking_markup_note": "Smoobu Booking.com markup set to 0% on 12 Nov 2026 (Corentin): Booking.com now at the same level as Airbnb. The global Price adjustment field alone did not change the Booking.com price; a separate overwrite in the Smoobu pricing settings held +10% (Booking.com = Smoobu x1.10 rounded up, seen on Camden 10 Nov and Abbey Rd 12 Nov). Corentin overwrote it in pricing on 12 Nov. History: +30% for ~11 months, then +15% set on 24 Oct 2026 (effective x1.10 from at least 10 Nov), then 0% on 12 Nov.",
   "booking_stacked_promotions": "Corentin confirms Booking.com promotions stack on top of each other (20 Oct 2026). A Booking paid rate below 1.2 x price after stay discounts is explained by these promotions: report its size, do not call it unexplained.",
   "airbnb_discount": "Was: manual Airbnb promotions on selected dates giving 15-20% off (Corentin, 21 Oct 2026). All removed 21 Oct 2026. From bookings made after 21 Oct, Airbnb paid-vs-price should be close to PriceLabs minus the 15%/20% stay discounts; flag any remaining gap as unexplained.",
-  "booking_markup_scope": "The Smoobu +20% Booking.com markup is global (all apartments); it cannot be set per flat (Corentin, 21 Oct 2026). Per-flat levers are Booking.com promotions (per property) and PriceLabs prices.",
+  "booking_markup_scope": "Global Smoobu field plus an overwrite in Smoobu pricing; the overwrite is what set the Booking.com price (12 Nov 2026). Per-flat levers remain Booking.com promotions (per property) and PriceLabs prices.",
   "airbnb_smoobu_settings_21oct": {
    "source": "Corentin screenshots 21 Oct 2026 (Smoobu Airbnb settings, Shepherd's Bush listings)",
    "price_adjustment": "0% (Smoobu price settings for Airbnb)",
