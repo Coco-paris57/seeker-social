@@ -85,6 +85,7 @@ function propertyOut(p, { full = false } = {}) {
     station: p.station, mode: p.mode || null, effectiveMode: propertyMode(p, settings), active: !!p.active,
     smoobuId: p.smoobu_id, guestUrl: `${config.baseUrl}/g/${p.qr_token}`,
     knowledgeCount: q.get('SELECT COUNT(*) AS n FROM knowledge WHERE property_id = ?', p.id).n,
+    exampleCount: q.get('SELECT COUNT(*) AS n FROM examples WHERE property_id = ?', p.id).n,
     stats: approvalStats(p.id),
   };
   if (full) Object.assign(out, { address: p.address, notes: p.notes, amenities: details.amenities || [], rooms: details.rooms || null });
@@ -299,7 +300,22 @@ admin.post('/properties/sync', async (req, res) => {
 
 admin.get('/properties/:id', (req, res) => {
   const p = propertyOr404(req.params.id);
-  res.json({ property: propertyOut(p, { full: true }), knowledge: q.all('SELECT * FROM knowledge WHERE property_id = ? ORDER BY category, id', p.id).map(knowledgeOut) });
+  const names = userNames();
+  res.json({
+    property: propertyOut(p, { full: true }),
+    knowledge: q.all('SELECT * FROM knowledge WHERE property_id = ? ORDER BY category, id', p.id).map(knowledgeOut),
+    // Replies the team approved here, which the assistant learns from. Newest first.
+    examples: q.all('SELECT * FROM examples WHERE property_id = ? ORDER BY id DESC LIMIT 300', p.id).map((e) => ({
+      id: e.id, question: e.question, answer: e.answer, verifiedOnly: !!e.private, edited: !!e.edited, approvedBy: names[e.approved_by] || null, at: iso(e.created_at),
+    })),
+  });
+});
+
+/** Forget an approved reply, e.g. one that is out of date. */
+admin.delete('/examples/:id', (req, res) => {
+  q.run('DELETE FROM examples WHERE id = ?', Number(req.params.id));
+  audit(req.user.id, 'example.delete', `example ${req.params.id}`);
+  res.json({ ok: true });
 });
 
 admin.patch('/properties/:id', (req, res) => {

@@ -396,3 +396,10 @@ td:first-child { white-space: nowrap; }
 @media (min-width: 900px) {
   #toasts, .dialog-toasts { left: auto; top: auto; right: 20px; bottom: 20px; width: 360px; }
 }
+
+/* Approved replies on a property page. */
+.example-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.example-list li { padding: 12px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface); }
+.example-q { margin: 0 0 4px; font-weight: 600; }
+.example-a { margin: 0 0 6px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.example-meta { margin: 0 0 8px; font-size: 13px; color: var(--text-2); }

@@ -45,6 +45,9 @@ Actions
 Why accuracy matters more than helpfulness here
 Guests act on what you say: they stand at a door with the code you gave, or plan a journey around a check-in time. A confident wrong answer costs them far more than a short wait for the team. So state only what appears in the facts provided. If the facts are silent, partial, or for a different property, choose ask_team. Never guess a door code, key-safe location, WiFi password, price, policy or time. The exception is getting around and the neighbourhood. You know London well, and the facts give you the property's area, postcode and nearby stations, so answer questions about transport and the local area yourself rather than asking the team: which stations and lines are closest, how to reach airports, main-line stations and well-known venues, how contactless payment works, and what kind of shops, supermarkets, pharmacies and restaurants are in the area. Use the nearby_stations facts where given, and your own knowledge of the area otherwise. Keep it practical and present times as approximate ("about 25 minutes"). Do not state opening hours, prices or whether a specific business is open today; suggest the guest checks a map app for those.
 
+Approved replies
+The facts may include approved_replies_for_this_property: replies a team member approved (or wrote) for earlier guests at this same property, with what each guest wanted. They are how you learn the property. Treat what they state as true for this property, and follow their wording, level of detail and tone, especially where corrected_by_team is true. When one covers the guest's question, base your answer on it and adapt it to this guest; that counts as the facts answering the question directly. If an approved reply and the knowledge base disagree, the knowledge base wins, since the team keeps it up to date. Do not copy anything that was specific to the earlier guest: their name, dates, booking, or a promise made to them (a visit time, a refund, an exception). [CHECKIN_LINK] in an approved reply is a placeholder: use it only if this guest's facts include booking.online_checkin_link.
+
 Set confidence to high only when the facts answer the question directly. Use medium when you had to interpret, and low when you are unsure the facts apply.
 
 Holding replies (ask_team, maintenance) must not contain any claim you could not make as an answer. Thank the guest, say the team is being asked, and stop. Do not promise a time unless the facts give one. Team hours: ${ctx.officeHours}.
@@ -74,6 +77,7 @@ export function userPrompt(ctx) {
     stage: ctx.stage,
     access_details_released: ctx.accessReleased,
     knowledge_base: ctx.knowledge,
+    approved_replies_for_this_property: ctx.examples?.length ? ctx.examples : undefined,
     open_requests_with_team: ctx.openTickets,
   };
   const transcript = ctx.history.map((m) => `<${m.role}>${m.text}</${m.role}>`).join('\n');
@@ -213,6 +217,11 @@ function mockDecide(ctx) {
     const score = have.filter((w) => want.has(w)).length;
     if (score > 0 && (!best || score > best.score)) best = { k, score };
   }
+  // Approved replies count as knowledge too (the real model reads them the same way).
+  for (const e of ctx.examples || []) {
+    const score = words(e.guest_wanted).filter((w) => want.has(w)).length;
+    if (score > 1 && (!best || score > best.score)) best = { k: { id: null, category: 'other', answer: e.approved_reply }, score };
+  }
   if (MAINTENANCE.test(text)) {
     return {
       ...base, action: 'maintenance', confidence: 'high', category: 'maintenance',
@@ -220,7 +229,7 @@ function mockDecide(ctx) {
       team_question: `Guest reports a problem: ${text}`,
     };
   }
-  if (best) return { ...base, action: 'answer', confidence: best.score >= 2 ? 'high' : 'medium', category: best.k.category, reply: best.k.answer, knowledge_ids: [best.k.id] };
+  if (best) return { ...base, action: 'answer', confidence: best.score >= 2 ? 'high' : 'medium', category: best.k.category, reply: best.k.answer, knowledge_ids: best.k.id ? [best.k.id] : [] };
   if (ACCESS.test(text) && ctx.stay?.online_checkin_link) {
     return {
       ...base, action: 'answer', confidence: 'high', category: 'access',

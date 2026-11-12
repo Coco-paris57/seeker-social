@@ -144,6 +144,7 @@ export function buildContext(conversation, { latest = '', uptoMessageId = null }
       online_checkin_completed: reservation.checkin_link ? !!reservation.checkin_done : undefined,
     },
     knowledge,
+    examples: examplesFor(conversation, latest),
     openTickets: q
       .all("SELECT type, summary FROM tickets WHERE conversation_id = ? AND status = 'open'", conversation.id)
       .map((t) => ({ type: t.type, summary: t.summary })),
@@ -467,6 +468,41 @@ function saveKnowledge({ propertyId, category, question, answer, userId, sensiti
   );
 }
 
+const MAX_EXAMPLES_PER_PROPERTY = 300;
+const significant = (text) => new Set(String(text).toLowerCase().match(/[a-z0-9]{3,}/g) || []);
+
+/**
+ * Keep an approved reply as an example for this property. Every Approve & send lands here, so
+ * the assistant learns what the team considers right for each property and how they word it.
+ * The guest's private check-in link is replaced by its placeholder before storing.
+ */
+function rememberApproval(conversation, meta, answer, user, edited) {
+  if (!conversation.property_id) return;
+  const question = clip(meta.summary || '', 300);
+  if (!question) return;
+  const link = checkinLinkOf(conversation);
+  const text = withoutLink(answer.trim(), link);
+  const same = q.get('SELECT id FROM examples WHERE property_id = ? AND lower(question) = lower(?)', conversation.property_id, question);
+  if (same) {
+    q.run("UPDATE examples SET answer = ?, private = ?, edited = ?, approved_by = ?, created_at = datetime('now') WHERE id = ?", text, conversation.verified ? 1 : 0, edited ? 1 : 0, user.id, same.id);
+  } else {
+    q.run('INSERT INTO examples(property_id, question, answer, private, edited, approved_by) VALUES(?, ?, ?, ?, ?, ?)', conversation.property_id, question, text, conversation.verified ? 1 : 0, edited ? 1 : 0, user.id);
+    q.run('DELETE FROM examples WHERE property_id = ? AND id NOT IN (SELECT id FROM examples WHERE property_id = ? ORDER BY id DESC LIMIT ?)', conversation.property_id, conversation.property_id, MAX_EXAMPLES_PER_PROPERTY);
+  }
+}
+
+/** The approved replies most relevant to the guest's message, newest first among equals. */
+function examplesFor(conversation, latest, limit = 12) {
+  if (!conversation.property_id) return [];
+  const want = significant(latest);
+  return q
+    .all('SELECT * FROM examples WHERE property_id = ? AND (private = 0 OR ?) ORDER BY id DESC', conversation.property_id, conversation.verified ? 1 : 0)
+    .map((e) => ({ e, score: [...significant(e.question + ' ' + e.answer)].filter((w) => want.has(w)).length }))
+    .sort((a, b) => b.score - a.score || b.e.id - a.e.id)
+    .slice(0, limit)
+    .map(({ e }) => ({ guest_wanted: e.question, approved_reply: e.answer, corrected_by_team: e.edited ? true : undefined, approved_on: e.created_at.slice(0, 10) }));
+}
+
 /** Approve a drafted reply, optionally edited. remember saves the final text as knowledge. */
 export async function approveDraft(messageId, user, { text, remember = false, scope = 'property', sensitive } = {}) {
   const draft = q.get("SELECT * FROM messages WHERE id = ? AND status = 'pending'", messageId);
@@ -486,6 +522,7 @@ export async function approveDraft(messageId, user, { text, remember = false, sc
       category: meta.category, question: meta.summary || guest?.body || 'Guest question', answer: finalText, userId: user.id, sensitive,
     });
   }
+  if (draft.kind === 'answer') rememberApproval(conversation, meta, finalText, user, edited);
   audit(user.id, edited ? 'draft.approve_edited' : 'draft.approve', `message ${draft.id}`);
   const message = q.get('SELECT * FROM messages WHERE id = ?', draft.id);
   await deliver(conversation, message);
@@ -505,6 +542,7 @@ export async function rejectDraft(messageId, user, { replyText, remember = false
   let knowledgeId = null;
   if (replyText?.trim()) {
     message = await sendMessage(conversation, 'team', replyText.trim(), { createdBy: user.id, meta: { replaces: draft.id } });
+    if (draft.kind === 'answer') rememberApproval(conversation, meta, replyText, user, true); // the team's own reply is the pattern to follow
     if (remember) {
       knowledgeId = saveKnowledge({
         propertyId: scope === 'global' ? null : conversation.property_id,

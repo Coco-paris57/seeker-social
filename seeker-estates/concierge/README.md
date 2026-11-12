@@ -33,6 +33,13 @@ The team supervises from a phone-friendly app with push notifications.
    how many drafts were approved unchanged in the last 30 days: use that to decide when to switch
    it to auto.
 
+**Every approval teaches it.** Each reply a team member approves, corrects or writes for a
+property is kept as an approved reply for that property (Properties, property page, "Approved
+replies"). The assistant is given the most relevant ones with every question, so it learns what
+is right for each property and how the team words it. A reply approved for a verified guest is
+only reused for verified guests, and a guest's private check-in link is never stored. Remove an
+approved reply there if it goes out of date; the knowledge base always takes precedence.
+
 **Learning mode is strict.** Nothing the assistant wrote reaches a guest until a person has seen
 it: answers are approved in the inbox, and when the team answers a request they preview the
 assistant's wording before it is sent. While waiting, guests in the web chat get a fixed

@@ -269,6 +269,7 @@ export function propertyView({ id }) {
       return;
     }
     const p = data.property;
+    const examples = data.examples || [];
     const checklist = h('div', { class: 'checklist' });
     const editor = knowledgeEditor({
       propertyId: p.id, propertyName: p.displayName,
@@ -308,7 +309,27 @@ export function propertyView({ id }) {
         h('div', { class: 'section-head' },
           h('h2', null, 'Knowledge base'),
           button('Add entry', { variant: 'primary', icon: 'plus', onclick: () => editor.add() })),
-        checklist, editor.el));
+        checklist, editor.el),
+      h('section', { class: 'card section' },
+        h('h2', null, `Approved replies (${examples.length})`),
+        h('p', { class: 'hint' }, 'Every reply you approve or write for this property is kept here, and the assistant uses them to learn what is right for this property and how you word it. Remove one if it is out of date.'),
+        examples.length
+          ? h('ul', { class: 'example-list' }, examples.map((e) => h('li', null,
+            h('p', { class: 'example-q' }, e.question),
+            h('p', { class: 'example-a' }, e.answer),
+            h('p', { class: 'example-meta' },
+              [e.edited ? 'Corrected by the team' : 'Approved as drafted', e.approvedBy, new Date(e.at).toLocaleDateString(), e.verifiedOnly && 'verified guests only'].filter(Boolean).join(' · ')),
+            button('Remove', { icon: 'trash', onclick: async () => {
+              if (!(await confirmDialog({ title: 'Remove this approved reply?', message: 'The assistant will stop using it. The message already sent to the guest is not affected.', confirmLabel: 'Remove', danger: true }))) return;
+              try {
+                await api(`/examples/${e.id}`, { method: 'DELETE' });
+                toast('Removed');
+                load();
+              } catch (err) {
+                showError(err);
+              }
+            } }))))
+          : h('p', { class: 'muted' }, 'None yet. They appear as you approve replies in the Inbox.')));
     reloadKnowledge = editor.reload;
   }
 

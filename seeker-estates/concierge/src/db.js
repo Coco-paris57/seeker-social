@@ -119,6 +119,17 @@ CREATE TABLE IF NOT EXISTS audit (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE TABLE IF NOT EXISTS smoobu_seen (message_id INTEGER PRIMARY KEY);
+CREATE TABLE IF NOT EXISTS examples (   -- replies a team member approved, kept so the assistant learns each property
+  id INTEGER PRIMARY KEY,
+  property_id INTEGER REFERENCES properties(id) ON DELETE CASCADE,
+  question TEXT NOT NULL,          -- what the guest wanted, as a short summary (not their words)
+  answer TEXT NOT NULL,
+  private INTEGER NOT NULL DEFAULT 0,   -- 1 = approved for a verified guest: only reused for verified guests
+  edited INTEGER NOT NULL DEFAULT 0,    -- 1 = the team changed the draft or wrote the reply
+  approved_by INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS examples_property ON examples(property_id, id);
 CREATE TABLE IF NOT EXISTS files (
   token TEXT PRIMARY KEY,          -- random; also the file name on disk
   kind TEXT NOT NULL,              -- 'image' | 'video'
