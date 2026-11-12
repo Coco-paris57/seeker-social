@@ -369,8 +369,16 @@ export function attachmentsView(files, { links, label = 'Photo from the guest', 
     if (f.kind === 'video') return h('li', null, h('video', { class: 'attach-video', src: f.url, controls: true, preload: 'metadata', playsInline: true, 'aria-label': videoLabel }));
     const alt = pictures > 1 ? `${label} ${++n}` : label;
     const size = small ? 64 : 96;
-    return h('li', null, h('button', { type: 'button', class: 'attach-thumb', 'aria-label': `${alt}, open larger`, onclick: () => openPicture(f.url, alt) },
-      h('img', { src: f.url, alt, loading: 'lazy', decoding: 'async', width: size, height: size })));
+    const img = h('img', { src: f.url, alt, loading: 'lazy', decoding: 'async', width: size, height: size });
+    const thumb = h('button', { type: 'button', class: 'attach-thumb', 'aria-label': `${alt}, open larger`, onclick: () => openPicture(f.url, alt) }, img);
+    // The file may have been removed since (a picture taken off its knowledge entry, an erased chat).
+    img.addEventListener('error', () => {
+      thumb.disabled = true;
+      thumb.classList.add('attach-missing');
+      thumb.setAttribute('aria-label', `${alt}: no longer available`);
+      fill(thumb, icon('image', 24));
+    });
+    return h('li', null, thumb);
   };
   return h('div', { class: small ? 'attachments attachments-small' : 'attachments' },
     caption && h('p', { class: 'label' }, caption),

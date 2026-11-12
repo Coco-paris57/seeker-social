@@ -58,7 +58,7 @@ function mediaFor(knowledgeIds, allowed) {
   const attachments = [];
   const links = [];
   for (const id of ids) {
-    for (const f of q.all("SELECT token, kind FROM files WHERE knowledge_id = ? ORDER BY created_at, token LIMIT 6", id)) attachments.push({ token: f.token, kind: f.kind });
+    for (const f of q.all("SELECT token, kind FROM files WHERE knowledge_id = ? ORDER BY rowid LIMIT 6", id)) attachments.push({ token: f.token, kind: f.kind });
     const k = q.get('SELECT question, video_url FROM knowledge WHERE id = ?', id);
     if (k?.video_url) links.push({ url: k.video_url, label: k.question });
   }

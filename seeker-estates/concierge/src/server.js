@@ -89,7 +89,8 @@ export function createApp() {
   // eslint-disable-next-line no-unused-vars
   app.use((err, req, res, next) => {
     if (err instanceof HttpError) return res.status(err.status).json({ error: err.message });
-    if (err?.type === 'entity.parse.failed' || err?.type === 'entity.too.large') return res.status(400).json({ error: 'That request could not be read.' });
+    if (err?.type === 'entity.too.large') return res.status(413).json({ error: 'That file is too large. Photos up to 8 MB, videos up to 40 MB.' });
+    if (err?.type === 'entity.parse.failed') return res.status(400).json({ error: 'That request could not be read.' });
     console.error(err);
     res.status(500).json({ error: 'Something went wrong on our side. Please try again.' });
   });

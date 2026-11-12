@@ -61,7 +61,8 @@ function guestMessages(conversationId, after = 0) {
 /** A message as the guest sees it, with any pictures, videos and video links. */
 function messageOut(m) {
   const meta = parseJson(m.meta);
-  const files = m.role === 'guest' ? q.all('SELECT token, kind FROM files WHERE message_id = ?', m.id) : meta.attachments || [];
+  // Team pictures are listed on the message; one removed from its knowledge entry since is left out.
+  const files = m.role === 'guest' ? q.all('SELECT token, kind FROM files WHERE message_id = ?', m.id) : (meta.attachments || []).filter((a) => getFile(a.token));
   return {
     id: m.id, role: m.role === 'bot' ? 'assistant' : m.role, text: m.body, kind: m.kind, at: iso(m.sent_at || m.created_at),
     attachments: files.map(guestFile), links: (meta.links || []).map((l) => ({ url: l.url, label: l.label })),

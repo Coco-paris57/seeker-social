@@ -225,9 +225,9 @@ function entryDialog({ entry = {}, propertyId, propertyName }) {
             identified && h('p', { class: 'draft-saw' }, h('strong', null, 'What the assistant saw: '), identified)));
           saw.hidden = false;
           // The warning belongs to this draft: it stays until the entry is saved or a new draft replaces the text.
-          const check = String(out.toCheck || '').trim();
-          fill(toCheck, icon('alert', 20), h('p', { class: 'pre' }, h('strong', null, 'Check before saving: '), check));
-          toCheck.hidden = !check;
+          const warn = String(out.toCheck || '').trim();
+          fill(toCheck, icon('alert', 20), h('p', { class: 'pre' }, h('strong', null, 'Check before saving: '), warn));
+          toCheck.hidden = !warn;
           syncPictures();
           answer.focus();
           return undefined;

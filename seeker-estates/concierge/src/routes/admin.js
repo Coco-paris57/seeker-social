@@ -95,7 +95,7 @@ const knowledgeOut = (k) => ({
   id: k.id, propertyId: k.property_id, category: k.category, question: k.question, answer: k.answer,
   sensitive: !!k.sensitive, source: k.source, updatedAt: iso(k.updated_at),
   videoUrl: k.video_url || null, pictureNotes: k.media_notes || '',
-  pictures: q.all("SELECT token, kind FROM files WHERE knowledge_id = ? ORDER BY created_at, token", k.id).map(adminFile),
+  pictures: q.all("SELECT token, kind FROM files WHERE knowledge_id = ? ORDER BY rowid", k.id).map(adminFile),
 });
 
 // --- sign-in ----------------------------------------------------------------------------
@@ -243,7 +243,7 @@ admin.get('/conversations/:id', (req, res) => {
   const names = userNames();
   res.json({
     conversation: conversationOut(c),
-    messages: q.all("SELECT * FROM messages WHERE conversation_id = ? AND status != 'superseded' ORDER BY id", c.id).map((m) => messageOut(m, names)),
+    messages: q.all("SELECT * FROM messages WHERE conversation_id = ? AND status != 'superseded' ORDER BY sent_at IS NULL, COALESCE(sent_at, created_at), id", c.id).map((m) => messageOut(m, names)),
     tickets: q.all('SELECT * FROM tickets WHERE conversation_id = ? ORDER BY id', c.id).map((t) => ticketOut(t, names)),
   });
 });
