@@ -51,7 +51,7 @@ class Audits(unittest.TestCase):
         self.assertEqual(len(audit.pricelabs_vs_smoobu(prices)["P01"]), 1)
 
     def test_channel_price(self):
-        self.assertEqual(audit.expected_channel_price(100, "booking"), 100.0)   # Smoobu 0% since 12 Nov 2026
+        self.assertEqual(audit.expected_channel_price(100, "booking"), 110.0)   # Smoobu +10% since 12 Nov 2026
         self.assertEqual(audit.expected_channel_price(100, "direct"), 90.0)
 
 
