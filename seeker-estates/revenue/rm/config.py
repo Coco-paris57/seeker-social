@@ -37,7 +37,7 @@ BY_REF = {p["ref"]: p for p in PROPERTIES}
 # Confirm every value in Smoobu > Channel Manager and on each OTA extranet.
 CHANNELS = {
     "airbnb":  {"markup": 0.00, "discount": 0.00, "commission": 0.155},  # 15.5% of base + cleaning (observed)
-    "booking": {"markup": 0.15, "discount": 0.00, "commission": 0.15},   # Smoobu +15% since 24 Oct 2026 (was +30%, Corentin); stay discounts and stacked promotions in policy.json
+    "booking": {"markup": 0.00, "discount": 0.00, "commission": 0.15},   # Smoobu 0% since 12 Nov 2026 (Corentin; was +15% from 24 Oct, +30% before); stay discounts and stacked promotions in policy.json
     "vrbo":    {"markup": 0.08, "discount": 0.00, "commission": 0.08},
     "direct":  {"markup": 0.00, "discount": 0.10, "commission": 0.00},   # 10% direct discount
 }
