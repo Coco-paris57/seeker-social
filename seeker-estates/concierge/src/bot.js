@@ -520,6 +520,26 @@ function saveKnowledge({ propertyId, category, question, answer, userId, sensiti
   );
 }
 
+/**
+ * Pictures and videos a team member attaches to a reply. Only files the team uploaded (never a
+ * guest's file) and at most six. Booking channels carry text only, so they are refused there.
+ */
+export function teamAttachments(conversation, tokens) {
+  if (!Array.isArray(tokens) || !tokens.length) return [];
+  if (conversation.channel !== 'web') throw new HttpError(400, 'Pictures and videos cannot be sent through Airbnb, Booking.com or email from here. Send the text only, or share the file in the channel\'s own app.');
+  const list = [...new Set(tokens.map(String))].slice(0, 6).map((token) => q.get('SELECT token, kind, conversation_id FROM files WHERE token = ?', token));
+  if (list.some((f) => !f || f.conversation_id)) throw new HttpError(400, 'One of the files could not be attached. Please add it again.');
+  return list.map((f) => ({ token: f.token, kind: f.kind }));
+}
+
+/** Record that these files were sent with a message, and keep them with a knowledge entry when asked. */
+function fileSent(files, messageId, knowledgeId = null) {
+  for (const f of files) {
+    q.run('UPDATE files SET message_id = COALESCE(message_id, ?) WHERE token = ?', messageId, f.token);
+    if (knowledgeId) q.run('UPDATE files SET knowledge_id = COALESCE(knowledge_id, ?) WHERE token = ?', knowledgeId, f.token);
+  }
+}
+
 const MAX_EXAMPLES_PER_PROPERTY = 300;
 const significant = (text) => new Set(String(text).toLowerCase().match(/[a-z0-9]{3,}/g) || []);
 
@@ -556,14 +576,17 @@ function examplesFor(conversation, latest, limit = 12) {
 }
 
 /** Approve a drafted reply, optionally edited. remember saves the final text as knowledge. */
-export async function approveDraft(messageId, user, { text, remember = false, scope = 'property', sensitive } = {}) {
+export async function approveDraft(messageId, user, { text, remember = false, scope = 'property', sensitive, attachments } = {}) {
   const draft = q.get("SELECT * FROM messages WHERE id = ? AND status = 'pending'", messageId);
   if (!draft) throw new HttpError(409, 'This draft has already been handled or replaced by a newer one.');
   const conversation = q.get('SELECT * FROM conversations WHERE id = ?', draft.conversation_id);
   const finalText = (text ?? draft.body).trim();
   if (!finalText) throw new HttpError(400, 'The reply cannot be empty.');
   const edited = finalText !== draft.body.trim();
-  const meta = { ...parseJson(draft.meta), approvedBy: user.id, edited, ...(edited ? { original: draft.body } : {}) };
+  const added = teamAttachments(conversation, attachments);
+  const before = parseJson(draft.meta);
+  const meta = { ...before, approvedBy: user.id, edited, ...(edited ? { original: draft.body } : {}),
+    ...(added.length ? { attachments: [...(before.attachments || []), ...added].slice(0, 8) } : {}) };
   q.run("UPDATE messages SET body = ?, status = 'sent', meta = ?, sent_at = strftime('%Y-%m-%d %H:%M:%f', 'now') WHERE id = ?", finalText, JSON.stringify(meta), draft.id);
   q.run("UPDATE conversations SET last_message_at = datetime('now') WHERE id = ?", conversation.id);
   let knowledgeId = null;
@@ -574,6 +597,7 @@ export async function approveDraft(messageId, user, { text, remember = false, sc
       category: meta.category, question: meta.summary || guest?.body || 'Guest question', answer: finalText, userId: user.id, sensitive,
     });
   }
+  fileSent(added, draft.id, knowledgeId);
   if (draft.kind === 'answer') rememberApproval(conversation, meta, finalText, user, edited);
   audit(user.id, edited ? 'draft.approve_edited' : 'draft.approve', `message ${draft.id}`);
   const message = q.get('SELECT * FROM messages WHERE id = ?', draft.id);
@@ -582,7 +606,7 @@ export async function approveDraft(messageId, user, { text, remember = false, sc
 }
 
 /** Reject a draft. If the team writes their own reply it is sent in its place. */
-export async function rejectDraft(messageId, user, { replyText, remember = false, scope = 'property', sensitive } = {}) {
+export async function rejectDraft(messageId, user, { replyText, remember = false, scope = 'property', sensitive, attachments } = {}) {
   const draft = q.get("SELECT * FROM messages WHERE id = ? AND status = 'pending'", messageId);
   if (!draft) throw new HttpError(409, 'This draft has already been handled or replaced by a newer one.');
   const conversation = q.get('SELECT * FROM conversations WHERE id = ?', draft.conversation_id);
@@ -593,7 +617,9 @@ export async function rejectDraft(messageId, user, { replyText, remember = false
   let message = null;
   let knowledgeId = null;
   if (replyText?.trim()) {
-    message = await sendMessage(conversation, 'team', replyText.trim(), { createdBy: user.id, meta: { replaces: draft.id } });
+    const added = teamAttachments(conversation, attachments);
+    message = await sendMessage(conversation, 'team', replyText.trim(), { createdBy: user.id, meta: { replaces: draft.id, ...(added.length ? { attachments: added } : {}) } });
+    fileSent(added, message.id);
     if (draft.kind === 'answer') rememberApproval(conversation, meta, replyText, user, true); // the team's own reply is the pattern to follow
     if (remember) {
       knowledgeId = saveKnowledge({
@@ -621,7 +647,7 @@ export async function answerTicket(ticketId, user, opts = {}) {
   }
 }
 
-async function answerTicketOnce(ticketId, user, { answer, reply: reviewed, remember = false, scope = 'property', sensitive, verbatim = false, close = true } = {}) {
+async function answerTicketOnce(ticketId, user, { answer, reply: reviewed, remember = false, scope = 'property', sensitive, verbatim = false, close = true, attachments } = {}) {
   const ticket = q.get('SELECT * FROM tickets WHERE id = ?', ticketId);
   if (!ticket) throw new HttpError(404, 'Request not found.');
   if (ticket.status === 'closed') throw new HttpError(409, 'This request is already closed.');
@@ -642,8 +668,9 @@ async function answerTicketOnce(ticketId, user, { answer, reply: reviewed, remem
       console.error(`Compose failed for ticket ${ticket.id}: ${e.message}`); // fall back to the team's own words
     }
   }
+  const added = teamAttachments(conversation, attachments);
   const message = await sendMessage(conversation, worded ? 'bot' : 'team', reply, {
-    kind: 'relay', createdBy: user.id, meta: { ticketId: ticket.id, answeredBy: user.id },
+    kind: 'relay', createdBy: user.id, meta: { ticketId: ticket.id, answeredBy: user.id, ...(added.length ? { attachments: added } : {}) },
   });
   let knowledgeId = ticket.knowledge_id;
   if (remember && !knowledgeId) {
@@ -652,6 +679,7 @@ async function answerTicketOnce(ticketId, user, { answer, reply: reviewed, remem
       category: ticket.category, question: ticket.question, answer: text, userId: user.id, sensitive,
     });
   }
+  fileSent(added, message.id, remember ? knowledgeId : null); // kept with the knowledge entry, so the next guest gets them too
   q.run(
     `UPDATE tickets SET status = ?, answer = COALESCE(answer || char(10) || char(10), '') || ?, answered_by = ?,
      answered_at = datetime('now'), knowledge_id = ? WHERE id = ?`,

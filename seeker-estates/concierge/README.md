@@ -66,6 +66,9 @@ never sent to the AI model: the model writes a placeholder and the app puts the 
   browser, videos up to 40 MB). The assistant looks at photos directly and at a few still frames
   of a video (needs `ffmpeg`, included in the Docker image), and the team sees them next to the
   request. Files live on the data disk under `uploads/` and are erased with the chat.
+- *Team replies* can carry photos and a video too: when approving a draft, answering a request
+  or writing in a chat. With "remember" or "Save to knowledge base" ticked, the files are kept
+  with the answer and sent to the next guest who asks. Booking-channel chats are text only.
 
 **Team-only record (ChargeAutomation API, optional).** With `CHARGEAUTOMATION_CLIENT_ID` and
 `CHARGEAUTOMATION_CLIENT_SECRET` set, each sync also copies every property's WiFi details, access

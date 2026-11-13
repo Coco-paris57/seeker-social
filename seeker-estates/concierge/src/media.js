@@ -69,6 +69,8 @@ export function sweepFiles() {
   for (const f of q.all("SELECT * FROM files WHERE message_id IS NULL AND knowledge_id IS NULL AND created_at < datetime('now', '-1 day')")) {
     q.run('DELETE FROM files WHERE token = ?', f.token);
   }
+  // Files the team sent in a reply go when that chat is erased, unless they were kept for future guests.
+  q.run('DELETE FROM files WHERE conversation_id IS NULL AND knowledge_id IS NULL AND message_id IS NOT NULL AND message_id NOT IN (SELECT id FROM messages)');
   if (!fs.existsSync(UPLOAD_DIR)) return;
   const known = new Set(q.all('SELECT token, ext FROM files').map((f) => `${f.token}.${f.ext}`));
   for (const name of fs.readdirSync(UPLOAD_DIR)) {

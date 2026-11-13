@@ -5,7 +5,7 @@ import QRCode from 'qrcode';
 import { config, SETTING_DEFAULTS } from '../config.js';
 import { q, getSettings, setSetting, audit, parseJson } from '../db.js';
 import { createUser, endTeamSession, hashPassword, requireAdmin, requireUser, startTeamSession, currentUser, verifyPassword } from '../auth.js';
-import { answerTicket, approvalStats, approveDraft, closeTicket, previewTicketReply, propertyMode, rejectDraft, sendMessage, SENSITIVE_CATEGORIES, stageOf } from '../bot.js';
+import { teamAttachments, answerTicket, approvalStats, approveDraft, closeTicket, previewTicketReply, propertyMode, rejectDraft, sendMessage, SENSITIVE_CATEGORIES, stageOf } from '../bot.js';
 import { CATEGORIES } from '../llm.js';
 import { bus, emitAdmin, emitConversation, notifyTeam, vapidPublicKey } from '../notify.js';
 import { refreshTeamRecords, syncAll } from '../sync.js';
@@ -14,7 +14,7 @@ import crypto from 'node:crypto';
 import { clip, failureLimiter, HttpError, newToken, rateLimiter } from '../util.js';
 import { iso, sse } from './shared.js';
 import { posterHtml } from '../poster.js';
-import { adminFile, getFile, MAX_IMAGE, modelImages, saveUpload, sendFile, sweepFiles } from '../media.js';
+import { adminFile, getFile, MAX_VIDEO, modelImages, saveUpload, sendFile, sweepFiles } from '../media.js';
 import { describePictures } from '../llm.js';
 
 export const admin = express.Router();
@@ -72,7 +72,7 @@ function ticketOut(t, names = userNames()) {
     answer: t.answer, createdAt: iso(t.created_at), answeredAt: iso(t.answered_at), answeredByName: names[t.answered_by] || null,
     savedToKnowledge: !!t.knowledge_id, conversationId: t.conversation_id, propertyId: t.property_id,
     propertyName: property ? property.display_name || property.name : null,
-    guestName: c?.guest_name || null, guestVerified: !!c?.verified, guestMessage: guest?.body || null,
+    guestName: c?.guest_name || null, guestVerified: !!c?.verified, channel: c?.channel || 'web', guestMessage: guest?.body || null,
     // Photos and videos the guest sent in this chat up to the message that raised the request.
     attachments: t.guest_message_id ? q.all('SELECT token, kind FROM files WHERE conversation_id = ? AND message_id IS NOT NULL AND message_id <= ? ORDER BY message_id DESC LIMIT 8', t.conversation_id, t.guest_message_id).map(adminFile) : [],
   };
@@ -97,7 +97,8 @@ const knowledgeOut = (k) => ({
   id: k.id, propertyId: k.property_id, category: k.category, question: k.question, answer: k.answer,
   sensitive: !!k.sensitive, source: k.source, updatedAt: iso(k.updated_at),
   videoUrl: k.video_url || null, pictureNotes: k.media_notes || '',
-  pictures: q.all("SELECT token, kind FROM files WHERE knowledge_id = ? ORDER BY rowid", k.id).map(adminFile),
+  pictures: q.all("SELECT token, kind FROM files WHERE knowledge_id = ? AND kind = 'image' ORDER BY rowid", k.id).map(adminFile),
+  videos: q.all("SELECT token, kind FROM files WHERE knowledge_id = ? AND kind = 'video' ORDER BY rowid", k.id).map(adminFile),
 });
 
 // --- sign-in ----------------------------------------------------------------------------
@@ -178,14 +179,14 @@ function inbox() {
 admin.get('/inbox', (req, res) => res.json(inbox()));
 
 admin.post('/messages/:id/approve', async (req, res) => {
-  const { text, remember, scope, sensitive } = req.body || {};
-  const out = await approveDraft(Number(req.params.id), req.user, { text, remember: !!remember, scope, sensitive: setBool(sensitive) });
+  const { text, remember, scope, sensitive, attachments } = req.body || {};
+  const out = await approveDraft(Number(req.params.id), req.user, { text, remember: !!remember, scope, sensitive: setBool(sensitive), attachments });
   res.json({ message: messageOut(out.message), knowledgeId: out.knowledgeId });
 });
 
 admin.post('/messages/:id/reject', async (req, res) => {
-  const { replyText, remember, scope, sensitive } = req.body || {};
-  const out = await rejectDraft(Number(req.params.id), req.user, { replyText, remember: !!remember, scope, sensitive: setBool(sensitive) });
+  const { replyText, remember, scope, sensitive, attachments } = req.body || {};
+  const out = await rejectDraft(Number(req.params.id), req.user, { replyText, remember: !!remember, scope, sensitive: setBool(sensitive), attachments });
   res.json({ message: out.message ? messageOut(out.message) : null, knowledgeId: out.knowledgeId });
 });
 
@@ -209,9 +210,9 @@ admin.post('/tickets/:id/preview', async (req, res) => {
 });
 
 admin.post('/tickets/:id/answer', async (req, res) => {
-  const { answer, reply, remember, scope, sensitive, verbatim, keepOpen } = req.body || {};
+  const { answer, reply, remember, scope, sensitive, verbatim, keepOpen, attachments } = req.body || {};
   if (String(reply || '').length > 4000) throw new HttpError(400, 'Messages can be up to 4000 characters.');
-  const out = await answerTicket(Number(req.params.id), req.user, { answer, reply, remember: !!remember, scope, sensitive: setBool(sensitive), verbatim: !!verbatim, close: !keepOpen });
+  const out = await answerTicket(Number(req.params.id), req.user, { answer, reply, remember: !!remember, scope, sensitive: setBool(sensitive), verbatim: !!verbatim, close: !keepOpen, attachments });
   res.json({ ticket: ticketOut(out.ticket), message: messageOut(out.message), knowledgeId: out.knowledgeId });
 });
 
@@ -263,9 +264,11 @@ admin.get('/conversations/:id', (req, res) => {
 admin.post('/conversations/:id/reply', async (req, res) => {
   const c = conversationOr404(req.params.id);
   const text = String(req.body?.text || '').trim();
-  if (!text) throw new HttpError(400, 'Please write a message.');
+  const files = teamAttachments(c, req.body?.attachments);
+  if (!text && !files.length) throw new HttpError(400, 'Please write a message.');
   if (text.length > 4000) throw new HttpError(400, 'Messages can be up to 4000 characters.');
-  const m = await sendMessage(c, 'team', text, { createdBy: req.user.id });
+  const m = await sendMessage(c, 'team', text, { createdBy: req.user.id, meta: files.length ? { attachments: files } : {} });
+  for (const f of files) q.run('UPDATE files SET message_id = COALESCE(message_id, ?) WHERE token = ?', m.id, f.token);
   audit(req.user.id, 'conversation.reply', `conversation ${c.id}`);
   res.status(201).json({ message: messageOut(m) });
 });
@@ -472,8 +475,11 @@ function setPictures(knowledgeId, tokens, user) {
     if (!f || f.kind !== 'image' || f.conversation_id || (f.knowledge_id && f.knowledge_id !== knowledgeId)) throw new HttpError(400, 'One of the pictures could not be attached. Please upload it again.');
     q.run('UPDATE files SET knowledge_id = ? WHERE token = ?', knowledgeId, token);
   }
-  for (const f of q.all('SELECT token FROM files WHERE knowledge_id = ?', knowledgeId)) {
-    if (!wanted.includes(f.token)) q.run('DELETE FROM files WHERE token = ?', f.token);
+  for (const f of q.all("SELECT token, message_id FROM files WHERE knowledge_id = ? AND kind = 'image'", knowledgeId)) {
+    if (wanted.includes(f.token)) continue;
+    // A picture that was also sent in a chat stays in that chat; it just leaves the entry.
+    if (f.message_id) q.run('UPDATE files SET knowledge_id = NULL WHERE token = ?', f.token);
+    else q.run('DELETE FROM files WHERE token = ?', f.token);
   }
   sweepFiles();
   audit(user.id, 'knowledge.pictures', `knowledge ${knowledgeId}: ${wanted.length} picture(s)`);
@@ -500,10 +506,13 @@ admin.patch('/knowledge/:id', (req, res) => {
   res.json({ knowledge: knowledgeOut(q.get('SELECT * FROM knowledge WHERE id = ?', existing.id)) });
 });
 
-/** Upload a picture for the knowledge base. The request body is the file itself. */
-admin.post('/uploads', express.raw({ type: 'image/*', limit: MAX_IMAGE }), (req, res) => {
-  if (!Buffer.isBuffer(req.body) || !req.body.length) throw new HttpError(400, 'No picture was received.');
-  const f = saveUpload(req.body, { userId: req.user.id, allow: ['image'] });
+/**
+ * Upload a picture (for the knowledge base or a reply) or a video (for a reply). The request
+ * body is the file itself.
+ */
+admin.post('/uploads', express.raw({ type: ['image/*', 'video/*'], limit: MAX_VIDEO }), (req, res) => {
+  if (!Buffer.isBuffer(req.body) || !req.body.length) throw new HttpError(400, 'No file was received.');
+  const f = saveUpload(req.body, { userId: req.user.id });
   res.status(201).json({ file: adminFile(f) });
 });
 

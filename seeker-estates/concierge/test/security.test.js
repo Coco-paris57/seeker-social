@@ -113,3 +113,19 @@ test('app code is always re-checked with the server, so updates show immediately
   }
   assert.match((await fetch(`${srv.base}/shared/logo.svg`)).headers.get('cache-control'), /max-age=86400/);
 });
+
+test('the team app service worker is present and handles push (it once shipped empty)', async () => {
+  const fs = await import('node:fs');
+  const sw = fs.readFileSync(new URL('../public/admin/sw.js', import.meta.url), 'utf8');
+  assert.ok(sw.length > 2000, 'sw.js must not be empty');
+  for (const needle of ["addEventListener('push'", "addEventListener('notificationclick'", 'showNotification', '/admin/attach.js']) assert.ok(sw.includes(needle), needle);
+  // Every app file must be non-empty too.
+  for (const dir of ['../public/admin/', '../public/guest/']) {
+    for (const name of fs.readdirSync(new URL(dir, import.meta.url))) {
+      if (/\.(js|css|html|webmanifest)$/.test(name)) assert.ok(fs.statSync(new URL(dir + name, import.meta.url)).size > 100, `${dir}${name} is empty`);
+    }
+  }
+  const served = await fetch(`${srv.base}/admin/sw.js`);
+  assert.equal(served.headers.get('cache-control'), 'no-cache');
+  assert.ok((await served.text()).includes("addEventListener('push'"));
+});

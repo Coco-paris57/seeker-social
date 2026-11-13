@@ -48,7 +48,7 @@ export async function uploadPicture(blob) {
   const data = await request('/uploads', { method: 'POST', headers: { 'Content-Type': blob.type }, body: blob }, {
     fallback: {
       413: 'This picture is too large. Try a smaller one.',
-      415: 'This kind of file cannot be used. Try a JPEG or PNG picture.',
+      415: 'This kind of file cannot be used. Try a JPEG or PNG picture, or an MP4 video.',
     },
   });
   return data.file;

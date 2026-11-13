@@ -176,3 +176,12 @@ Team `message` objects now include `attachments: file[]` and `links`. `ticket` o
 `attachments: file[]` (photos and videos the guest sent in that chat), and each inbox approval
 includes `guestAttachments: file[]`. Show them wherever the guest's words are shown: the team
 needs to see the photo of the leak next to the message about the leak.
+
+Team replies can carry files too. Upload with `POST /api/admin/uploads` (pictures and videos),
+then pass `attachments: token[]` (at most 6) to `POST /messages/:id/approve`,
+`POST /messages/:id/reject` (with `replyText`), `POST /tickets/:id/answer` or
+`POST /conversations/:id/reply` (where `text` may then be empty). When the same call has
+`remember: true`, the files are kept with the new knowledge entry (`knowledge.pictures` and
+`knowledge.videos`) and sent with that answer to later guests. Booking-channel chats
+(`channel: 'smoobu'`) are text only: attachments there return `400`. `ticket.channel` and
+`conversation.channel` say which kind of chat it is.

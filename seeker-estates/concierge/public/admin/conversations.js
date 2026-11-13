@@ -2,6 +2,7 @@
 import { api, attachmentsView, autoGrow, busy, button, chip, confirmDialog, fill, guestLabel, h, icon, loadError, loading, reconcile, showError, stayDate, fullTime, timeEl, toast, uid } from './lib.js';
 import { approvalCard, ticketCard } from './inbox.js';
 import { inbox } from './state.js';
+import { attachControl, CHANNEL_TEXT_ONLY } from './attach.js';
 
 const STAGES = { before_arrival: 'Before arrival', during_stay: 'During stay', after_stay: 'After stay' };
 const CHANNELS = { web: 'Web chat', smoobu: 'Booking channel message' };
@@ -55,9 +56,11 @@ function threadPane(id, { onGone }) {
   const replyBox = autoGrow(h('textarea', { id: replyId, rows: 1, maxLength: 4000, placeholder: 'Write to the guest' }));
   const sendBtn = button('Send', { variant: 'primary', icon: 'send', type: 'submit' });
   const composerNote = h('p', { class: 'hint' });
+  const attachSlot = h('div');
+  let attach = null; // built once the chat's channel is known
   const composer = h('form', { class: 'composer' },
     h('label', { htmlFor: replyId, class: 'visually-hidden' }, 'Your message to the guest'),
-    h('div', { class: 'composer-row' }, replyBox, sendBtn), composerNote);
+    h('div', { class: 'composer-row' }, replyBox, sendBtn), attachSlot, composerNote);
 
   const el = h('section', { class: 'thread', 'aria-label': 'Conversation' },
     h('header', { class: 'thread-head' },
@@ -103,6 +106,10 @@ function threadPane(id, { onGone }) {
         showError(err);
       }
     }));
+    if (!attach) {
+      attach = attachControl({ disabledReason: c.channel === 'web' ? '' : CHANNEL_TEXT_ONLY });
+      fill(attachSlot, attach.el);
+    }
     // Read = responded. It changes by itself when a reply is sent or the guest writes; this is the manual override.
     const readBtn = button(c.unread ? 'Mark as read' : 'Mark as unread', { icon: c.unread ? 'check' : 'clock', small: true });
     readBtn.addEventListener('click', () => busy(readBtn, async () => {
@@ -227,9 +234,12 @@ function threadPane(id, { onGone }) {
 
   const send = () => busy(sendBtn, async () => {
     const text = replyBox.value.trim();
-    if (!text) return;
+    if (attach && !attach.ready()) return;
+    const files = attach ? attach.tokens() : [];
+    if (!text && !files.length) return;
     try {
-      await api(`/conversations/${id}/reply`, { method: 'POST', body: { text } });
+      await api(`/conversations/${id}/reply`, { method: 'POST', body: files.length ? { text, attachments: files } : { text } });
+      attach?.clear();
       replyBox.value = '';
       replyBox.dispatchEvent(new Event('input'));
       await load();

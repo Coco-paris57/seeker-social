@@ -2,6 +2,7 @@
 // questions). The approval and request cards are also used inside a conversation thread.
 import { add, api, ApiError, attachmentsView, autoGrow, busy, button, check, chip, confirmDialog, fill, guestLabel, h, icon, loadError, loading, openDialog, pageHeader, reconcile, showError, TICKET_TYPES, timeEl, toast, uid } from './lib.js';
 import { inbox } from './state.js';
+import { attachControl, CHANNEL_TEXT_ONLY } from './attach.js';
 
 const CONFIDENCE = {
   high: { label: 'High confidence', tone: 'ok', icon: 'check' },
@@ -66,18 +67,26 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
 
   const textId = uid('draft');
   const textarea = autoGrow(h('textarea', { id: textId, class: 'draft-text', rows: 3, value: original }));
-  const remember = rememberControl({ label: property ? `Remember this answer for ${property}` : 'Remember this answer', propertyName: property, category: draft.category, text: () => textarea.value });
+  const remember = rememberControl({ label: property ? `Remember this answer, and any files added, for ${property}` : 'Remember this answer and any files added', propertyName: property, category: draft.category, text: () => textarea.value });
   remember.el.hidden = true;
   const approve = button('Approve & send', { variant: 'primary', icon: 'check', 'data-primary': true });
   const reject = button('Reject', { icon: 'x' });
+  // Photos or a video to send with the reply. Ticking "remember" keeps them for future guests too.
+  const attach = attachControl({
+    onChange: () => sync(),
+    disabledReason: conversation.channel === 'web' ? '' : CHANNEL_TEXT_ONLY,
+  });
   const reset = button('Undo changes', { variant: 'ghost', small: true, hidden: true });
   const edited = () => textarea.value.trim() !== original.trim();
 
   // Editing reveals "remember": a corrected answer is worth keeping for next time.
   const sync = () => {
-    remember.el.hidden = reset.hidden = !edited();
+    const files = attach.count() > 0;
+    reset.hidden = !edited();
+    // "Remember" matters once there is something new to keep: changed wording, or files.
+    remember.el.hidden = !edited() && !files;
     remember.refresh();
-    approve.lastChild.textContent = edited() ? 'Send edited reply' : 'Approve & send';
+    approve.lastChild.textContent = edited() ? (files ? 'Send edited reply with files' : 'Send edited reply') : files ? 'Approve & send with files' : 'Approve & send';
   };
   textarea.addEventListener('input', sync);
   reset.addEventListener('click', () => {
@@ -93,7 +102,7 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
   let overtaken = false; // the draft on the server is no longer the text this card started with
   let sending = false;
   const news = h('div', { class: 'draft-news', role: 'status', hidden: true });
-  card.inUse = () => sending || edited() || card.contains(document.activeElement);
+  card.inUse = () => sending || edited() || attach.count() > 0 || card.contains(document.activeElement);
   card.changed = (next) => {
     overtaken = true;
     const latest = next.recentGuestMessages?.at(-1) || next.guestMessage;
@@ -126,8 +135,11 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
 
   const send = () => busy(approve, async () => {
     if (!textarea.value.trim()) return toast('The reply cannot be empty.', { kind: 'error' });
+    if (!attach.ready()) return undefined;
+    const files = attach.tokens();
     // After the draft changed underneath, always send exactly what is on screen.
-    const body = edited() ? { text: textarea.value.trim(), ...remember.value() } : overtaken ? { text: textarea.value.trim() } : {};
+    const body = edited() || files.length ? { text: textarea.value.trim(), ...remember.value() } : overtaken ? { text: textarea.value.trim() } : {};
+    if (files.length) body.attachments = files;
     sending = true;
     try {
       const out = await api(`/messages/${draft.id}/approve`, { method: 'POST', body });
@@ -176,6 +188,7 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
       textarea,
       // Pictures and the video link of the knowledge entry the answer came from.
       attachmentsView(draft.attachments, { links: draft.links, label: 'Picture from the knowledge base', caption: 'Shown to the guest with this reply' }),
+      attach.el,
       remember.el),
     h('div', { class: 'actions' }, approve, reject, reset),
   );
@@ -277,6 +290,7 @@ function answerForm(ticket, { autoMode, card }) {
   answer.setAttribute('aria-describedby', hint.id);
 
   const remember = ticket.savedToKnowledge ? null : rememberControl({ label: 'Save to knowledge base', propertyName: ticket.propertyName, category: ticket.category, text: () => answer.value, checked: ticket.type === 'question' });
+  const attach = attachControl({ disabledReason: ticket.channel === 'web' ? '' : CHANNEL_TEXT_ONLY });
   const verbatim = check('Send exactly as written');
   // A maintenance update usually comes before the fix, so the request stays open by default.
   const keepOpen = followUp ? check('Keep open for follow-up', { checked: true }) : null;
@@ -340,12 +354,13 @@ function answerForm(ticket, { autoMode, card }) {
   preview.addEventListener('click', doPreview);
 
   const post = (btn, extra) => busy(btn, async () => {
-    if (!needAnswer()) return;
+    if (!needAnswer() || !attach.ready()) return;
     if ('reply' in extra && !extra.reply) {
       toast('The reply to the guest cannot be empty.', { kind: 'error' });
       return;
     }
     const body = { answer: answer.value.trim(), ...(remember ? remember.value() : {}), keepOpen: !!keepOpen?.input.checked, ...extra };
+    if (attach.tokens().length) body.attachments = attach.tokens();
     try {
       const out = await api(`/tickets/${ticket.id}/answer`, { method: 'POST', body });
       const saved = body.remember && out.knowledgeId ? ' Saved to the knowledge base.' : '';
@@ -380,6 +395,8 @@ function answerForm(ticket, { autoMode, card }) {
 
   return h('div', { class: 'answer-form' },
     h('div', { class: 'field' }, h('label', { htmlFor: answerId }, answered ? 'Send another update' : 'Your answer'), answer, hint),
+    attach.el,
+    h('p', { class: 'hint' }, remember ? 'Files are sent to the guest with the reply. With "Save to knowledge base" ticked they are kept with the answer and sent to the next guest who asks.' : 'Files are sent to the guest with the reply.'),
     h('div', { class: 'options' }, remember?.el, verbatim.wrap, keepOpen?.wrap),
     previewBox,
     h('div', { class: 'actions' }, preview, send, quick, closeBtn));

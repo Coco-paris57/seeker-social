@@ -210,7 +210,7 @@ guest.post('/uploads', requireGuest, express.raw({ type: ['image/*', 'video/*'],
 guest.get('/files/:token', requireGuest, (req, res) => {
   const f = getFile(req.params.token);
   const c = req.conversation;
-  const shown = f && f.knowledge_id && q.get(
+  const shown = f && !f.conversation_id && q.get(
     "SELECT 1 FROM messages m, json_each(m.meta, '$.attachments') a WHERE m.conversation_id = ? AND m.status = 'sent' AND json_extract(a.value, '$.token') = ?",
     c.id, f.token,
   );

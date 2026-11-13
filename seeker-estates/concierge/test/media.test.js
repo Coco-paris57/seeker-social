@@ -95,8 +95,10 @@ test('team pictures and a video link on a knowledge entry reach the guest with t
   const team = withRaw(await signIn(srv.base), srv.base);
   const up = await team.raw('POST', '/api/admin/uploads', PNG, 'image/png');
   assert.equal(up.status, 201);
-  // Videos are not accepted for the knowledge base (a link is used instead).
-  assert.equal((await team.raw('POST', '/api/admin/uploads', Buffer.concat([Buffer.from([0, 0, 0, 0x18]), Buffer.from('ftypisom'), Buffer.alloc(64)]), 'image/png')).status, 415);
+  // A video can be uploaded (for a reply) but not used as a knowledge-base picture.
+  const video = await team.raw('POST', '/api/admin/uploads', Buffer.concat([Buffer.from([0, 0, 0, 0x18]), Buffer.from('ftypisom'), Buffer.alloc(64)]), 'video/mp4');
+  assert.equal(video.status, 201);
+  assert.equal((await team('POST', '/api/admin/knowledge', { propertyId: ctx.propertyId, category: 'appliances', question: 'x', answer: 'y', pictures: [video.json.file.token] })).status, 400);
 
   const d = await team('POST', '/api/admin/knowledge/describe', { pictures: [up.json.file.token], topic: 'TV remote' });
   assert.equal(d.status, 200);
@@ -147,4 +149,60 @@ test('a guest video is turned into frames for the model', { skip: !hasFfmpeg && 
   assert.ok(images.length >= 3, `expected several frames, got ${images.length}`);
   assert.ok(images.every((i) => i.media_type === 'image/jpeg' && i.data.length > 500));
   assert.match(images[0].label, /video frame 1 of/);
+});
+
+test('the team attaches a picture and a video to replies; saved ones come back for the next guest', async () => {
+  const team = withRaw(await signIn(srv.base), srv.base);
+  await team('PATCH', `/api/admin/properties/${ctx.propertyId}`, { mode: null }); // learning: answers wait for approval
+  const pic = (await team.raw('POST', '/api/admin/uploads', PNG, 'image/png')).json.file;
+  const vid = (await team.raw('POST', '/api/admin/uploads', Buffer.concat([Buffer.from([0, 0, 0, 0x18]), Buffer.from('ftypisom'), Buffer.alloc(64)]), 'video/mp4')).json.file;
+
+  // 1. Answering a request with files, saved to the knowledge base.
+  const guest = withRaw(await openChat(srv.base), srv.base);
+  const me = await say(guest, 'Where is the fuse box?');
+  const ticket = (await team('GET', '/api/admin/inbox')).json.tickets.find((t) => t.conversationId === me.conversation.id);
+  const answered = await team('POST', `/api/admin/tickets/${ticket.id}/answer`, { answer: 'The fuse box is in the hallway cupboard.', attachments: [pic.token, vid.token], remember: true, sensitive: false });
+  assert.equal(answered.status, 200);
+  const got = (await guest('GET', '/api/guest/me')).json.messages.at(-1);
+  assert.deepEqual(got.attachments.map((a) => a.kind), ['image', 'video']);
+  for (const a of got.attachments) assert.equal((await fetch(srv.base + a.url, { headers: { Cookie: guest.cookies() } })).status, 200);
+  const entry = (await team('GET', `/api/admin/properties/${ctx.propertyId}`)).json.knowledge.find((k) => k.id === answered.json.knowledgeId);
+  assert.equal(entry.pictures.length, 1);
+  assert.equal(entry.videos.length, 1);
+
+  // 2. The next guest asking the same thing gets the picture and video with the answer.
+  await team('PATCH', `/api/admin/properties/${ctx.propertyId}`, { mode: 'auto' });
+  const next = withRaw(await openChat(srv.base), srv.base);
+  const again = await say(next, 'Where is the fuse box please?');
+  assert.match(again.messages.at(-1).text, /hallway cupboard/);
+  assert.deepEqual(again.messages.at(-1).attachments.map((a) => a.kind), ['image', 'video']);
+  assert.equal((await fetch(srv.base + again.messages.at(-1).attachments[0].url, { headers: { Cookie: next.cookies() } })).status, 200);
+
+  // 3. A direct reply with only a picture, not saved: a third guest cannot fetch it, and erasing the chat removes it.
+  const once = (await team.raw('POST', '/api/admin/uploads', PNG, 'image/png')).json.file;
+  assert.equal((await team('POST', `/api/admin/conversations/${me.conversation.id}/reply`, { text: '', attachments: [once.token] })).status, 201);
+  assert.equal((await guest('GET', '/api/guest/me')).json.messages.at(-1).attachments.length, 1);
+  assert.equal((await fetch(`${srv.base}/api/guest/files/${once.token}`, { headers: { Cookie: next.cookies() } })).status, 404);
+  const onDisk = filePath(getFile(once.token));
+  const kept = filePath(getFile(pic.token));
+  await guest('POST', '/api/guest/erase', {});
+  assert.ok(!fs.existsSync(onDisk), 'a one-off file goes with the chat');
+  assert.ok(fs.existsSync(kept), 'a file saved for future guests stays');
+
+  // 4. Approving a draft with an extra picture; a guest's own file can never be attached by the team route.
+  await team('PATCH', `/api/admin/properties/${ctx.propertyId}`, { mode: null });
+  const third = withRaw(await openChat(srv.base), srv.base);
+  const t3 = await say(third, 'How do I use the washing machine?');
+  const draft = (await team('GET', '/api/admin/inbox')).json.approvals.find((a) => a.conversation.id === t3.conversation.id).draft;
+  const extra = (await team.raw('POST', '/api/admin/uploads', PNG, 'image/png')).json.file;
+  const guestFileToken = (await third.raw('POST', '/api/guest/uploads', PNG, 'image/png')).json.file.token;
+  assert.equal((await team('POST', `/api/admin/messages/${draft.id}/approve`, { attachments: [guestFileToken] })).status, 400);
+  assert.equal((await team('POST', `/api/admin/messages/${draft.id}/approve`, { attachments: [extra.token] })).status, 200);
+  assert.equal((await third('GET', '/api/guest/me')).json.messages.at(-1).attachments.length, 1);
+
+  // 5. Booking channels are text only.
+  const c = q.insert("INSERT INTO conversations(property_id, channel, verified) VALUES(?, 'smoobu', 1)", ctx.propertyId);
+  const refused = await team('POST', `/api/admin/conversations/${c}/reply`, { text: 'see picture', attachments: [extra.token] });
+  assert.equal(refused.status, 400);
+  assert.match(refused.json.error, /cannot be sent through Airbnb/);
 });

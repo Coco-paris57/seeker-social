@@ -33,7 +33,7 @@ async function decodePicture(file) {
  * Scale a picture to at most MAX_SIDE on its long side and re-encode it as JPEG. This keeps
  * uploads small, converts phone formats the server does not take, and drops location data.
  */
-async function preparePicture(file) {
+export async function preparePicture(file) {
   let source;
   try {
     source = await decodePicture(file);
