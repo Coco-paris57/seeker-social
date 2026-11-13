@@ -2,10 +2,10 @@
 // Only the fields the concierge needs are kept: no email, phone, price or payment data.
 import fs from 'node:fs';
 import path from 'node:path';
-import { q, parseJson } from './db.js';
+import { q, parseJson, getRaw, setRaw } from './db.js';
 import { ROOT } from './config.js';
 import { smoobu } from './smoobu.js';
-import { addDays, londonDate, newToken } from './util.js';
+import { addDays, htmlToText, londonDate, newToken } from './util.js';
 import { describeStations, nearbyStations } from './places.js';
 import { chargeAutomation } from './chargeautomation.js';
 
@@ -131,7 +131,7 @@ export async function syncTeamRecords() {
     try {
       const ca = await api.propertyByPmsId(p.smoobu_id);
       if (!ca) continue;
-      const text = (v) => (v == null ? '' : String(v).trim().slice(0, 4000));
+      const text = (v) => htmlToText(v).slice(0, 4000); // ChargeAutomation stores some fields as HTML
       const record = {
         source: 'ChargeAutomation', name: text(ca.name) || text(ca.internal_name), wifi: text(ca.wifi_details), accessCode: text(ca.access_code),
         text1: text(ca.property_text1), text2: text(ca.property_text2), checkIn: text(ca.standard_check_in_time), checkOut: text(ca.standard_check_out_time),
@@ -147,11 +147,35 @@ export async function syncTeamRecords() {
   return { teamRecords: found };
 }
 
+/** Smoobu apartments and reservations. Runs every few minutes. */
 export async function syncAll() {
   const p = await syncProperties();
   const r = await syncReservations();
-  const t = await syncTeamRecords().catch((e) => { console.error(`ChargeAutomation sync failed: ${e.message}`); return { teamRecords: 0, teamRecordsError: e.message.slice(0, 160) }; });
-  return { ...p, ...r, ...t };
+  return { ...p, ...r };
+}
+
+/** The team-only records, with failures reported rather than thrown. */
+export async function refreshTeamRecords() {
+  try {
+    return await syncTeamRecords();
+  } catch (e) {
+    console.error(`ChargeAutomation sync failed: ${e.message}`);
+    return { teamRecords: 0, teamRecordsError: e.message.slice(0, 160) };
+  }
+}
+
+/**
+ * Refresh the team-only records once a day, at 07:00 UK time (or as soon after as the service
+ * is running). Call this every minute.
+ */
+export async function dailyTeamRecords(now = new Date()) {
+  if (!chargeAutomation()) return null;
+  const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', hourCycle: 'h23' }).format(now));
+  if (hour < 7 || getRaw('team_records_synced_on') === londonDate(now)) return null;
+  setRaw('team_records_synced_on', londonDate(now)); // claim the day first so a slow run is not started twice
+  const out = await refreshTeamRecords();
+  console.log(`ChargeAutomation daily update: ${out.teamRecords} property record(s)${out.teamRecordsError ? `, error: ${out.teamRecordsError}` : ''}`);
+  return out;
 }
 
 /** Refresh a single booking, e.g. after a Smoobu webhook. */

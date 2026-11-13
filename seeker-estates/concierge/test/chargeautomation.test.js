@@ -71,3 +71,36 @@ test('extras from ChargeAutomation land on the booking and reach the assistant; 
   const team = await signIn(srv.base);
   assert.equal((await team('GET', `/api/admin/conversations/${gid}`)).json.conversation.stay.extras[0].status, 'purchased');
 });
+
+test('HTML from ChargeAutomation is stored as plain text', async () => {
+  const { htmlToText } = await import('../src/util.js');
+  assert.equal(htmlToText('<p><span style="color: rgb(0, 0, 0)">Flat 30, Example House, W12 7BT</span></p><p><br></p>'), 'Flat 30, Example House, W12 7BT');
+  assert.equal(htmlToText('<p>Line one</p><p>Tom &amp; Jerry&#39;s<br>Line three</p><ul><li>a</li><li>b</li></ul>'), "Line one\nTom & Jerry's\nLine three\n- a\n- b");
+  assert.equal(htmlToText('Plain text\nstays as it is'), 'Plain text\nstays as it is');
+  assert.equal(htmlToText(null), '');
+  useChargeAutomationClient({ propertyByPmsId: async () => ({ name: 'Flat', wifi_details: '<p>Name : Net</p><p>Password : abc</p>', access_code: '<p>Lockbox by the door.</p><p><br></p><p>Code: 0000</p>', property_text1: '<p><span style="color: rgb(0, 0, 0)">An address</span></p><p><br></p>' }) });
+  await syncTeamRecords();
+  const r = JSON.parse(q.get('SELECT team_record FROM properties WHERE id = ?', ctx.propertyId).team_record);
+  assert.equal(r.text1, 'An address');
+  assert.equal(r.wifi, 'Name : Net\nPassword : abc');
+  assert.equal(r.accessCode, 'Lockbox by the door.\n\nCode: 0000');
+});
+
+test('the daily update runs once, from 07:00 UK time', async () => {
+  const { dailyTeamRecords } = await import('../src/sync.js');
+  const { setRaw } = await import('../src/db.js');
+  let calls = 0;
+  useChargeAutomationClient({ propertyByPmsId: async () => { calls += 1; return { name: 'Flat' }; } });
+  setRaw('team_records_synced_on', '2000-01-01');
+  assert.equal(await dailyTeamRecords(new Date('2026-11-14T06:59:00Z')), null); // 06:59 in London (winter)
+  assert.equal(calls, 0);
+  assert.deepEqual(await dailyTeamRecords(new Date('2026-11-14T07:00:30Z')), { teamRecords: 1 });
+  assert.equal(await dailyTeamRecords(new Date('2026-11-14T07:01:30Z')), null); // already done today
+  assert.equal(await dailyTeamRecords(new Date('2026-11-14T19:00:00Z')), null);
+  assert.equal(calls, 1);
+  assert.deepEqual(await dailyTeamRecords(new Date('2026-11-15T09:30:00Z')), { teamRecords: 1 }); // next day, service started late
+  // Summer: 07:00 in London is 06:00 UTC.
+  setRaw('team_records_synced_on', '2000-01-01');
+  assert.equal(await dailyTeamRecords(new Date('2026-07-01T05:59:00Z')), null);
+  assert.deepEqual(await dailyTeamRecords(new Date('2026-07-01T06:00:30Z')), { teamRecords: 1 });
+});

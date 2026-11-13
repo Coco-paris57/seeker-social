@@ -7,6 +7,7 @@ import { handleGuestMessage } from '../bot.js';
 import { emitConversation, notifyTeam } from '../notify.js';
 import { smoobu } from '../smoobu.js';
 import { syncReservation } from '../sync.js';
+import { htmlToText } from '../util.js';
 import { channelInboxOn, webhookToken } from '../channel.js';
 
 export const webhooks = express.Router();
@@ -14,7 +15,7 @@ export const webhooks = express.Router();
 export const ATTACHMENT_NOTE = '[The guest sent a photo or file through the booking channel. Smoobu does not pass it on, so it cannot be shown here. Open the conversation in Smoobu or in the Airbnb or Booking.com app to see it.]';
 
 const same = (a, b) => a.length === b.length && crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
-const plain = (html) => String(html || '').replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#0?39;|&apos;/g, "'").replace(/&quot;/g, '"').trim();
+const plain = htmlToText;
 
 webhooks.post('/smoobu/:token', (req, res) => {
   if (!same(String(req.params.token), webhookToken())) return res.status(404).end();

@@ -37,6 +37,20 @@ export function normaliseName(s) {
     .replace(/[^a-z]/g, '');
 }
 
+/** Text pasted from a rich editor (ChargeAutomation, Smoobu) as plain text: tags removed, line breaks kept. */
+export function htmlToText(html) {
+  return String(html ?? '')
+    .replace(/<\s*br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|h[1-6]|tr)\s*>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '- ')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"').replace(/&#0?39;|&apos;/gi, "'")
+    .replace(/&#(\d+);/g, (m, n) => String.fromCodePoint(Number(n)))
+    .replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 export const clip = (s, n) => {
   const t = String(s ?? '').trim();
   return t.length > n ? t.slice(0, n - 1).trimEnd() + '…' : t;

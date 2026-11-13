@@ -302,7 +302,7 @@ export function propertyView({ id }) {
       section('QR code for guests', qrSection(p)),
       section('Facts the assistant tells guests', factsForm(p)),
       section('Team-only record',
-        h('p', { class: 'hint' }, 'From ChargeAutomation, for your team only. It is never shown or sent to a guest. The assistant is told whether WiFi and an access code are on file, not what they are.'),
+        h('p', { class: 'hint' }, 'From ChargeAutomation, for your team only. It is never shown or sent to a guest. The assistant is told whether WiFi and an access code are on file, not what they are. Updated every day at 07:00 UK time, and whenever you press "Sync from Smoobu".'),
         p.teamRecord
           ? h('dl', { class: 'record' },
             [['ChargeAutomation property', p.teamRecord.name], ['WiFi', p.teamRecord.wifi], ['Access code', p.teamRecord.accessCode],

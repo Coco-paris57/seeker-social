@@ -8,7 +8,7 @@ import { guest } from './routes/guest.js';
 import { admin, setupToken } from './routes/admin.js';
 import { webhooks } from './routes/webhooks.js';
 import { runRetention } from './retention.js';
-import { syncAll } from './sync.js';
+import { dailyTeamRecords, refreshTeamRecords, syncAll } from './sync.js';
 import { HttpError } from './util.js';
 
 const PUBLIC = path.join(ROOT, 'public');
@@ -108,6 +108,9 @@ async function main() {
     sync();
     setInterval(sync, config.syncMinutes * 60_000).unref();
   }
+  // Team-only records from ChargeAutomation: once now, so a restart shows current data, then daily at 07:00 UK time.
+  refreshTeamRecords().then((r) => { if (r.teamRecords || r.teamRecordsError) console.log(`ChargeAutomation: ${r.teamRecords} property record(s)${r.teamRecordsError ? `, error: ${r.teamRecordsError}` : ''}`); });
+  setInterval(() => dailyTeamRecords().catch((e) => console.error(`ChargeAutomation daily update: ${e.message}`)), 60_000).unref();
   runRetention();
   setInterval(runRetention, 6 * 3600_000).unref();
 }

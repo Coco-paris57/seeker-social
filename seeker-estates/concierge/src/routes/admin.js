@@ -8,7 +8,7 @@ import { createUser, endTeamSession, hashPassword, requireAdmin, requireUser, st
 import { answerTicket, approvalStats, approveDraft, closeTicket, previewTicketReply, propertyMode, rejectDraft, sendMessage, SENSITIVE_CATEGORIES, stageOf } from '../bot.js';
 import { CATEGORIES } from '../llm.js';
 import { bus, emitAdmin, emitConversation, notifyTeam, vapidPublicKey } from '../notify.js';
-import { syncAll } from '../sync.js';
+import { refreshTeamRecords, syncAll } from '../sync.js';
 import { channelInboxOn, ensureWebhook, webhookToken } from '../channel.js';
 import crypto from 'node:crypto';
 import { clip, failureLimiter, HttpError, newToken, rateLimiter } from '../util.js';
@@ -351,7 +351,7 @@ admin.get('/properties', (req, res) => {
 
 admin.post('/properties/sync', async (req, res) => {
   if (config.smoobuMode !== 'live') throw new HttpError(400, 'Smoobu is not connected. Set SMOOBU_API_KEY and SMOOBU_API_SECRET.');
-  const out = await syncAll();
+  const out = { ...(await syncAll()), ...(await refreshTeamRecords()) };
   audit(req.user.id, 'smoobu.sync', JSON.stringify(out));
   res.json(out);
 });
