@@ -53,11 +53,14 @@ let stream = null;
 let streamRetry = null;
 let pendingEvents = new Map(); // event type -> data, flushed together
 
+let unreadBadge = null; // count of unread chats on the Chats tab
+
 function buildShell() {
   const badges = [];
   const links = NAV.map((item) => {
-    const badge = item.key === 'inbox' ? h('span', { class: 'badge', hidden: true }) : null;
-    if (badge) badges.push(badge);
+    const badge = item.key === 'inbox' || item.key === 'conversations' ? h('span', { class: 'badge', hidden: true }) : null;
+    if (item.key === 'inbox') badges.push(badge);
+    if (item.key === 'conversations') unreadBadge = badge;
     return h('a', { href: item.href, dataset: { nav: item.key } }, h('span', { class: 'nav-icon' }, icon(item.icon, 22), badge), h('span', { class: 'nav-label' }, item.label));
   });
   const main = h('main', { id: 'main', tabIndex: -1 });
@@ -85,6 +88,12 @@ function renderBadge() {
     badge.hidden = !total;
     badge.textContent = total > 99 ? '99+' : total;
     badge.classList.toggle('badge-urgent', !!counts?.urgent);
+  }
+  const unread = counts?.unread || 0;
+  if (unreadBadge) {
+    unreadBadge.hidden = !unread;
+    unreadBadge.textContent = unread > 99 ? '99+' : unread;
+    shell.links[1].setAttribute('aria-label', unread ? `Chats, ${unread} unread` : 'Chats');
   }
   const inboxLink = shell.links[0];
   inboxLink.setAttribute('aria-label', total ? `Inbox, ${total} waiting${counts.urgent ? `, ${counts.urgent} urgent` : ''}` : 'Inbox');

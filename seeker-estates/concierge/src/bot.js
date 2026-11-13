@@ -168,6 +168,8 @@ function insertMessage(conversationId, role, body, { status = 'sent', kind = 'an
 
 /** Deliver a sent message on the conversation's channel. Web chats read from the database. */
 async function deliver(conversation, message) {
+  // Read = the guest has had a real reply. "Confirming with the team" is not one.
+  if (message.kind !== 'holding') q.run('UPDATE conversations SET needs_reply = 0 WHERE id = ?', conversation.id);
   emitConversation(conversation.id, 'message', { messageId: message.id });
   if (conversation.channel === 'smoobu' && conversation.reservation_id) {
     const api = smoobu();

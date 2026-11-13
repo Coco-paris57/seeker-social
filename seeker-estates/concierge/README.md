@@ -69,6 +69,11 @@ never sent to the AI model: the model writes a placeholder and the app puts the 
 
 A team member can take over any chat (the assistant pauses) and hand it back later.
 
+**Read and unread.** A chat is unread while the guest is waiting for a real answer: a guest
+message marks it unread, and a reply that is sent (not the "confirming with the team" note) marks
+it read. The Chats tab shows the unread count, unread chats are highlighted, the list can be
+filtered to unread, and a chat can be marked read or unread by hand.
+
 ## Run it locally
 
 ```

@@ -409,3 +409,8 @@ td:first-child { white-space: nowrap; }
 .draft-news p { margin: 0 0 6px; }
 .draft-news-quote { padding-left: 10px; border-left: 3px solid var(--warn); }
 .draft-news .actions { margin-top: 6px; }
+
+/* Read and unread conversations. Unread = the guest is still waiting for a real answer. */
+.conv-unread strong, .conv-unread .conv-last { font-weight: 700; color: var(--text); }
+.unread-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--clay); }
+.read-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 8px 16px; border-bottom: 1px solid var(--line); background: var(--surface); }

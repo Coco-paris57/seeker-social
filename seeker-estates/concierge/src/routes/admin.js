@@ -49,11 +49,12 @@ function messageOut(m, names = userNames()) {
 function conversationOut(c) {
   const property = c.property_id ? q.get('SELECT id, name, display_name FROM properties WHERE id = ?', c.property_id) : null;
   const reservation = c.reservation_id ? q.get('SELECT * FROM reservations WHERE id = ?', c.reservation_id) : null;
-  const last = q.get("SELECT role, body FROM messages WHERE conversation_id = ? AND (role = 'guest' OR status = 'sent') ORDER BY id DESC LIMIT 1", c.id);
+  // Latest by when it was sent: an approved reply is newer than the holding note written after its draft.
+  const last = q.get("SELECT role, body FROM messages WHERE conversation_id = ? AND (role = 'guest' OR status = 'sent') ORDER BY COALESCE(sent_at, created_at) DESC, id DESC LIMIT 1", c.id);
   return {
     id: c.id, propertyId: c.property_id, propertyName: property ? property.display_name || property.name : null,
     guestName: c.guest_name || null, verified: !!c.verified, channel: c.channel, language: c.language,
-    botPaused: !!c.bot_paused, stage: stageOf(c.verified ? reservation : null),
+    botPaused: !!c.bot_paused, unread: !!c.needs_reply, stage: stageOf(c.verified ? reservation : null),
     stay: reservation && c.verified ? { arrival: reservation.arrival, departure: reservation.departure, checkIn: reservation.check_in, checkOut: reservation.check_out, channel: reservation.channel, smoobuId: reservation.id, checkinLink: reservation.checkin_link || null, checkinCompleted: !!reservation.checkin_done } : null,
     createdAt: iso(c.created_at), lastMessageAt: iso(c.last_message_at),
     lastMessage: last ? { role: last.role === 'bot' ? 'assistant' : last.role, text: clip(last.body, 160) } : null,
@@ -168,7 +169,8 @@ function inbox() {
   const tickets = q.all(`SELECT * FROM tickets WHERE status != 'closed' ORDER BY ${order}, id`).map((t) => ticketOut(t, names));
   return {
     approvals, tickets,
-    counts: { approvals: approvals.length, tickets: tickets.length, urgent: tickets.filter((t) => t.type === 'urgent').length, total: approvals.length + tickets.length },
+    counts: { approvals: approvals.length, tickets: tickets.length, urgent: tickets.filter((t) => t.type === 'urgent').length, total: approvals.length + tickets.length,
+      unread: q.get('SELECT COUNT(*) AS n FROM conversations WHERE needs_reply = 1 AND id IN (SELECT conversation_id FROM messages)').n },
   };
 }
 
@@ -231,6 +233,7 @@ admin.get('/conversations', (req, res) => {
     params.push(like, like);
   }
   // Chats where the guest never wrote anything are noise.
+  if (req.query.unread) clauses.push('needs_reply = 1');
   clauses.push('id IN (SELECT conversation_id FROM messages)');
   const rows = q.all(`SELECT * FROM conversations WHERE ${clauses.join(' AND ')} ORDER BY last_message_at DESC LIMIT 100`, ...params);
   res.json({ conversations: rows.map(conversationOut) });
@@ -261,6 +264,16 @@ admin.post('/conversations/:id/reply', async (req, res) => {
   const m = await sendMessage(c, 'team', text, { createdBy: req.user.id });
   audit(req.user.id, 'conversation.reply', `conversation ${c.id}`);
   res.status(201).json({ message: messageOut(m) });
+});
+
+/** Mark a chat as read (responded) or unread (still needs a response). */
+admin.post('/conversations/:id/read', (req, res) => {
+  const c = conversationOr404(req.params.id);
+  if (typeof req.body?.read !== 'boolean') throw new HttpError(400, 'read must be true or false.');
+  q.run('UPDATE conversations SET needs_reply = ? WHERE id = ?', req.body.read ? 0 : 1, c.id);
+  audit(req.user.id, req.body.read ? 'conversation.read' : 'conversation.unread', `conversation ${c.id}`);
+  emitConversation(c.id, 'conversation');
+  res.json({ conversation: conversationOut(conversationOr404(c.id)) });
 });
 
 /** Take over a chat (the assistant stops replying) or hand it back. */

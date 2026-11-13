@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS conversations (
   guest_name TEXT,
   verified INTEGER NOT NULL DEFAULT 0,
   bot_paused INTEGER NOT NULL DEFAULT 0, -- 1 = a team member has taken over
+  needs_reply INTEGER NOT NULL DEFAULT 0, -- 1 = unread: the guest is still waiting for a real answer
   language TEXT,
   consent_at TEXT,
   status TEXT NOT NULL DEFAULT 'open',
@@ -154,6 +155,13 @@ export function openDb(file) {
   // Columns added after the first release. Existing databases get them here.
   const has = (table, column) => db.prepare(`PRAGMA table_info(${table})`).all().some((c) => c.name === column);
   if (!has('reservations', 'checkin_link')) db.exec('ALTER TABLE reservations ADD COLUMN checkin_link TEXT');
+  if (!has('conversations', 'needs_reply')) {
+    db.exec('ALTER TABLE conversations ADD COLUMN needs_reply INTEGER NOT NULL DEFAULT 0');
+    // Existing chats: unread when the last thing in them is from the guest, or only a holding note followed.
+    db.exec(`UPDATE conversations SET needs_reply = 1 WHERE (
+      SELECT CASE WHEN m.role = 'guest' OR m.kind = 'holding' THEN 1 ELSE 0 END FROM messages m
+      WHERE m.conversation_id = conversations.id AND (m.role = 'guest' OR m.status = 'sent') ORDER BY m.id DESC LIMIT 1) = 1`);
+  }
   if (!has('knowledge', 'video_url')) db.exec('ALTER TABLE knowledge ADD COLUMN video_url TEXT');
   if (!has('knowledge', 'media_notes')) db.exec('ALTER TABLE knowledge ADD COLUMN media_notes TEXT');
   if (!has('reservations', 'checkin_done')) db.exec('ALTER TABLE reservations ADD COLUMN checkin_done INTEGER NOT NULL DEFAULT 0');

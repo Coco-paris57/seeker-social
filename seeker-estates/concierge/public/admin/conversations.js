@@ -45,6 +45,7 @@ function threadPane(id, { onGone }) {
   const detailsId = uid('details');
   const detailsBtn = h('button', { type: 'button', class: 'btn btn-secondary btn-small details-toggle', 'aria-expanded': 'false', 'aria-controls': detailsId }, icon('info', 18), h('span', null, 'Details'));
   const takeover = h('div', { class: 'takeover' });
+  const readBar = h('div', { class: 'read-bar' });
   const list = h('ol', { class: 'messages', 'aria-label': 'Messages' });
   const scroller = h('div', { class: 'thread-scroll', tabIndex: 0, role: 'region', 'aria-label': 'Message history' }, loading('Loading the conversation'), list);
   const details = h('aside', { class: 'thread-details', id: detailsId, 'aria-label': 'Guest details and requests' });
@@ -62,6 +63,7 @@ function threadPane(id, { onGone }) {
       h('a', { class: 'back-link', href: '#/conversations' }, icon('back', 18), 'All conversations'),
       h('div', { class: 'thread-head-row' }, h('div', null, title, headChips), detailsBtn),
       sub),
+    readBar,
     takeover,
     h('div', { class: 'thread-main' }, scroller, details),
     composer);
@@ -99,6 +101,20 @@ function threadPane(id, { onGone }) {
         showError(err);
       }
     }));
+    // Read = responded. It changes by itself when a reply is sent or the guest writes; this is the manual override.
+    const readBtn = button(c.unread ? 'Mark as read' : 'Mark as unread', { icon: c.unread ? 'check' : 'clock', small: true });
+    readBtn.addEventListener('click', () => busy(readBtn, async () => {
+      try {
+        await api(`/conversations/${id}/read`, { method: 'POST', body: { read: c.unread } });
+        toast(c.unread ? 'Marked as read.' : 'Marked as unread. It stays highlighted until someone replies.', { kind: 'ok' });
+        await load();
+      } catch (err) {
+        showError(err);
+      }
+    }));
+    fill(readBar,
+      c.unread ? chip('Unread: needs a response', { tone: 'warn', icon: 'clock' }) : chip('Read: responded', { tone: 'ok', icon: 'check' }),
+      readBtn);
     takeover.className = c.botPaused ? 'takeover takeover-on' : 'takeover';
     fill(takeover,
       icon(c.botPaused ? 'user' : 'bot', 20),
@@ -211,8 +227,9 @@ function listItem(c, activeId) {
     c.openTickets > 0 && chip(`${c.openTickets} open ${c.openTickets === 1 ? 'request' : 'requests'}`, { tone: 'warn', icon: 'help' }),
   ].filter(Boolean);
   return h('li', null,
-    h('a', { class: 'conv-item', href: `#/conversations/${c.id}`, 'aria-current': c.id === activeId ? 'page' : null },
+    h('a', { class: c.unread ? 'conv-item conv-unread' : 'conv-item', href: `#/conversations/${c.id}`, 'aria-current': c.id === activeId ? 'page' : null },
       h('span', { class: 'conv-top' },
+        c.unread && h('span', { class: 'unread-dot' }, h('span', { class: 'visually-hidden' }, 'Unread, needs a response.')),
         h('strong', null, guestLabel(c.guestName)),
         c.verified && h('span', { class: 'verified-mark' }, icon('shield', 14), h('span', { class: 'visually-hidden' }, 'Verified')),
         timeEl(c.lastMessageAt)),
@@ -226,6 +243,7 @@ export function conversationsView(params) {
   const searchId = uid('search');
   const search = h('input', { type: 'search', id: searchId, placeholder: 'Search guests and messages', autocomplete: 'off' });
   const propertySelect = h('select', { 'aria-label': 'Filter by property' }, h('option', { value: '' }, 'All properties'));
+  const readSelect = h('select', { 'aria-label': 'Filter by read or unread' }, h('option', { value: '' }, 'All conversations'), h('option', { value: '1' }, 'Unread: needs a response'));
   const list = h('ul', { class: 'conv-list' });
   const status = h('div', null, loading('Loading conversations'));
   const listPane = h('div', { class: 'conv-pane' },
@@ -234,7 +252,7 @@ export function conversationsView(params) {
       h('div', { class: 'conv-filters' },
         h('label', { htmlFor: searchId, class: 'visually-hidden' }, 'Search conversations'),
         h('div', { class: 'search-box' }, icon('search', 18), search),
-        propertySelect)),
+        propertySelect, readSelect)),
     status, list);
   const threadSlot = h('div', { class: 'thread-slot' });
   const el = h('div', { class: 'split' }, listPane, threadSlot);
@@ -248,6 +266,7 @@ export function conversationsView(params) {
     const query = new URLSearchParams();
     if (search.value.trim()) query.set('q', search.value.trim());
     if (propertySelect.value) query.set('propertyId', propertySelect.value);
+    if (readSelect.value) query.set('unread', '1');
     try {
       const { conversations } = await api(`/conversations?${query}`);
       if (mine !== requestNo) return; // a newer search has started
@@ -281,6 +300,7 @@ export function conversationsView(params) {
     timer = setTimeout(loadList, 250);
   });
   propertySelect.addEventListener('change', loadList);
+  readSelect.addEventListener('change', loadList);
 
   api('/properties').then(({ properties }) => {
     propertySelect.append(...properties.map((p) => h('option', { value: p.id }, p.ref ? `${p.ref} · ${p.displayName}` : p.displayName)));
