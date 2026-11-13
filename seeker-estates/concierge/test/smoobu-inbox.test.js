@@ -130,3 +130,30 @@ test('a photo sent on the booking channel arrives empty: the team is told where 
   const last = (await team('GET', `/api/admin/conversations/${c.id}`)).json.messages.filter((m) => m.role === 'guest').at(-1);
   assert.match(last.text, /cannot be shown here/);
 });
+
+test('booking-channel replies speak as the team ("we"); the web chat speaks as the assistant ("I")', async () => {
+  const { systemPrompt } = await import('../src/llm.js');
+  const { buildContext } = await import('../src/bot.js');
+  const { openChat, say } = await import('./helpers.js');
+  const channel = q.get("SELECT * FROM conversations WHERE channel = 'smoobu' AND reservation_id = 501");
+  const forChannel = systemPrompt(buildContext(channel));
+  assert.match(forChannel, /say "we" and "us", never "I" or "me"/);
+  assert.match(forChannel, /do not claim to be a person/);
+  assert.ok(!forChannel.includes('Speak as that assistant'));
+  const guest = await openChat(srv.base);
+  const web = q.get('SELECT * FROM conversations WHERE id = ?', (await guest('GET', '/api/guest/me')).json.conversation.id);
+  const forWeb = systemPrompt(buildContext(web));
+  assert.match(forWeb, /first person singular \("I"\)/);
+  assert.ok(!forWeb.includes('never "I" or "me"'));
+
+  // Demo mode follows the same rule, so what the team sees in drafts matches.
+  const team = await signIn(srv.base);
+  await team('PATCH', '/api/admin/settings', { channelInbox: true, channelAuto: false });
+  fake.messages = async () => [{ id: 9050, type: 1, message: 'The shower is leaking onto the floor', htmlMessage: '' }];
+  await handleSmoobuEvent({ action: 'newMessage', data: { id: 9050, sender: 'guest', booking: { id: 501 } } });
+  const draft = (await team('GET', '/api/admin/inbox')).json.approvals.at(-1).draft;
+  assert.match(draft.text, /We are looking into this/);
+  assert.ok(!/\bI\b/.test(draft.text), draft.text);
+  const me = await say(guest, 'Is there a cot available?');
+  assert.match(me.messages.at(-1).text, /\bI\b/);
+});

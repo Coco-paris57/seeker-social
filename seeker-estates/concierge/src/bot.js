@@ -132,6 +132,7 @@ export function buildContext(conversation, { latest = '', uptoMessageId = null }
     accessReleased: released,
     stage: stageOf(reservation),
     language: conversation.language,
+    channel: conversation.channel, // 'web' (the guest opened our chat) or 'smoobu' (Airbnb, Booking.com, email)
     property: property && {
       name: property.display_name || property.name,
       area: property.area,
