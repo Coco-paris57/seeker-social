@@ -3,7 +3,7 @@
 import { api } from './lib.js';
 
 /** Filled from GET /me after sign-in. */
-export const session = { user: null, llmMode: null, smoobuMode: null, smoobuInbox: false, baseUrl: '', categories: [] };
+export const session = { user: null, llmMode: null, smoobuMode: null, smoobuInbox: false, chargeAutomation: false, chargeAutomationWebhook: '', baseUrl: '', categories: [] };
 export const isAdmin = () => session.user?.role === 'admin';
 
 const listeners = new Set();

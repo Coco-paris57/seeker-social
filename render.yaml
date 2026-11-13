@@ -35,3 +35,8 @@ services:
         sync: false
       - key: PRIVACY_EMAIL
         sync: false
+      # Optional: ChargeAutomation > Settings > API > New OAuth Credential (read access).
+      - key: CHARGEAUTOMATION_CLIENT_ID
+        sync: false
+      - key: CHARGEAUTOMATION_CLIENT_SECRET
+        sync: false

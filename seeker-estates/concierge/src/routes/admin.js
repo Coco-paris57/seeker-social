@@ -9,7 +9,7 @@ import { answerTicket, approvalStats, approveDraft, closeTicket, previewTicketRe
 import { CATEGORIES } from '../llm.js';
 import { bus, emitAdmin, emitConversation, notifyTeam, vapidPublicKey } from '../notify.js';
 import { syncAll } from '../sync.js';
-import { channelInboxOn, ensureWebhook } from '../channel.js';
+import { channelInboxOn, ensureWebhook, webhookToken } from '../channel.js';
 import crypto from 'node:crypto';
 import { clip, failureLimiter, HttpError, newToken, rateLimiter } from '../util.js';
 import { iso, sse } from './shared.js';
@@ -55,7 +55,7 @@ function conversationOut(c) {
     id: c.id, propertyId: c.property_id, propertyName: property ? property.display_name || property.name : null,
     guestName: c.guest_name || null, verified: !!c.verified, channel: c.channel, language: c.language,
     botPaused: !!c.bot_paused, unread: !!c.needs_reply, archived: !!c.archived, stage: stageOf(c.verified ? reservation : null),
-    stay: reservation && c.verified ? { arrival: reservation.arrival, departure: reservation.departure, checkIn: reservation.check_in, checkOut: reservation.check_out, channel: reservation.channel, smoobuId: reservation.id, checkinLink: reservation.checkin_link || null, checkinCompleted: !!reservation.checkin_done } : null,
+    stay: reservation && c.verified ? { arrival: reservation.arrival, departure: reservation.departure, checkIn: reservation.check_in, checkOut: reservation.check_out, channel: reservation.channel, smoobuId: reservation.id, checkinLink: reservation.checkin_link || null, checkinCompleted: !!reservation.checkin_done, extras: parseJson(reservation.extras, []).map((x) => ({ title: x.title, status: x.status, note: x.note || '' })) } : null,
     createdAt: iso(c.created_at), lastMessageAt: iso(c.last_message_at),
     lastMessage: last ? { role: last.role === 'bot' ? 'assistant' : last.role, text: clip(last.body, 160) } : null,
     pendingDrafts: q.get("SELECT COUNT(*) AS n FROM messages WHERE conversation_id = ? AND status = 'pending'", c.id).n,
@@ -89,7 +89,7 @@ function propertyOut(p, { full = false } = {}) {
     exampleCount: q.get('SELECT COUNT(*) AS n FROM examples WHERE property_id = ?', p.id).n,
     stats: approvalStats(p.id),
   };
-  if (full) Object.assign(out, { address: p.address, notes: p.notes, amenities: details.amenities || [], rooms: details.rooms || null });
+  if (full) Object.assign(out, { teamRecord: parseJson(p.team_record, null), address: p.address, notes: p.notes, amenities: details.amenities || [], rooms: details.rooms || null });
   return out;
 }
 
@@ -144,7 +144,8 @@ admin.post('/logout', (req, res) => {
 admin.get('/me', (req, res) => {
   const user = currentUser(req);
   if (!user) return res.status(401).json({ error: 'Please sign in.' });
-  res.json({ user, llmMode: config.llmMode, smoobuMode: config.smoobuMode, smoobuInbox: channelInboxOn(), baseUrl: config.baseUrl, categories: CATEGORIES });
+  res.json({ user, llmMode: config.llmMode, smoobuMode: config.smoobuMode, smoobuInbox: channelInboxOn(), chargeAutomation: !!(config.caClientId && config.caClientSecret),
+    chargeAutomationWebhook: `${config.baseUrl}/api/webhooks/chargeautomation/${webhookToken()}`, baseUrl: config.baseUrl, categories: CATEGORIES });
 });
 
 admin.use(requireUser);

@@ -65,6 +65,22 @@ function mediaFor(knowledgeIds, allowed) {
   return { ...(attachments.length ? { attachments: attachments.slice(0, 8) } : {}), ...(links.length ? { links } : {}) };
 }
 
+/**
+ * What the team holds on record for a property (from ChargeAutomation), for the assistant's
+ * reasoning only. The WiFi password and access code themselves are never included, so they
+ * cannot be repeated to a guest; the team's internal notes are included only for verified guests.
+ */
+function onFile(property, verified) {
+  const r = parseJson(property?.team_record, null);
+  if (!r) return undefined;
+  const notes = [r.text1, r.text2].filter(Boolean);
+  return {
+    wifi_details: r.wifi ? 'on file' : 'not on file',
+    access_code: r.accessCode ? 'on file' : 'not on file',
+    internal_notes: !notes.length ? undefined : verified ? notes : 'on file',
+  };
+}
+
 /** Everything the model is allowed to see for this conversation. */
 export function buildContext(conversation, { latest = '', uptoMessageId = null } = {}) {
   const settings = getSettings();
@@ -123,6 +139,7 @@ export function buildContext(conversation, { latest = '', uptoMessageId = null }
       // The full street address identifies the flat, so it is kept for verified guests.
       address: conversation.verified ? property.address : undefined,
       nearest_station: property.station,
+      on_file_with_team: onFile(property, !!conversation.verified),
       nearby_stations: details.stations?.length ? details.stations.map((s) => ({ name: s.name, lines: s.lines, approx_walk_minutes: s.walkMinutes })) : undefined,
       notes: property.notes,
       bedrooms: details.rooms?.bedrooms ?? undefined,
@@ -142,6 +159,8 @@ export function buildContext(conversation, { latest = '', uptoMessageId = null }
       cancelled: reservation.cancelled ? true : undefined,
       online_checkin_link: reservation.checkin_link && !reservation.cancelled ? CHECKIN_LINK : undefined,
       online_checkin_completed: reservation.checkin_link ? !!reservation.checkin_done : undefined,
+      // Extras the guest bought or asked for in online check-in (early check-in, late checkout...).
+      extras: parseJson(reservation.extras, []).length ? parseJson(reservation.extras, []).map((x) => ({ item: x.title, status: x.status, note: x.note || undefined })) : undefined,
     },
     knowledge,
     examples: examplesFor(conversation, latest),

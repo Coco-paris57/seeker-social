@@ -17,7 +17,12 @@ function statusSection() {
       h('li', null, session.smoobuMode === 'live'
         ? chip(session.smoobuInbox ? 'Smoobu connected, including guest messages' : 'Smoobu connected', { tone: 'ok', icon: 'check' })
         : chip('Smoobu not connected', { tone: 'neutral', icon: 'info' }),
-        session.smoobuMode !== 'live' && h('p', { class: 'hint' }, 'Properties and bookings are not being synced.'))));
+        session.smoobuMode !== 'live' && h('p', { class: 'hint' }, 'Properties and bookings are not being synced.')),
+      h('li', null, session.chargeAutomation
+        ? chip('ChargeAutomation connected', { tone: 'ok', icon: 'check' })
+        : chip('ChargeAutomation not connected', { tone: 'neutral', icon: 'info' }),
+        h('p', { class: 'hint' }, 'To be told when a guest buys or requests an extra (early check-in, late checkout), paste this address in ChargeAutomation under Integrations, Webhooks, as the Trigger Url for "Upsell Purchased" and "Upsell Requested":'),
+        h('input', { type: 'text', readOnly: true, value: session.chargeAutomationWebhook || '', 'aria-label': 'ChargeAutomation webhook address', onfocus: (e) => e.target.select() }))));
 }
 
 /** Guest messages from Airbnb, Booking.com and email. Each switch saves as soon as it is confirmed. */

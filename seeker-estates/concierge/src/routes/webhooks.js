@@ -22,6 +22,42 @@ webhooks.post('/smoobu/:token', (req, res) => {
   handleSmoobuEvent(req.body || {}).catch((e) => console.error(`Smoobu webhook: ${e.message}`));
 });
 
+/**
+ * ChargeAutomation webhooks (Integrations > Webhooks > Trigger Url). Used for extras only:
+ * "Upsell Purchased" and "Upsell Requested". Deliveries are not signed, so the address carries
+ * the same secret token as the Smoobu one.
+ */
+webhooks.post('/chargeautomation/:token', (req, res) => {
+  if (!same(String(req.params.token), webhookToken())) return res.status(404).end();
+  res.json({ ok: true });
+  try {
+    for (const event of Array.isArray(req.body) ? req.body : [req.body || {}]) recordExtra(event);
+  } catch (e) {
+    console.error(`ChargeAutomation webhook: ${e.message}`);
+  }
+});
+
+export function recordExtra(event) {
+  const kind = { 'booking.upsell.purchased': 'purchased', 'booking.upsell.requested': 'requested' }[String(event?.event || '')];
+  const d = event?.data;
+  if (!kind || !d || typeof d !== 'object') return false;
+  const bookingId = parseInt(String(d.pms_booking_id ?? '').split('-').pop(), 10); // "1079-14567017" or "14567017"
+  const reservation = Number.isInteger(bookingId) ? q.get('SELECT id, extras FROM reservations WHERE id = ?', bookingId) : null;
+  if (!reservation) return false;
+  const clean = (v, n) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, n);
+  const title = clean(d.title || d.internal_name, 120);
+  if (!title) return false;
+  const approval = clean(d.client_approval_status, 30).toLowerCase();
+  const status = approval === 'declined' ? 'declined' : kind === 'purchased' || approval === 'approved' ? 'purchased' : 'requested, awaiting the team';
+  const note = clean(d.note, 200);
+  const list = JSON.parse(reservation.extras || '[]').filter((x) => x.ref !== clean(d.charge_ref_no, 60) && x.title !== title);
+  list.push({ title, status, note: /^n\/?a$/i.test(note) ? '' : note, ref: clean(d.charge_ref_no, 60), at: new Date().toISOString() });
+  q.run('UPDATE reservations SET extras = ? WHERE id = ?', JSON.stringify(list.slice(-20)), reservation.id);
+  const c = q.get('SELECT id FROM conversations WHERE reservation_id = ? ORDER BY id DESC LIMIT 1', reservation.id);
+  if (c) emitConversation(c.id, 'conversation');
+  return true;
+}
+
 export async function handleSmoobuEvent(event) {
   const action = String(event.action || '');
   const data = event.data || {};

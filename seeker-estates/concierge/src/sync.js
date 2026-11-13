@@ -7,6 +7,7 @@ import { ROOT } from './config.js';
 import { smoobu } from './smoobu.js';
 import { addDays, londonDate, newToken } from './util.js';
 import { describeStations, nearbyStations } from './places.js';
+import { chargeAutomation } from './chargeautomation.js';
 
 const seed = parseJson(fs.readFileSync(path.join(ROOT, 'src/properties-seed.json'), 'utf8'), {}).properties || {};
 
@@ -117,10 +118,40 @@ export async function syncReservations() {
   return { reservations: bookings.length };
 }
 
+/**
+ * Copy each property's record from ChargeAutomation (WiFi, access code, its two free-text
+ * fields, standard times). This is for the team's reference only: it is shown in the team app
+ * and is never given to the assistant or to a guest.
+ */
+export async function syncTeamRecords() {
+  const api = chargeAutomation();
+  if (!api) return { teamRecords: 0 };
+  let found = 0;
+  for (const p of q.all('SELECT id, smoobu_id FROM properties WHERE smoobu_id IS NOT NULL')) {
+    try {
+      const ca = await api.propertyByPmsId(p.smoobu_id);
+      if (!ca) continue;
+      const text = (v) => (v == null ? '' : String(v).trim().slice(0, 4000));
+      const record = {
+        source: 'ChargeAutomation', name: text(ca.name) || text(ca.internal_name), wifi: text(ca.wifi_details), accessCode: text(ca.access_code),
+        text1: text(ca.property_text1), text2: text(ca.property_text2), checkIn: text(ca.standard_check_in_time), checkOut: text(ca.standard_check_out_time),
+        syncedAt: new Date().toISOString(),
+      };
+      q.run('UPDATE properties SET team_record = ? WHERE id = ?', JSON.stringify(record), p.id);
+      found += 1;
+    } catch (e) {
+      console.warn(`ChargeAutomation property ${p.smoobu_id}: ${e.message}`);
+      if (/sign-in failed/.test(e.message)) throw e; // wrong credentials: no point trying the rest
+    }
+  }
+  return { teamRecords: found };
+}
+
 export async function syncAll() {
   const p = await syncProperties();
   const r = await syncReservations();
-  return { ...p, ...r };
+  const t = await syncTeamRecords().catch((e) => { console.error(`ChargeAutomation sync failed: ${e.message}`); return { teamRecords: 0, teamRecordsError: e.message.slice(0, 160) }; });
+  return { ...p, ...r, ...t };
 }
 
 /** Refresh a single booking, e.g. after a Smoobu webhook. */

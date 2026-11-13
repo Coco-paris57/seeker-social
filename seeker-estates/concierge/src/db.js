@@ -164,6 +164,9 @@ export function openDb(file) {
       WHERE m.conversation_id = conversations.id AND (m.role = 'guest' OR m.status = 'sent') ORDER BY m.id DESC LIMIT 1) = 1`);
   }
   if (!has('conversations', 'archived')) db.exec('ALTER TABLE conversations ADD COLUMN archived INTEGER NOT NULL DEFAULT 0');
+  // Team-only record per property (WiFi, access code...) and extras a guest bought, from ChargeAutomation.
+  if (!has('properties', 'team_record')) db.exec("ALTER TABLE properties ADD COLUMN team_record TEXT");
+  if (!has('reservations', 'extras')) db.exec("ALTER TABLE reservations ADD COLUMN extras TEXT NOT NULL DEFAULT '[]'");
   if (!has('knowledge', 'video_url')) db.exec('ALTER TABLE knowledge ADD COLUMN video_url TEXT');
   if (!has('knowledge', 'media_notes')) db.exec('ALTER TABLE knowledge ADD COLUMN media_notes TEXT');
   if (!has('reservations', 'checkin_done')) db.exec('ALTER TABLE reservations ADD COLUMN checkin_done INTEGER NOT NULL DEFAULT 0');

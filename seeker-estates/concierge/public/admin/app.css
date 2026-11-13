@@ -416,3 +416,9 @@ td:first-child { white-space: nowrap; }
 .read-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 8px 16px; border-bottom: 1px solid var(--line); background: var(--surface); }
 
 .read-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* Team-only record on a property page. */
+.record { display: grid; gap: 8px; margin: 8px 0 0; }
+.record div { display: grid; grid-template-columns: minmax(120px, 34%) 1fr; gap: 8px; }
+.record dt { color: var(--text-2); font-size: 14px; }
+.record dd { margin: 0; overflow-wrap: anywhere; }

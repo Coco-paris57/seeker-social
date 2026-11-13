@@ -301,6 +301,18 @@ export function propertyView({ id }) {
         statsBlock(p.stats)),
       section('QR code for guests', qrSection(p)),
       section('Facts the assistant tells guests', factsForm(p)),
+      section('Team-only record',
+        h('p', { class: 'hint' }, 'From ChargeAutomation, for your team only. It is never shown or sent to a guest. The assistant is told whether WiFi and an access code are on file, not what they are.'),
+        p.teamRecord
+          ? h('dl', { class: 'record' },
+            [['ChargeAutomation property', p.teamRecord.name], ['WiFi', p.teamRecord.wifi], ['Access code', p.teamRecord.accessCode],
+              ['Note 1', p.teamRecord.text1], ['Note 2', p.teamRecord.text2],
+              ['Standard check-in / checkout', [p.teamRecord.checkIn, p.teamRecord.checkOut].filter(Boolean).join(' / ')],
+              ['Last updated', new Date(p.teamRecord.syncedAt).toLocaleString()]]
+              .map(([label, value]) => h('div', null, h('dt', null, label), h('dd', { class: 'pre' }, value || 'Not recorded in ChargeAutomation'))))
+          : h('p', { class: 'muted' }, session.chargeAutomation
+            ? 'Nothing found for this property in ChargeAutomation yet. Use "Sync from Smoobu" on the Properties page to refresh.'
+            : 'ChargeAutomation is not connected yet.')),
       section('From Smoobu',
         rooms && h('p', null, rooms),
         p.amenities.length ? h('ul', { class: 'amenities' }, p.amenities.map((a) => h('li', null, a))) : h('p', { class: 'muted' }, 'No amenities have been synced for this property.'),

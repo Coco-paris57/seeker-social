@@ -31,6 +31,10 @@ export const config = {
   smoobuInbox: bool(env.SMOOBU_INBOX, false),
   syncMinutes: int(env.SMOOBU_SYNC_MINUTES, 15),
 
+  // ChargeAutomation (optional): read-only API credentials for the team-only property record.
+  caClientId: env.CHARGEAUTOMATION_CLIENT_ID || '',
+  caClientSecret: env.CHARGEAUTOMATION_CLIENT_SECRET || '',
+
   // Web push (VAPID). Generated and stored in the database on first run when not set.
   vapidPublic: env.VAPID_PUBLIC_KEY || '',
   vapidPrivate: env.VAPID_PRIVATE_KEY || '',

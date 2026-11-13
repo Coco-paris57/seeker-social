@@ -85,7 +85,8 @@ function threadPane(id, { onGone }) {
       chip(CHANNELS[c.channel] || c.channel, { icon: 'chat' }));
     fill(sub,
       c.propertyId ? h('a', { href: `#/properties/${c.propertyId}` }, c.propertyName) : 'No property',
-      c.stay && ` · ${stayDate(c.stay.arrival)} to ${stayDate(c.stay.departure)}`);
+      c.stay && ` · ${stayDate(c.stay.arrival)} to ${stayDate(c.stay.departure)}`,
+      c.stay?.extras?.length ? ` · Extras: ${c.stay.extras.map((x) => `${x.title} (${x.status})`).join(', ')}` : '');
   }
 
   function renderTakeover(c) {

@@ -67,6 +67,15 @@ never sent to the AI model: the model writes a placeholder and the app puts the 
   of a video (needs `ffmpeg`, included in the Docker image), and the team sees them next to the
   request. Files live on the data disk under `uploads/` and are erased with the chat.
 
+**Team-only record (ChargeAutomation API, optional).** With `CHARGEAUTOMATION_CLIENT_ID` and
+`CHARGEAUTOMATION_CLIENT_SECRET` set, each sync also copies every property's WiFi details, access
+code, two free-text fields and standard times from ChargeAutomation, matched by Smoobu apartment
+id. It is shown on the property page for the team and never sent to a guest. The assistant is told
+only whether WiFi and an access code are on file, not their values; the free-text notes are given
+to it for verified guests, to reason with and not to quote. Extras a guest buys or requests
+(early check-in, late checkout) arrive by webhook: paste the address shown in Settings into
+ChargeAutomation, Integrations, Webhooks, for "Upsell Purchased" and "Upsell Requested".
+
 A team member can take over any chat (the assistant pauses) and hand it back later.
 
 **Read and unread.** A chat is unread while the guest is waiting for a real answer: a guest
