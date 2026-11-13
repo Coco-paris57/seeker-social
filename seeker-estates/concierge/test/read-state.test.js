@@ -51,3 +51,45 @@ test('existing databases get the flag, set from who spoke last', async () => {
   assert.deepEqual(db.prepare('SELECT id, needs_reply FROM conversations ORDER BY id').all().map((r) => [r.id, r.needs_reply]), [[1, 1], [2, 0], [3, 1]]);
   db.close();
 });
+
+test('"No response needed" marks the chat read and removes the suggestion without counting it as rejected', async () => {
+  const guest = await openChat(srv.base);
+  const id = (await say(guest, 'How do I use the washing machine?')).conversation.id;
+  const before = (await team('GET', `/api/admin/properties/${ctx.propertyId}`)).json.property.stats;
+  assert.ok((await team('GET', '/api/admin/inbox')).json.approvals.some((a) => a.conversation.id === id));
+  const out = await team('POST', `/api/admin/conversations/${id}/no-response`, {});
+  assert.equal(out.status, 200);
+  assert.equal(out.json.withdrawn, 1);
+  assert.equal(out.json.conversation.unread, false);
+  assert.ok(!(await team('GET', '/api/admin/inbox')).json.approvals.some((a) => a.conversation.id === id));
+  const after = (await team('GET', `/api/admin/properties/${ctx.propertyId}`)).json.property.stats;
+  assert.equal(after.rejected, before.rejected);
+  // The guest saw nothing new, and the assistant does not come back to that message later.
+  assert.equal((await guest('GET', '/api/guest/me')).json.messages.at(-1).kind, 'holding');
+  const next = await say(guest, 'Is there a cot?');
+  assert.ok(!JSON.stringify(q.all("SELECT body FROM messages WHERE conversation_id = ? AND status = 'pending'", next.conversation.id)).includes('Cotton 40'));
+});
+
+test('an archived chat is hidden, findable, and comes back when the guest writes again', async () => {
+  const guest = await openChat(srv.base);
+  const id = (await say(guest, 'How do I use the washing machine?')).conversation.id;
+  const ids = async (query = '') => (await team('GET', `/api/admin/conversations${query}`)).json.conversations.map((c) => c.id);
+  assert.ok((await ids()).includes(id));
+  const out = await team('POST', `/api/admin/conversations/${id}/archive`, { archived: true });
+  assert.equal(out.json.conversation.archived, true);
+  assert.equal(out.json.conversation.unread, false);
+  assert.ok(!(await ids()).includes(id), 'hidden from the normal list');
+  assert.ok((await ids('?archived=1')).includes(id), 'listed under Archived');
+  assert.ok((await ids('?q=washing')).includes(id), 'found by search');
+  assert.ok(!(await team('GET', '/api/admin/inbox')).json.approvals.some((a) => a.conversation.id === id), 'its suggestion is withdrawn');
+  // Still readable for the guest, and a new message brings it back, unread.
+  await say(guest, 'Hello, one more question about the washing machine');
+  assert.ok((await ids()).includes(id));
+  const c = (await team('GET', `/api/admin/conversations/${id}`)).json.conversation;
+  assert.equal(c.archived, false);
+  assert.equal(c.unread, true);
+  // Unarchive by hand works too.
+  await team('POST', `/api/admin/conversations/${id}/archive`, { archived: true });
+  assert.equal((await team('POST', `/api/admin/conversations/${id}/archive`, { archived: false })).json.conversation.archived, false);
+  assert.equal((await team('POST', `/api/admin/conversations/${id}/archive`, {})).status, 400);
+});

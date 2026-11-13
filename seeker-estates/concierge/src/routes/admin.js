@@ -54,7 +54,7 @@ function conversationOut(c) {
   return {
     id: c.id, propertyId: c.property_id, propertyName: property ? property.display_name || property.name : null,
     guestName: c.guest_name || null, verified: !!c.verified, channel: c.channel, language: c.language,
-    botPaused: !!c.bot_paused, unread: !!c.needs_reply, stage: stageOf(c.verified ? reservation : null),
+    botPaused: !!c.bot_paused, unread: !!c.needs_reply, archived: !!c.archived, stage: stageOf(c.verified ? reservation : null),
     stay: reservation && c.verified ? { arrival: reservation.arrival, departure: reservation.departure, checkIn: reservation.check_in, checkOut: reservation.check_out, channel: reservation.channel, smoobuId: reservation.id, checkinLink: reservation.checkin_link || null, checkinCompleted: !!reservation.checkin_done } : null,
     createdAt: iso(c.created_at), lastMessageAt: iso(c.last_message_at),
     lastMessage: last ? { role: last.role === 'bot' ? 'assistant' : last.role, text: clip(last.body, 160) } : null,
@@ -170,7 +170,7 @@ function inbox() {
   return {
     approvals, tickets,
     counts: { approvals: approvals.length, tickets: tickets.length, urgent: tickets.filter((t) => t.type === 'urgent').length, total: approvals.length + tickets.length,
-      unread: q.get('SELECT COUNT(*) AS n FROM conversations WHERE needs_reply = 1 AND id IN (SELECT conversation_id FROM messages)').n },
+      unread: q.get('SELECT COUNT(*) AS n FROM conversations WHERE needs_reply = 1 AND archived = 0 AND id IN (SELECT conversation_id FROM messages)').n },
   };
 }
 
@@ -234,6 +234,9 @@ admin.get('/conversations', (req, res) => {
   }
   // Chats where the guest never wrote anything are noise.
   if (req.query.unread) clauses.push('needs_reply = 1');
+  // Archived chats are hidden unless asked for; a search looks through them too.
+  if (req.query.archived) clauses.push('archived = 1');
+  else if (!req.query.q) clauses.push('archived = 0');
   clauses.push('id IN (SELECT conversation_id FROM messages)');
   const rows = q.all(`SELECT * FROM conversations WHERE ${clauses.join(' AND ')} ORDER BY last_message_at DESC LIMIT 100`, ...params);
   res.json({ conversations: rows.map(conversationOut) });
@@ -274,6 +277,44 @@ admin.post('/conversations/:id/read', (req, res) => {
   audit(req.user.id, req.body.read ? 'conversation.read' : 'conversation.unread', `conversation ${c.id}`);
   emitConversation(c.id, 'conversation');
   res.json({ conversation: conversationOut(conversationOr404(c.id)) });
+});
+
+/** Withdraw the assistant's waiting suggestions in a chat. They are not counted as rejected. */
+function withdrawDrafts(conversationId) {
+  const drafts = q.all("SELECT id FROM messages WHERE conversation_id = ? AND status = 'pending'", conversationId);
+  for (const d of drafts) {
+    q.run("UPDATE messages SET status = 'superseded' WHERE id = ?", d.id);
+    emitConversation(conversationId, 'draft', { messageId: d.id });
+  }
+  // Nothing in the chat is left waiting for the assistant either.
+  q.run("UPDATE messages SET meta = json_set(meta, '$.handled', 1) WHERE conversation_id = ? AND role = 'guest' AND json_extract(meta, '$.handled') IS NULL", conversationId);
+  return drafts.length;
+}
+
+/** "No response needed": mark the chat read and drop the assistant's suggested reply. */
+admin.post('/conversations/:id/no-response', (req, res) => {
+  const c = conversationOr404(req.params.id);
+  const withdrawn = withdrawDrafts(c.id);
+  q.run('UPDATE conversations SET needs_reply = 0 WHERE id = ?', c.id);
+  audit(req.user.id, 'conversation.no_response', `conversation ${c.id}, ${withdrawn} suggestion(s) removed`);
+  emitConversation(c.id, 'conversation');
+  res.json({ conversation: conversationOut(conversationOr404(c.id)), withdrawn });
+});
+
+/** Archive a chat (hide it from the list) or bring it back. A new guest message brings it back by itself. */
+admin.post('/conversations/:id/archive', (req, res) => {
+  const c = conversationOr404(req.params.id);
+  if (typeof req.body?.archived !== 'boolean') throw new HttpError(400, 'archived must be true or false.');
+  let withdrawn = 0;
+  if (req.body.archived) {
+    withdrawn = withdrawDrafts(c.id); // an archived chat is finished: no suggestion left waiting, not unread
+    q.run('UPDATE conversations SET archived = 1, needs_reply = 0 WHERE id = ?', c.id);
+  } else {
+    q.run('UPDATE conversations SET archived = 0 WHERE id = ?', c.id);
+  }
+  audit(req.user.id, req.body.archived ? 'conversation.archive' : 'conversation.unarchive', `conversation ${c.id}`);
+  emitConversation(c.id, 'conversation');
+  res.json({ conversation: conversationOut(conversationOr404(c.id)), withdrawn });
 });
 
 /** Take over a chat (the assistant stops replying) or hand it back. */

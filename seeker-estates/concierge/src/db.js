@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS conversations (
   verified INTEGER NOT NULL DEFAULT 0,
   bot_paused INTEGER NOT NULL DEFAULT 0, -- 1 = a team member has taken over
   needs_reply INTEGER NOT NULL DEFAULT 0, -- 1 = unread: the guest is still waiting for a real answer
+  archived INTEGER NOT NULL DEFAULT 0,    -- 1 = hidden from the list until the guest writes again
   language TEXT,
   consent_at TEXT,
   status TEXT NOT NULL DEFAULT 'open',
@@ -162,6 +163,7 @@ export function openDb(file) {
       SELECT CASE WHEN m.role = 'guest' OR m.kind = 'holding' THEN 1 ELSE 0 END FROM messages m
       WHERE m.conversation_id = conversations.id AND (m.role = 'guest' OR m.status = 'sent') ORDER BY m.id DESC LIMIT 1) = 1`);
   }
+  if (!has('conversations', 'archived')) db.exec('ALTER TABLE conversations ADD COLUMN archived INTEGER NOT NULL DEFAULT 0');
   if (!has('knowledge', 'video_url')) db.exec('ALTER TABLE knowledge ADD COLUMN video_url TEXT');
   if (!has('knowledge', 'media_notes')) db.exec('ALTER TABLE knowledge ADD COLUMN media_notes TEXT');
   if (!has('reservations', 'checkin_done')) db.exec('ALTER TABLE reservations ADD COLUMN checkin_done INTEGER NOT NULL DEFAULT 0');

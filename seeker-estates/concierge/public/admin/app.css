@@ -414,3 +414,5 @@ td:first-child { white-space: nowrap; }
 .conv-unread strong, .conv-unread .conv-last { font-weight: 700; color: var(--text); }
 .unread-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--clay); }
 .read-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 8px 16px; border-bottom: 1px solid var(--line); background: var(--surface); }
+
+.read-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }

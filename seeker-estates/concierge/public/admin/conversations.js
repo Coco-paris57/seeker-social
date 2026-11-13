@@ -1,6 +1,7 @@
 // Conversations: searchable list and the thread view (take over, reply, erase).
 import { api, attachmentsView, autoGrow, busy, button, chip, confirmDialog, fill, guestLabel, h, icon, loadError, loading, reconcile, showError, stayDate, fullTime, timeEl, toast, uid } from './lib.js';
 import { approvalCard, ticketCard } from './inbox.js';
+import { inbox } from './state.js';
 
 const STAGES = { before_arrival: 'Before arrival', during_stay: 'During stay', after_stay: 'After stay' };
 const CHANNELS = { web: 'Web chat', smoobu: 'Booking channel message' };
@@ -112,9 +113,36 @@ function threadPane(id, { onGone }) {
         showError(err);
       }
     }));
+    // One tap for "fyi, thanks" messages: mark read and drop the assistant's suggested reply.
+    const hasDraft = c.pendingDrafts > 0;
+    const noReply = c.unread || hasDraft ? button('No response needed', { icon: 'x', small: true }) : null;
+    noReply?.addEventListener('click', () => busy(noReply, async () => {
+      try {
+        const out = await api(`/conversations/${id}/no-response`, { method: 'POST' });
+        toast(out.withdrawn ? 'Marked as read. The suggested reply was removed.' : 'Marked as read.', { kind: 'ok' });
+        inbox.refresh();
+        await load();
+      } catch (err) {
+        showError(err);
+      }
+    }));
+    const archiveBtn = button(c.archived ? 'Unarchive' : 'Archive', { icon: c.archived ? 'refresh' : 'inbox', small: true });
+    archiveBtn.addEventListener('click', () => busy(archiveBtn, async () => {
+      try {
+        await api(`/conversations/${id}/archive`, { method: 'POST', body: { archived: !c.archived } });
+        toast(c.archived ? 'Back in the list.' : 'Archived. It comes back by itself if the guest writes again.', { kind: 'ok' });
+        inbox.refresh();
+        if (c.archived) await load();
+        else onGone(); // back to the list, where it is now hidden
+      } catch (err) {
+        showError(err);
+      }
+    }));
     fill(readBar,
-      c.unread ? chip('Unread: needs a response', { tone: 'warn', icon: 'clock' }) : chip('Read: responded', { tone: 'ok', icon: 'check' }),
-      readBtn);
+      c.archived ? chip('Archived', { tone: 'neutral', icon: 'inbox' })
+        : c.unread ? chip('Unread: needs a response', { tone: 'warn', icon: 'clock' }) : chip('Read: responded', { tone: 'ok', icon: 'check' }),
+      // "No response needed" already marks the chat read, so the plain read button only shows for "Mark as unread".
+      h('div', { class: 'read-actions' }, noReply, !c.archived && !noReply && readBtn, archiveBtn));
     takeover.className = c.botPaused ? 'takeover takeover-on' : 'takeover';
     fill(takeover,
       icon(c.botPaused ? 'user' : 'bot', 20),
@@ -243,7 +271,7 @@ export function conversationsView(params) {
   const searchId = uid('search');
   const search = h('input', { type: 'search', id: searchId, placeholder: 'Search guests and messages', autocomplete: 'off' });
   const propertySelect = h('select', { 'aria-label': 'Filter by property' }, h('option', { value: '' }, 'All properties'));
-  const readSelect = h('select', { 'aria-label': 'Filter by read or unread' }, h('option', { value: '' }, 'All conversations'), h('option', { value: '1' }, 'Unread: needs a response'));
+  const readSelect = h('select', { 'aria-label': 'Filter by read or unread' }, h('option', { value: '' }, 'All conversations'), h('option', { value: 'unread' }, 'Unread: needs a response'), h('option', { value: 'archived' }, 'Archived'));
   const list = h('ul', { class: 'conv-list' });
   const status = h('div', null, loading('Loading conversations'));
   const listPane = h('div', { class: 'conv-pane' },
@@ -266,7 +294,7 @@ export function conversationsView(params) {
     const query = new URLSearchParams();
     if (search.value.trim()) query.set('q', search.value.trim());
     if (propertySelect.value) query.set('propertyId', propertySelect.value);
-    if (readSelect.value) query.set('unread', '1');
+    if (readSelect.value) query.set(readSelect.value, '1');
     try {
       const { conversations } = await api(`/conversations?${query}`);
       if (mine !== requestNo) return; // a newer search has started

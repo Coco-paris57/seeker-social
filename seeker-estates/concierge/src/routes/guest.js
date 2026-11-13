@@ -187,7 +187,7 @@ guest.post('/messages', requireGuest, (req, res) => {
   const id = q.insert("INSERT INTO messages(conversation_id, role, body, sent_at) VALUES(?, 'guest', ?, strftime('%Y-%m-%d %H:%M:%f', 'now'))", c.id, text);
   for (const f of files) q.run('UPDATE files SET message_id = ? WHERE token = ?', id, f.token);
   if (files.length) q.run("UPDATE messages SET meta = json_set(meta, '$.attachments', json(?)) WHERE id = ?", JSON.stringify(files.map((f) => ({ token: f.token, kind: f.kind }))), id);
-  q.run("UPDATE conversations SET last_message_at = datetime('now'), status = 'open', needs_reply = 1 WHERE id = ?", c.id);
+  q.run("UPDATE conversations SET last_message_at = datetime('now'), status = 'open', needs_reply = 1, archived = 0 WHERE id = ?", c.id);
   emitConversation(c.id, 'message', { messageId: id });
   handleGuestMessage(c.id); // replies arrive over the stream
   res.status(202).json({ message: messageOut(q.get('SELECT * FROM messages WHERE id = ?', id)) });

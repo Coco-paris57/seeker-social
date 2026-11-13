@@ -96,6 +96,8 @@ Objects:
 | `GET /conversations/:id` | | `{ conversation, messages, tickets }` (messages include pending drafts and rejected ones). |
 | `POST /conversations/:id/reply` | `{ text }` | `201 { message }`. A team member writes to the guest directly. |
 | `POST /conversations/:id/read` | `{ read: boolean }` | `{ conversation }`. Read means responded; unread means the guest still needs a response. It also changes by itself: a guest message marks the chat unread, a real reply (not a holding note) marks it read. `GET /conversations?unread=1` lists unread chats only, `conversation.unread` is the flag, and `GET /inbox` `counts.unread` is the number of unread chats. |
+| `POST /conversations/:id/no-response` | `{}` | `{ conversation, withdrawn }`. No response needed: marks the chat read and withdraws the assistant's waiting suggestion (not counted as a rejection). |
+| `POST /conversations/:id/archive` | `{ archived: boolean }` | `{ conversation, withdrawn }`. Hides the chat from `GET /conversations` (list them with `?archived=1`; a search includes them). Archiving also marks it read and withdraws waiting suggestions. A new guest message unarchives it. `conversation.archived` is the flag. |
 | `POST /conversations/:id/takeover` | `{ paused: boolean }` | `{ conversation }`. `paused: true` stops the assistant replying in this chat; the team gets a notification for each guest message. |
 | `DELETE /conversations/:id` | | `{ ok }`. Erases the chat (privacy request). |
 | `GET /properties` | | `{ properties, defaultMode }` |

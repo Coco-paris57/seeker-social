@@ -72,7 +72,10 @@ A team member can take over any chat (the assistant pauses) and hand it back lat
 **Read and unread.** A chat is unread while the guest is waiting for a real answer: a guest
 message marks it unread, and a reply that is sent (not the "confirming with the team" note) marks
 it read. The Chats tab shows the unread count, unread chats are highlighted, the list can be
-filtered to unread, and a chat can be marked read or unread by hand.
+filtered to unread, and a chat can be marked read or unread by hand. **No response needed** in an
+open chat marks it read and removes the assistant's suggested reply (it is not counted as a
+rejection). **Archive** hides a finished chat from the list; it is still found by search and
+under the Archived filter, and it comes back by itself if the guest writes again.
 
 ## Run it locally
 

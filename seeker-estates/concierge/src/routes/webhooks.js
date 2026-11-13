@@ -69,7 +69,7 @@ export async function importGuestMessage(bookingId, messageId) {
     conversation = q.get('SELECT * FROM conversations WHERE id = ?', id);
   }
   const id = q.insert("INSERT INTO messages(conversation_id, role, body, meta, sent_at) VALUES(?, 'guest', ?, ?, strftime('%Y-%m-%d %H:%M:%f', 'now'))", conversation.id, text.slice(0, 4000), JSON.stringify({ smoobuMessageId: messageId, ...(attachmentOnly ? { handled: 1, channelAttachment: true } : {}) }));
-  q.run("UPDATE conversations SET last_message_at = datetime('now'), needs_reply = 1 WHERE id = ?", conversation.id);
+  q.run("UPDATE conversations SET last_message_at = datetime('now'), needs_reply = 1, archived = 0 WHERE id = ?", conversation.id);
   emitConversation(conversation.id, 'message', { messageId: id });
   if (attachmentOnly) {
     // Nothing for the assistant to read, so no draft: a person needs to look at the picture.
