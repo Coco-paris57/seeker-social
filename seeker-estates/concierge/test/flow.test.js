@@ -97,15 +97,34 @@ test('maintenance and urgent issues alert the team even in auto mode', async () 
   await team('PATCH', `/api/admin/properties/${ctx.propertyId}`, { mode: null });
 });
 
-test('a newer guest message replaces the pending draft', async () => {
+test('a newer guest message updates the waiting draft in place, so the card a team member is editing stays put', async () => {
   const guest = await openChat(srv.base);
   await say(guest, 'How does the washing machine work?');
-  await say(guest, 'Also where is the washing machine?');
   const id = (await guest('GET', '/api/guest/me')).json.conversation.id;
-  const rows = q.all("SELECT status FROM messages WHERE conversation_id = ? AND role = 'bot' AND kind = 'answer'", id);
-  assert.deepEqual(rows.map((r) => r.status).sort(), ['pending', 'superseded']);
+  const first = q.get("SELECT id FROM messages WHERE conversation_id = ? AND status = 'pending'", id).id;
+  await say(guest, 'Also where is the washing machine?');
+  const rows = q.all("SELECT id, status, meta FROM messages WHERE conversation_id = ? AND role = 'bot' AND kind = 'answer'", id);
+  assert.deepEqual(rows.map((r) => r.status), ['pending']);
+  assert.equal(rows[0].id, first, 'the draft keeps its id');
+  assert.equal(JSON.parse(rows[0].meta).covers.length, 2, 'and now covers both guest messages');
   // Only one holding note within the window.
   assert.equal(q.get("SELECT COUNT(*) AS n FROM messages WHERE conversation_id = ? AND kind = 'holding'", id).n, 1);
+
+  // The reply the team member was writing still sends after the update.
+  const team = await signIn(srv.base);
+  const sent = await team('POST', `/api/admin/messages/${first}/approve`, { text: 'It is in the kitchen. Turn the dial to Cotton 40 and press Start.' });
+  assert.equal(sent.status, 200);
+  assert.match((await guest('GET', '/api/guest/me')).json.messages.at(-1).text, /It is in the kitchen/);
+});
+
+test('if the newer message turns it into a request for the team, the old draft is withdrawn', async () => {
+  const guest = await openChat(srv.base);
+  await say(guest, 'How does the washing machine work?');
+  await say(guest, 'Never mind that, the shower is leaking onto the floor');
+  const id = (await guest('GET', '/api/guest/me')).json.conversation.id;
+  assert.equal(q.get("SELECT COUNT(*) AS n FROM messages WHERE conversation_id = ? AND status = 'pending'", id).n, 0);
+  assert.equal(q.get("SELECT COUNT(*) AS n FROM messages WHERE conversation_id = ? AND status = 'superseded'", id).n, 1);
+  assert.equal(q.get("SELECT COUNT(*) AS n FROM tickets WHERE conversation_id = ?", id).n, 1);
 });
 
 test('team takeover pauses the assistant; erase removes the chat', async () => {

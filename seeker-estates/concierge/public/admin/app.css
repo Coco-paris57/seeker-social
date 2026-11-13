@@ -403,3 +403,9 @@ td:first-child { white-space: nowrap; }
 .example-q { margin: 0 0 4px; font-weight: 600; }
 .example-a { margin: 0 0 6px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .example-meta { margin: 0 0 8px; font-size: 13px; color: var(--text-2); }
+
+/* Notice inside a draft card when the guest writes again while someone is editing it. */
+.draft-news { margin: 8px 0; padding: 10px 12px; border: 1.5px solid var(--warn); border-radius: var(--radius-s); background: var(--warn-ground); color: #5C3C00; }
+.draft-news p { margin: 0 0 6px; }
+.draft-news-quote { padding-left: 10px; border-left: 3px solid var(--warn); }
+.draft-news .actions { margin-top: 6px; }

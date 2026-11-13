@@ -155,7 +155,10 @@ function inbox() {
   const approvals = q.all("SELECT * FROM messages WHERE status = 'pending' ORDER BY id").map((m) => {
     const c = q.get('SELECT * FROM conversations WHERE id = ?', m.conversation_id);
     const meta = parseJson(m.meta);
-    const guestMessages = q
+    // The guest messages this draft answers. A draft keeps its place when the guest writes
+    // again, so newer messages are found through the list it covers, not by position.
+    const covered = (meta.covers || []).map((id) => q.get("SELECT body FROM messages WHERE id = ? AND conversation_id = ? AND role = 'guest'", id, m.conversation_id)?.body).filter(Boolean);
+    const guestMessages = covered.length ? covered.slice(-5) : q
       .all("SELECT body FROM messages WHERE conversation_id = ? AND role = 'guest' AND id < ? ORDER BY id DESC LIMIT 3", m.conversation_id, m.id)
       .reverse()
       .map((g) => g.body);

@@ -228,17 +228,51 @@ function unanswered(conversationId) {
 }
 
 /** A newer guest message replaces a draft still waiting for approval; the questions it covered are asked again. */
-function supersedeDrafts(conversationId) {
-  for (const draft of q.all("SELECT id, meta FROM messages WHERE conversation_id = ? AND status = 'pending'", conversationId)) {
+/**
+ * A newer guest message means a waiting draft no longer covers everything. Put the questions
+ * it covered back in the queue and return the drafts concerned. They stay in the Inbox for now:
+ * a team member may be editing one, so it is updated in place rather than swapped for a new one.
+ */
+function requeueDraftQuestions(conversationId) {
+  const drafts = q.all("SELECT id, meta FROM messages WHERE conversation_id = ? AND status = 'pending' ORDER BY id", conversationId);
+  for (const draft of drafts) {
     for (const id of parseJson(draft.meta).covers || []) {
       q.run("UPDATE messages SET meta = json_remove(meta, '$.handled') WHERE id = ? AND conversation_id = ? AND role = 'guest'", id, conversationId);
     }
-    q.run("UPDATE messages SET status = 'superseded' WHERE id = ?", draft.id);
-    emitConversation(conversationId, 'draft', { messageId: draft.id });
   }
+  return drafts.map((d) => d.id);
+}
+
+/** Write a draft for approval: over the draft already waiting in this chat if there is one, so the Inbox card stays put. */
+function placeDraft(conversation, reuse, body, { kind = 'answer', meta = {} } = {}) {
+  const current = reuse.id && q.get("SELECT id FROM messages WHERE id = ? AND status = 'pending'", reuse.id);
+  if (current) {
+    q.run('UPDATE messages SET body = ?, kind = ?, meta = ? WHERE id = ?', body, kind, JSON.stringify(meta), current.id);
+    reuse.used = true;
+    emitConversation(conversation.id, 'draft', { messageId: current.id });
+    return q.get('SELECT * FROM messages WHERE id = ?', current.id);
+  }
+  const draft = insertMessage(conversation.id, 'bot', body, { status: 'pending', kind, meta });
+  emitConversation(conversation.id, 'draft', { messageId: draft.id });
+  return draft;
 }
 
 async function processConversation(conversationId) {
+  if (!unanswered(conversationId).length) return;
+  const stale = requeueDraftQuestions(conversationId);
+  const reuse = { id: stale.at(-1) ?? null, used: false };
+  try {
+    await processPending(conversationId, reuse);
+  } finally {
+    // Drafts that were not updated (the new message led somewhere else, e.g. a request to the team) are withdrawn.
+    for (const id of stale) {
+      if (reuse.used && id === reuse.id) continue;
+      if (q.run("UPDATE messages SET status = 'superseded' WHERE id = ? AND status = 'pending'", id).changes) emitConversation(conversationId, 'draft', { messageId: id });
+    }
+  }
+}
+
+async function processPending(conversationId, reuse) {
   const conversation = q.get('SELECT * FROM conversations WHERE id = ?', conversationId);
   if (!conversation) return;
   const settings = getSettings();
@@ -246,8 +280,6 @@ async function processConversation(conversationId) {
   const where = property ? property.display_name || property.name : 'General enquiry';
   const url = `/admin/#/conversations/${conversation.id}`;
 
-  if (!unanswered(conversationId).length) return;
-  supersedeDrafts(conversationId); // may put earlier, still unanswered questions back in the queue
   const pending = unanswered(conversationId);
   const latest = pending.map((m) => m.body).join('\n');
   const lastGuest = pending[pending.length - 1];
@@ -318,8 +350,7 @@ async function processConversation(conversationId) {
       await sendMessage(conversation, 'bot', decision.reply, { meta: { ...meta, auto: true } });
       return;
     }
-    const draft = insertMessage(conversation.id, 'bot', decision.reply, { status: 'pending', meta });
-    emitConversation(conversation.id, 'draft', { messageId: draft.id });
+    placeDraft(conversation, reuse, decision.reply, { meta });
     if (liveChat && !recentHolding(conversation.id, settings.holdingMinutes)) {
       await sendMessage(conversation, 'bot', holdingText('confirming', decision.language), { kind: 'holding' });
     }
@@ -350,8 +381,7 @@ async function processConversation(conversationId) {
   if (!liveChat && learning) {
     // On a booking channel in approval mode even the first reply to a problem waits for a person.
     if (type !== 'question') {
-      const draft = insertMessage(conversation.id, 'bot', decision.reply, { status: 'pending', kind: type === 'urgent' ? 'urgent' : 'holding', meta: { ...meta, ticketId } });
-      emitConversation(conversation.id, 'draft', { messageId: draft.id });
+      placeDraft(conversation, reuse, decision.reply, { kind: type === 'urgent' ? 'urgent' : 'holding', meta: { ...meta, ticketId } });
     }
   } else if (!learning || type === 'urgent') {
     // Urgent replies carry safety instructions, so they are marked for the chat to emphasise.

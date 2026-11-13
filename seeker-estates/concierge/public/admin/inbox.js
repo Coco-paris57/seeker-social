@@ -88,9 +88,47 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
 
   const card = h('article', { class: 'card approval', 'aria-label': `Draft reply for ${guestLabel(conversation.guestName)}` });
 
+  // While someone is writing here the card is never replaced. If the guest writes again, the
+  // card says so and offers the assistant's new suggestion; the person's own text stays.
+  let overtaken = false; // the draft on the server is no longer the text this card started with
+  let sending = false;
+  const news = h('div', { class: 'draft-news', role: 'status', hidden: true });
+  card.inUse = () => sending || edited() || card.contains(document.activeElement);
+  card.changed = (next) => {
+    overtaken = true;
+    const latest = next.recentGuestMessages?.at(-1) || next.guestMessage;
+    const use = button('Use the new suggestion', { small: true });
+    const keep = button('Keep my text', { variant: 'ghost', small: true });
+    use.addEventListener('click', () => {
+      const fresh = approvalCard(next, { inThread, onDone });
+      fresh.dataset.key = card.dataset.key;
+      fresh.dataset.sig = card.dataset.sig;
+      card.replaceWith(fresh);
+      fresh.querySelector('textarea')?.focus();
+    });
+    keep.addEventListener('click', () => { news.hidden = true; textarea.focus(); });
+    fill(news,
+      h('p', null, h('strong', null, 'The guest sent another message while you were here.'), latest ? ' They wrote:' : ''),
+      latest && h('p', { class: 'pre draft-news-quote' }, latest),
+      h('p', null, 'Your text has not been changed. The assistant has written a new suggestion that covers the latest message.'),
+      h('div', { class: 'actions' }, use, keep));
+    news.hidden = false;
+  };
+  card.withdrawn = () => {
+    overtaken = true;
+    approve.disabled = reject.disabled = true;
+    fill(news,
+      h('p', null, h('strong', null, 'This draft was withdrawn.'), ' The guest wrote again and the matter is now handled as a request, or someone else dealt with it. Your text is still here to copy.'),
+      h('div', { class: 'actions' }, h('a', { class: 'btn btn-secondary btn-small', href: `#/conversations/${conversation.id}` }, 'Open the chat'),
+        button('Dismiss', { variant: 'ghost', small: true, onclick: () => card.remove() })));
+    news.hidden = false;
+  };
+
   const send = () => busy(approve, async () => {
     if (!textarea.value.trim()) return toast('The reply cannot be empty.', { kind: 'error' });
-    const body = edited() ? { text: textarea.value.trim(), ...remember.value() } : {};
+    // After the draft changed underneath, always send exactly what is on screen.
+    const body = edited() ? { text: textarea.value.trim(), ...remember.value() } : overtaken ? { text: textarea.value.trim() } : {};
+    sending = true;
     try {
       const out = await api(`/messages/${draft.id}/approve`, { method: 'POST', body });
       toast(out.knowledgeId ? 'Sent to the guest and saved to the knowledge base.' : 'Sent to the guest.', { kind: 'ok' });
@@ -99,6 +137,8 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
       inbox.refresh();
     } catch (err) {
       handleDraftError(err, send);
+    } finally {
+      sending = false;
     }
     return undefined;
   });
@@ -132,6 +172,7 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
       h('div', { class: 'draft-head' },
         h('label', { htmlFor: textId, class: 'label' }, 'Drafted reply (edit if needed)'),
         confidence ? chip(confidence.label, confidence) : null),
+      news,
       textarea,
       // Pictures and the video link of the knowledge entry the answer came from.
       attachmentsView(draft.attachments, { links: draft.links, label: 'Picture from the knowledge base', caption: 'Shown to the guest with this reply' }),
@@ -410,7 +451,8 @@ export function inboxView(params) {
     renderTickets(requestList, others);
     reconcile(approvalList, data.approvals, {
       key: (a) => a.draft.id,
-      signature: (a) => a.draft.text,
+      // A new guest message counts as a change even when the suggested wording stays the same.
+      signature: (a) => `${a.draft.text}\u0000${(a.recentGuestMessages || []).join('\u0000')}`,
       create: (a) => approvalCard(a),
     });
     approvalCount.textContent = data.approvals.length || '';

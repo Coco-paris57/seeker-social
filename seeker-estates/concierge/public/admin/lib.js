@@ -212,7 +212,11 @@ export function reconcile(container, items, { key, signature, create }) {
     const sig = signature(item);
     let el = old.get(k);
     old.delete(k);
-    if (!el || el.dataset.sig !== sig) {
+    if (el && el.dataset.sig !== sig && el.inUse?.()) {
+      // Someone is working in this card: keep it and let it show what changed.
+      el.dataset.sig = sig;
+      el.changed?.(item);
+    } else if (!el || el.dataset.sig !== sig) {
       const fresh = create(item);
       fresh.dataset.key = k;
       fresh.dataset.sig = sig;
@@ -223,7 +227,11 @@ export function reconcile(container, items, { key, signature, create }) {
     if (el !== expected) container.insertBefore(el, expected);
     prev = el;
   }
-  for (const el of old.values()) el.remove();
+  for (const el of old.values()) {
+    // Same when the item has gone: the card stays, marked as withdrawn, so typed text is not lost.
+    if (el.inUse?.() && el.withdrawn) el.withdrawn();
+    else el.remove();
+  }
 }
 
 // --- time ---------------------------------------------------------------------------------
