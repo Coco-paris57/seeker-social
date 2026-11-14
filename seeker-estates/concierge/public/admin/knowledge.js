@@ -353,10 +353,14 @@ export function knowledgeEditor({ propertyId = null, propertyName = null, onLoad
 /** Global knowledge screen. */
 export function knowledgeView() {
   const editor = knowledgeEditor({});
+  // The weekly tidy-up: how many proposals are waiting.
+  const tidyLabel = h('span', null, 'Suggestions');
+  const tidyLink = h('a', { class: 'btn btn-secondary', href: '#/tidy' }, icon('bolt', 18), tidyLabel);
+  api('/suggestions').then((d) => { if (d.suggestions.length) tidyLabel.textContent = `Suggestions (${d.suggestions.length})`; }).catch(() => {});
   const el = h('div', { class: 'page' },
     pageHeader('Knowledge', {
       sub: 'Answers that apply to every property: house rules, getting around, how bookings work. Knowledge for one property lives on that property.',
-      actions: [button('Add entry', { variant: 'primary', icon: 'plus', onclick: () => editor.add() })],
+      actions: [tidyLink, button('Add entry', { variant: 'primary', icon: 'plus', onclick: () => editor.add() })],
     }),
     editor.el);
   return {

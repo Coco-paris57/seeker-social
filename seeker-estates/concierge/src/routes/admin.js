@@ -17,6 +17,7 @@ import { posterHtml } from '../poster.js';
 import { adminFile, getFile, MAX_VIDEO, modelImages, saveUpload, sendFile, sweepFiles } from '../media.js';
 import { describePictures, translate } from '../llm.js';
 import { sha256 } from '../util.js';
+import { journey } from './journey.js';
 
 export const admin = express.Router();
 const loginIpLimit = rateLimiter(40, 15 * 60_000); // all attempts per IP
@@ -151,6 +152,7 @@ admin.get('/me', (req, res) => {
 });
 
 admin.use(requireUser);
+admin.use(journey);
 
 // --- inbox ------------------------------------------------------------------------------
 
@@ -162,7 +164,7 @@ function inbox() {
     // The guest messages this draft answers. A draft keeps its place when the guest writes
     // again, so newer messages are found through the list it covers, not by position.
     const covered = (meta.covers || []).map((id) => q.get("SELECT body FROM messages WHERE id = ? AND conversation_id = ? AND role = 'guest'", id, m.conversation_id)?.body).filter(Boolean);
-    const guestMessages = covered.length ? covered.slice(-5) : q
+    const guestMessages = covered.length ? covered.slice(-5) : m.kind === 'scheduled' ? [] : q
       .all("SELECT body FROM messages WHERE conversation_id = ? AND role = 'guest' AND id < ? ORDER BY id DESC LIMIT 3", m.conversation_id, m.id)
       .reverse()
       .map((g) => g.body);
@@ -286,7 +288,7 @@ admin.post('/conversations/:id/read', (req, res) => {
 
 /** Withdraw the assistant's waiting suggestions in a chat. They are not counted as rejected. */
 function withdrawDrafts(conversationId) {
-  const drafts = q.all("SELECT id FROM messages WHERE conversation_id = ? AND status = 'pending'", conversationId);
+  const drafts = q.all("SELECT id FROM messages WHERE conversation_id = ? AND status = 'pending' AND kind != 'scheduled'", conversationId);
   for (const d of drafts) {
     q.run("UPDATE messages SET status = 'superseded' WHERE id = ?", d.id);
     emitConversation(conversationId, 'draft', { messageId: d.id });

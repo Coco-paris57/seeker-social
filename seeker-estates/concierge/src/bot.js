@@ -82,6 +82,33 @@ function onFile(property, verified) {
 }
 
 /** Everything the model is allowed to see for this conversation. */
+const OFFER_LABEL = { early_checkin: 'Early check-in', late_checkout: 'Late checkout', extra_night: 'Extra night at the end of the stay' };
+
+/**
+ * Paid extras the team allows for this booking, each checked against the calendar: early
+ * check-in needs nobody leaving that morning, late checkout and an extra night need nobody
+ * arriving on the departure day. Other bookings and owner blocks both count.
+ */
+export function offersFor(reservation, today = londonDate()) {
+  if (!reservation || reservation.cancelled || reservation.departure < today) return undefined;
+  const taken = (where, date) => !!(
+    q.get(`SELECT 1 FROM reservations WHERE property_id = ? AND id != ? AND cancelled = 0 AND ${where}`, reservation.property_id, reservation.id, ...date)
+    || q.get(`SELECT 1 FROM blocks WHERE property_id = ? AND ${where}`, reservation.property_id, ...date));
+  const free = {
+    early_checkin: reservation.arrival >= today && !taken('departure = ?', [reservation.arrival]),
+    late_checkout: !taken('arrival = ?', [reservation.departure]),
+    extra_night: !taken('arrival <= ? AND departure > ?', [reservation.departure, reservation.departure]),
+  };
+  const rows = q.all('SELECT * FROM offers WHERE property_id = ? OR property_id IS NULL ORDER BY property_id IS NULL', reservation.property_id);
+  const out = [];
+  for (const type of Object.keys(OFFER_LABEL)) {
+    const row = rows.find((r) => r.type === type); // the property's own setting wins over the one for every property
+    if (!row || !row.enabled) continue;
+    out.push({ extra: OFFER_LABEL[type], price: row.price || 'to be confirmed by the team', conditions: row.details || undefined, calendar: free[type] ? 'possible' : 'not possible for these dates' });
+  }
+  return out.length ? out : undefined;
+}
+
 export function buildContext(conversation, { latest = '', uptoMessageId = null } = {}) {
   const settings = getSettings();
   const reservation = conversation.verified && conversation.reservation_id
@@ -161,6 +188,7 @@ export function buildContext(conversation, { latest = '', uptoMessageId = null }
       online_checkin_link: reservation.checkin_link && !reservation.cancelled ? CHECKIN_LINK : undefined,
       online_checkin_completed: reservation.checkin_link ? !!reservation.checkin_done : undefined,
       // Extras the guest bought or asked for in online check-in (early check-in, late checkout...).
+      offers: offersFor(reservation),
       extras: parseJson(reservation.extras, []).length ? parseJson(reservation.extras, []).map((x) => ({ item: x.title, status: x.status, note: x.note || undefined })) : undefined,
     },
     knowledge,
@@ -189,7 +217,7 @@ function insertMessage(conversationId, role, body, { status = 'sent', kind = 'an
 /** Deliver a sent message on the conversation's channel. Web chats read from the database. */
 async function deliver(conversation, message) {
   // Read = the guest has had a real reply. "Confirming with the team" is not one.
-  if (message.kind !== 'holding') q.run('UPDATE conversations SET needs_reply = 0 WHERE id = ?', conversation.id);
+  if (message.kind !== 'holding' && message.kind !== 'scheduled') q.run('UPDATE conversations SET needs_reply = 0 WHERE id = ?', conversation.id);
   emitConversation(conversation.id, 'message', { messageId: message.id });
   if (conversation.channel === 'smoobu' && conversation.reservation_id) {
     const api = smoobu();
@@ -208,6 +236,13 @@ async function deliver(conversation, message) {
       });
     }
   }
+}
+
+/** Put a message in the Inbox for a team member to approve (used for scheduled stay messages). */
+export function queueDraft(conversation, body, { kind = 'answer', meta = {} } = {}) {
+  const draft = insertMessage(conversation.id, 'bot', body, { status: 'pending', kind, meta });
+  emitConversation(conversation.id, 'draft', { messageId: draft.id });
+  return draft;
 }
 
 export async function sendMessage(conversation, role, body, opts = {}) {
@@ -256,7 +291,7 @@ function unanswered(conversationId) {
  * a team member may be editing one, so it is updated in place rather than swapped for a new one.
  */
 function requeueDraftQuestions(conversationId) {
-  const drafts = q.all("SELECT id, meta FROM messages WHERE conversation_id = ? AND status = 'pending' ORDER BY id", conversationId);
+  const drafts = q.all("SELECT id, meta FROM messages WHERE conversation_id = ? AND status = 'pending' AND kind != 'scheduled' ORDER BY id", conversationId);
   for (const draft of drafts) {
     for (const id of parseJson(draft.meta).covers || []) {
       q.run("UPDATE messages SET meta = json_remove(meta, '$.handled') WHERE id = ? AND conversation_id = ? AND role = 'guest'", id, conversationId);
@@ -521,7 +556,7 @@ export async function afterVerification(conversationId) {
 
 // Learned answers are for verified guests only unless a team member says otherwise: the
 // category comes from the model, so it must not decide what unverified visitors can be told.
-function saveKnowledge({ propertyId, category, question, answer, userId, sensitive, source = 'learned' }) {
+export function saveKnowledge({ propertyId, category, question, answer, userId, sensitive, source = 'learned' }) {
   const cat = llm.CATEGORIES.includes(category) ? category : 'other';
   return q.insert(
     'INSERT INTO knowledge(property_id, category, question, answer, sensitive, source, created_by) VALUES(?, ?, ?, ?, ?, ?, ?)',
@@ -689,6 +724,9 @@ async function answerTicketOnce(ticketId, user, { answer, reply: reviewed, remem
     });
   }
   fileSent(added, message.id, remember ? knowledgeId : null); // kept with the knowledge entry, so the next guest gets them too
+  // An answer to a question that was not saved as knowledge is still kept as an approved reply,
+  // so the assistant can learn from it and the weekly tidy-up can propose saving it properly.
+  if (ticket.type === 'question' && !knowledgeId) rememberApproval(conversation, { summary: ticket.summary }, reply, user, true);
   q.run(
     `UPDATE tickets SET status = ?, answer = COALESCE(answer || char(10) || char(10), '') || ?, answered_by = ?,
      answered_at = datetime('now'), knowledge_id = ? WHERE id = ?`,

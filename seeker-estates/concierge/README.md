@@ -94,6 +94,15 @@ open chat marks it read and removes the assistant's suggested reply (it is not c
 rejection). **Archive** hides a finished chat from the list; it is still found by search and
 under the Archived filter, and it comes back by itself if the guest writes again.
 
+### Help for the team, and the stay around the chat
+
+- **Suggested reply.** Every request the assistant sends to the team carries its best-guess reply, marked as not confirmed. "Use this" puts it in the answer box.
+- **Summary and mood.** Each chat shows one line on where it stands, and a flag (with one notification) when a guest sounds unhappy.
+- **Insights** (Properties > Insights): time to a real reply, share answered without the team, what guests ask about, the questions each property could not answer, and a per-property table.
+- **Weekly tidy-up** (Knowledge > Suggestions): on Monday mornings the assistant reads the replies the team approved and proposes knowledge entries to add or update. Nothing is saved until someone accepts; a dismissed proposal is not made again.
+- **Scheduled messages** (Settings > Scheduled messages): fixed texts sent at set points of a stay through the booking channel. Each is off until switched on, and waits in the Inbox for approval unless "Send without approval" is on. A message more than 12 hours late is skipped.
+- **Paid extras** (Settings > Paid extras): early check-in, late checkout and an extra night, with the team's price, for every property or one. The assistant only offers one when the calendar allows it (other bookings and owner blocks), and passes a "yes" to the team. It never confirms or takes payment.
+
 ## Run it locally
 
 ```

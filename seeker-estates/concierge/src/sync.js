@@ -54,9 +54,13 @@ export function checkinFromNotice(notice) {
 
 export function upsertReservation(b) {
   if (!b?.id || !b.apartment?.id || !b.arrival || !b.departure) return;
-  if (b['is-blocked-booking']) return; // owner blocks are not guests
   const property = q.get('SELECT id FROM properties WHERE smoobu_id = ?', b.apartment.id);
   if (!property) return;
+  if (b['is-blocked-booking']) {
+    // Owner blocks are not guests, but the dates are taken: kept so extras are not offered into them.
+    q.run('INSERT OR REPLACE INTO blocks(id, property_id, arrival, departure) VALUES(?, ?, ?, ?)', b.id, property.id, b.arrival, b.departure);
+    return;
+  }
   const first = b.firstname || '';
   const last = b.lastname || '';
   const checkin = checkinFromNotice(b.notice);
@@ -112,6 +116,7 @@ export async function syncReservations() {
   if (!api) return { reservations: 0 };
   const today = londonDate();
   const bookings = await api.reservations(addDays(today, -35), addDays(today, 180));
+  q.run('DELETE FROM blocks');
   for (const b of bookings) upsertReservation(b);
   // Guest names are not needed once a stay is long over.
   q.run('DELETE FROM reservations WHERE departure < ?', addDays(today, -120));

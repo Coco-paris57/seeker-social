@@ -127,6 +127,21 @@ Push notification payload (delivered to the service worker as JSON, and as the `
 event): `{ title, body, url, tag, urgent }`. `url` is a path such as `/admin/#/inbox`,
 `/admin/#/tickets/12` or `/admin/#/conversations/7`: the team app must route these hashes.
 
+### Insights, tidy-up, scheduled messages, paid extras
+
+| Method | Path | What it does |
+| --- | --- | --- |
+| GET | `/insights?days=7\|30\|90` | Reply time, who wrote the replies, topics, knowledge gaps, per-property figures |
+| GET | `/suggestions` | Open tidy-up proposals (`add` or `update`) |
+| POST | `/suggestions/run` | Run the tidy-up now |
+| POST | `/suggestions/:id/accept` | Save the proposal (optional `question`, `answer`, `category`, `sensitive`) |
+| POST | `/suggestions/:id/dismiss` | Dismiss; it is not proposed again |
+| GET | `/templates` | Scheduled messages and the placeholders they may use |
+| POST, PATCH, DELETE | `/templates`, `/templates/:id` | Administrators only. Fields: `name`, `anchor` (`arrival`/`departure`), `days`, `time`, `body`, `propertyId`, `enabled`, `auto` |
+| GET | `/offers` | Paid extras |
+| PUT | `/offers` | Administrators only. `type`, `price`, `details`, `enabled`, `propertyId` (null = every property) |
+| DELETE | `/offers/:id` | Administrators only. Remove a property's own setting |
+
 ## Webhook
 
 `POST /api/webhooks/smoobu/<SMOOBU_WEBHOOK_TOKEN>` receives Smoobu events (reservation changes and,

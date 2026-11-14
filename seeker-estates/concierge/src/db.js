@@ -144,6 +144,53 @@ CREATE TABLE IF NOT EXISTS files (
   created_by INTEGER,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE TABLE IF NOT EXISTS suggestions (   -- the weekly tidy-up: knowledge entries proposed from approved replies
+  id INTEGER PRIMARY KEY,
+  property_id INTEGER REFERENCES properties(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL,              -- 'add' (new entry) | 'update' (an entry looks out of date)
+  knowledge_id INTEGER REFERENCES knowledge(id) ON DELETE CASCADE,
+  category TEXT NOT NULL DEFAULT 'other',
+  question TEXT NOT NULL,
+  answer TEXT NOT NULL,
+  reason TEXT NOT NULL DEFAULT '',
+  sensitive INTEGER NOT NULL DEFAULT 1,
+  status TEXT NOT NULL DEFAULT 'open',  -- 'open' | 'accepted' | 'dismissed'
+  decided_by INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS templates (     -- messages sent at set points of a stay
+  id INTEGER PRIMARY KEY,
+  property_id INTEGER REFERENCES properties(id) ON DELETE CASCADE,  -- NULL = every property
+  name TEXT NOT NULL,
+  anchor TEXT NOT NULL DEFAULT 'arrival',   -- 'arrival' | 'departure'
+  days INTEGER NOT NULL DEFAULT 0,          -- days from the anchor date; negative = before
+  time TEXT NOT NULL DEFAULT '10:00',       -- UK time of day
+  body TEXT NOT NULL,
+  enabled INTEGER NOT NULL DEFAULT 0,
+  auto INTEGER NOT NULL DEFAULT 0,          -- 1 = send without asking; 0 = wait in the Inbox for approval
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS template_sends (
+  template_id INTEGER NOT NULL,
+  reservation_id INTEGER NOT NULL,
+  message_id INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (template_id, reservation_id)
+);
+CREATE TABLE IF NOT EXISTS offers (        -- paid extras the assistant may offer
+  id INTEGER PRIMARY KEY,
+  property_id INTEGER REFERENCES properties(id) ON DELETE CASCADE,  -- NULL = every property
+  type TEXT NOT NULL,              -- 'early_checkin' | 'late_checkout' | 'extra_night'
+  price TEXT NOT NULL DEFAULT '',
+  details TEXT NOT NULL DEFAULT '',
+  enabled INTEGER NOT NULL DEFAULT 1
+);
+CREATE TABLE IF NOT EXISTS blocks (        -- owner blocks from Smoobu: dates that are not free, with no guest
+  id INTEGER PRIMARY KEY,
+  property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+  arrival TEXT NOT NULL,
+  departure TEXT NOT NULL
+);
 CREATE INDEX IF NOT EXISTS files_knowledge ON files(knowledge_id);
 CREATE INDEX IF NOT EXISTS files_message ON files(message_id);
 `;

@@ -466,3 +466,20 @@ td:first-child { white-space: nowrap; }
 table.data { border-collapse: collapse; width: 100%; font-size: 14.5px; font-variant-numeric: tabular-nums; }
 table.data th, table.data td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 table.data thead th { font-size: 13px; color: var(--text-2); font-weight: 600; }
+
+/* Weekly tidy-up, scheduled messages, paid extras */
+.tidy-card, .template { margin-bottom: 14px; padding: 16px; }
+.tidy-card > * + *, .template > * + * { margin-top: 12px; }
+.template.is-off { background: var(--ground); }
+.template-when { display: flex; align-items: center; gap: 6px; margin: 0; font-weight: 600; color: var(--brand); }
+.template-body { margin: 0; padding: 10px 12px; border-left: 3px solid var(--line); background: var(--ground); border-radius: var(--radius-s); font-size: 14px; max-height: 190px; overflow: auto; }
+.template.is-off .template-body { background: var(--surface); }
+.template-switches { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.extra-form { padding-top: 14px; border-top: 1px solid var(--line); }
+.extra-form > * + * { margin-top: 10px; }
+.extra-form .hint { margin-top: 2px; }
+.plain-list { list-style: none; margin: 0; padding: 0; }
+.plain-list li { padding: 6px 0; border-bottom: 1px solid var(--line); }
+.plain-list li:last-child { border-bottom: 0; }
+.page > div > .note { margin: 0 0 12px; align-items: flex-start; }
+.page > div > .note svg { flex: none; margin-top: 3px; }

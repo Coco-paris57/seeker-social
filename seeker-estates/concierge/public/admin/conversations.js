@@ -13,6 +13,7 @@ function messageChips(m) {
   const chips = [];
   if (m.status === 'rejected') chips.push(chip('Rejected, not sent', { tone: 'danger', icon: 'x' }));
   if (m.kind === 'holding') chips.push(chip('Holding note', { icon: 'clock' }));
+  if (m.kind === 'scheduled') chips.push(chip('Scheduled message', { icon: 'clock' }));
   if (m.kind === 'urgent') chips.push(chip('Urgent reply, sent automatically', { tone: 'danger', icon: 'alert' }));
   if (m.kind === 'relay') chips.push(chip(m.authorName ? `Team answer from ${m.authorName}` : 'Team answer', { icon: 'user' }));
   if (m.automatic && m.kind !== 'urgent') chips.push(chip('Sent automatically', { tone: 'brand', icon: 'bolt' }));

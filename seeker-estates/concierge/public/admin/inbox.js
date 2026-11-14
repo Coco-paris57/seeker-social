@@ -169,6 +169,7 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
   const confidence = CONFIDENCE[draft.confidence];
   // What the guest sent with their words: the photo of the leak next to the message about it.
   const guestFiles = attachmentsView(item.guestAttachments);
+  const scheduled = draft.kind === 'scheduled';
   add(card,
     !inThread && h('header', { class: 'card-head' },
       h('div', { class: 'card-title' },
@@ -176,15 +177,15 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
         h('span', { class: 'muted' }, guestLabel(conversation.guestName)),
         conversation.verified && chip('Verified', { tone: 'ok', icon: 'shield' })),
       h('div', { class: 'card-meta' }, timeEl(draft.at), h('a', { href: `#/conversations/${conversation.id}` }, 'Open chat'))),
-    !inThread && (asked.length > 0 || guestFiles) && h('div', { class: 'quote' },
+    !inThread && !scheduled && (asked.length > 0 || guestFiles) && h('div', { class: 'quote' },
       h('p', { class: 'label' }, asked.length ? 'Guest asked' : 'Guest sent'),
       asked.map((text, i) => h('p', { class: i < asked.length - 1 ? 'pre earlier' : 'pre' }, text)),
       asked.length > 0 && !isEnglish(conversation.language) && translateControl(asked.join('\n\n')),
       guestFiles),
     h('div', { class: 'draft' },
       h('div', { class: 'draft-head' },
-        h('label', { htmlFor: textId, class: 'label' }, 'Drafted reply (edit if needed)'),
-        confidence ? chip(confidence.label, confidence) : null),
+        h('label', { htmlFor: textId, class: 'label' }, scheduled ? 'Scheduled message (edit if needed)' : 'Drafted reply (edit if needed)'),
+        scheduled ? chip(String(draft.summary || 'Scheduled').replace(/^Scheduled: /, ''), { icon: 'clock' }) : confidence ? chip(confidence.label, confidence) : null),
       news,
       textarea,
       // The draft is written in the guest's language: read it in English before approving.
