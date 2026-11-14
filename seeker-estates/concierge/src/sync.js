@@ -73,7 +73,7 @@ export function upsertReservation(b) {
        departure = excluded.departure, check_in = excluded.check_in, check_out = excluded.check_out,
        adults = excluded.adults, children = excluded.children, channel = excluded.channel,
        language = excluded.language, cancelled = excluded.cancelled, checkin_link = excluded.checkin_link,
-       checkin_done = excluded.checkin_done, synced_at = excluded.synced_at`,
+       checkin_done = MAX(checkin_done, excluded.checkin_done), synced_at = excluded.synced_at`,
     b.id, property.id, first, last, b['guest-name'] || `${first} ${last}`.trim(), b.arrival, b.departure,
     b['check-in'] || null, b['check-out'] || null, b.adults ?? null, b.children ?? null,
     b.channel?.name || null, b.language || null, b.type === 'cancellation' ? 1 : 0, checkin.link, checkin.done ? 1 : 0,

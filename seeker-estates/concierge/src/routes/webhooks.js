@@ -32,11 +32,21 @@ webhooks.post('/chargeautomation/:token', (req, res) => {
   if (!same(String(req.params.token), webhookToken())) return res.status(404).end();
   res.json({ ok: true });
   try {
-    for (const event of Array.isArray(req.body) ? req.body : [req.body || {}]) recordExtra(event);
+    for (const event of Array.isArray(req.body) ? req.body : [req.body || {}]) recordExtra(event) || recordCheckin(event);
   } catch (e) {
     console.error(`ChargeAutomation webhook: ${e.message}`);
   }
 });
+
+/** "Online Check-in Completed": mark the booking at once, rather than waiting for the next Smoobu sync. */
+export function recordCheckin(event) {
+  if (String(event?.event || '') !== 'booking.pre_checkin.completed') return false;
+  const bookingId = parseInt(String(event.data?.id ?? event.data?.pms_booking_id ?? '').split('-').pop(), 10);
+  if (!Number.isInteger(bookingId) || !q.run('UPDATE reservations SET checkin_done = 1 WHERE id = ?', bookingId).changes) return false;
+  const c = q.get('SELECT id FROM conversations WHERE reservation_id = ? ORDER BY id DESC LIMIT 1', bookingId);
+  if (c) emitConversation(c.id, 'conversation');
+  return true;
+}
 
 export function recordExtra(event) {
   const kind = { 'booking.upsell.purchased': 'purchased', 'booking.upsell.requested': 'requested' }[String(event?.event || '')];

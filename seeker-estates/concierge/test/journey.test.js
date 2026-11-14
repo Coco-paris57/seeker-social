@@ -179,3 +179,15 @@ test('paid extras: only offered when switched on, priced by the team, and checke
   // Once the stay is over, nothing is offered.
   assert.equal(offersFor({ ...r(), arrival: addDays(ctx.today, -9), departure: addDays(ctx.today, -5) }), undefined);
 });
+
+test('ChargeAutomation "Online Check-in Completed" marks the booking at once, and a later sync does not undo it', async () => {
+  const { recordCheckin } = await import('../src/routes/webhooks.js');
+  q.run('UPDATE reservations SET checkin_done = 0 WHERE id = 501');
+  assert.equal(recordCheckin({ event: 'booking.created', data: { id: '1079-501' } }), false);
+  assert.equal(recordCheckin({ event: 'booking.pre_checkin.completed', data: { id: '1079-999999' } }), false);
+  assert.equal(recordCheckin({ event: 'booking.pre_checkin.completed', data: { id: '1079-501' } }), true);
+  const r = q.get('SELECT * FROM reservations WHERE id = 501');
+  assert.equal(r.checkin_done, 1);
+  upsertReservation({ id: 501, apartment: { id: 77 }, arrival: r.arrival, departure: r.departure, firstname: 'Zoë', lastname: 'O', notice: '' });
+  assert.equal(q.get('SELECT checkin_done FROM reservations WHERE id = 501').checkin_done, 1);
+});
