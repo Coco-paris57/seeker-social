@@ -191,3 +191,14 @@ test('ChargeAutomation "Online Check-in Completed" marks the booking at once, an
   upsertReservation({ id: 501, apartment: { id: 77 }, arrival: r.arrival, departure: r.departure, firstname: 'Zoë', lastname: 'O', notice: '' });
   assert.equal(q.get('SELECT checkin_done FROM reservations WHERE id = 501').checkin_done, 1);
 });
+
+test('the ChargeAutomation webhook address contains only letters and digits, and works', async () => {
+  const me = (await team('GET', '/api/admin/me')).json;
+  const path = new URL(me.chargeAutomationWebhook).pathname;
+  assert.match(path, /^\/api\/webhooks\/chargeautomation\/[a-f0-9]{40}$/);
+  const anon = client(srv.base);
+  q.run('UPDATE reservations SET checkin_done = 0 WHERE id = 501');
+  assert.equal((await anon('POST', path, [{ event: 'booking.pre_checkin.completed', data: { id: '1-501' } }])).status, 200);
+  assert.equal(q.get('SELECT checkin_done FROM reservations WHERE id = 501').checkin_done, 1);
+  assert.equal((await anon('POST', '/api/webhooks/chargeautomation/wrong', [])).status, 404);
+});

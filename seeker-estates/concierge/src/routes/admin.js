@@ -9,7 +9,7 @@ import { teamAttachments, answerTicket, approvalStats, approveDraft, closeTicket
 import { CATEGORIES } from '../llm.js';
 import { bus, emitAdmin, emitConversation, notifyTeam, vapidPublicKey } from '../notify.js';
 import { refreshTeamRecords, syncAll } from '../sync.js';
-import { channelInboxOn, ensureWebhook, webhookToken } from '../channel.js';
+import { channelInboxOn, ensureWebhook, webhookToken, webhookTokenPlain } from '../channel.js';
 import crypto from 'node:crypto';
 import { clip, failureLimiter, HttpError, newToken, rateLimiter } from '../util.js';
 import { iso, sse } from './shared.js';
@@ -150,7 +150,7 @@ admin.get('/me', (req, res) => {
   const user = currentUser(req);
   if (!user) return res.status(401).json({ error: 'Please sign in.' });
   res.json({ user, llmMode: config.llmMode, smoobuMode: config.smoobuMode, smoobuInbox: channelInboxOn(), chargeAutomation: !!(config.caClientId && config.caClientSecret),
-    chargeAutomationWebhook: `${config.baseUrl}/api/webhooks/chargeautomation/${webhookToken()}`, baseUrl: config.baseUrl, categories: CATEGORIES });
+    chargeAutomationWebhook: `${config.baseUrl}/api/webhooks/chargeautomation/${webhookTokenPlain()}`, baseUrl: config.baseUrl, categories: CATEGORIES });
 });
 
 admin.use(requireUser);

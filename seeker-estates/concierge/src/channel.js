@@ -1,5 +1,6 @@
 // Guest messages that reach Smoobu from Airbnb, Booking.com and email.
 // Switched on by the team in Settings; the Smoobu webhook is registered when they do.
+import crypto from 'node:crypto';
 import { config } from './config.js';
 import { getRaw, getSettings, setRaw } from './db.js';
 import { smoobu } from './smoobu.js';
@@ -18,6 +19,12 @@ export function webhookToken() {
   }
   return token;
 }
+
+/**
+ * The same secret in a form any address field accepts: letters and digits only. The token set
+ * in the environment may contain + / = which ChargeAutomation rejects as "not a valid URL".
+ */
+export const webhookTokenPlain = () => crypto.createHash('sha256').update(`ca:${webhookToken()}`).digest('hex').slice(0, 40);
 
 /** Make sure Smoobu sends events to this service. Other webhooks are left alone. */
 export async function ensureWebhook() {

@@ -8,7 +8,7 @@ import { emitConversation, notifyTeam } from '../notify.js';
 import { smoobu } from '../smoobu.js';
 import { syncReservation } from '../sync.js';
 import { htmlToText } from '../util.js';
-import { channelInboxOn, webhookToken } from '../channel.js';
+import { channelInboxOn, webhookToken, webhookTokenPlain } from '../channel.js';
 
 export const webhooks = express.Router();
 
@@ -29,7 +29,8 @@ webhooks.post('/smoobu/:token', (req, res) => {
  * the same secret token as the Smoobu one.
  */
 webhooks.post('/chargeautomation/:token', (req, res) => {
-  if (!same(String(req.params.token), webhookToken())) return res.status(404).end();
+  const given = String(req.params.token);
+  if (!same(given, webhookTokenPlain()) && !same(given, webhookToken())) return res.status(404).end();
   res.json({ ok: true });
   try {
     for (const event of Array.isArray(req.body) ? req.body : [req.body || {}]) recordExtra(event) || recordCheckin(event);
