@@ -50,6 +50,7 @@ function threadPane(id, { onGone }) {
   const detailsBtn = h('button', { type: 'button', class: 'btn btn-secondary btn-small details-toggle', 'aria-expanded': 'false', 'aria-controls': detailsId }, icon('info', 18), h('span', null, 'Details'));
   const takeover = h('div', { class: 'takeover' });
   const readBar = h('div', { class: 'read-bar' });
+  const summaryBox = h('div', { class: 'chat-summary', hidden: true });
   const list = h('ol', { class: 'messages', 'aria-label': 'Messages' });
   const scroller = h('div', { class: 'thread-scroll', tabIndex: 0, role: 'region', 'aria-label': 'Message history' }, loading('Loading the conversation'), list);
   const details = h('aside', { class: 'thread-details', id: detailsId, 'aria-label': 'Guest details and requests' });
@@ -68,7 +69,7 @@ function threadPane(id, { onGone }) {
     h('header', { class: 'thread-head' },
       h('a', { class: 'back-link', href: '#/conversations' }, icon('back', 18), 'All conversations'),
       h('div', { class: 'thread-head-row' }, h('div', null, title, headChips), detailsBtn),
-      sub),
+      sub, summaryBox),
     readBar,
     takeover,
     h('div', { class: 'thread-main' }, scroller, details),
@@ -87,7 +88,10 @@ function threadPane(id, { onGone }) {
     fill(headChips,
       c.verified ? chip('Verified guest', { tone: 'ok', icon: 'shield' }) : chip('Not verified', { icon: 'help' }),
       STAGES[c.stage] && chip(STAGES[c.stage], { icon: 'clock' }),
-      chip(CHANNELS[c.channel] || c.channel, { icon: 'chat' }));
+      chip(CHANNELS[c.channel] || c.channel, { icon: 'chat' }),
+      c.mood === 'unhappy' && chip('Sounds unhappy', { tone: 'danger', icon: 'alert' }));
+    fill(summaryBox, c.summary && h('p', null, h('strong', null, 'Where this stands: '), c.summary));
+    summaryBox.hidden = !c.summary;
     fill(sub,
       c.propertyId ? h('a', { href: `#/properties/${c.propertyId}` }, c.propertyName) : 'No property',
       c.stay && ` · ${stayDate(c.stay.arrival)} to ${stayDate(c.stay.departure)}`,
@@ -263,6 +267,7 @@ function threadPane(id, { onGone }) {
 
 function listItem(c, activeId) {
   const flags = [
+    c.mood === 'unhappy' && chip('Sounds unhappy', { tone: 'danger', icon: 'alert' }),
     c.botPaused && chip('Team handling', { tone: 'brand', icon: 'user' }),
     c.pendingDrafts > 0 && chip(`${c.pendingDrafts} to approve`, { tone: 'warn', icon: 'clock' }),
     c.openTickets > 0 && chip(`${c.openTickets} open ${c.openTickets === 1 ? 'request' : 'requests'}`, { tone: 'warn', icon: 'help' }),

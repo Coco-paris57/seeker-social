@@ -10,7 +10,7 @@ export const CATEGORIES = ['checkin', 'access', 'wifi', 'appliances', 'transport
 const DECISION_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['action', 'reply', 'confidence', 'team_question', 'summary', 'category', 'language', 'knowledge_ids'],
+  required: ['action', 'reply', 'confidence', 'team_question', 'summary', 'category', 'language', 'knowledge_ids', 'suggested_reply', 'chat_summary', 'guest_mood'],
   properties: {
     action: { type: 'string', enum: ['answer', 'ask_team', 'maintenance', 'urgent'] },
     reply: { type: 'string', description: 'The message to send to the guest, in the guest\'s language.' },
@@ -19,6 +19,9 @@ const DECISION_SCHEMA = {
     summary: { type: 'string', description: 'One short English line describing what the guest wants.' },
     category: { type: 'string', enum: CATEGORIES },
     language: { type: 'string', description: 'Language the guest is writing in, e.g. English, French.' },
+    suggested_reply: { type: 'string', description: 'For ask_team and maintenance only: your best attempt at the full reply the team could send to the guest, in the guest\'s language. Empty for answer and urgent, and empty when you have nothing useful to propose.' },
+    chat_summary: { type: 'string', description: 'For the team, in English, at most two short sentences: what this guest wants and what is still open in this conversation as a whole.' },
+    guest_mood: { type: 'string', enum: ['positive', 'neutral', 'unhappy'], description: 'How the guest comes across in this conversation as a whole.' },
     knowledge_ids: { type: 'array', items: { type: 'integer' }, description: 'Ids of the knowledge base entries the answer is based on. Their pictures and video are shown to the guest under the reply. Empty when none.' },
   },
 };
@@ -47,6 +50,9 @@ Guests act on what you say: they stand at a door with the code you gave, or plan
 
 Approved replies
 The facts may include approved_replies_for_this_property: replies a team member approved (or wrote) for earlier guests at this same property, with what each guest wanted. They are how you learn the property. Treat what they state as true for this property, and follow their wording, level of detail and tone, especially where corrected_by_team is true. When one covers the guest's question, base your answer on it and adapt it to this guest; that counts as the facts answering the question directly. If an approved reply and the knowledge base disagree, the knowledge base wins, since the team keeps it up to date. An approved reply may have been written as "I" or as "we": keep its content but always use the voice set out under "Who is speaking" for this guest. Do not copy anything that was specific to the earlier guest: their name, dates, booking, or a promise made to them (a visit time, a refund, an exception). [CHECKIN_LINK] in an approved reply is a placeholder: use it only if this guest's facts include booking.online_checkin_link.
+
+For the team
+Three fields are read by the team, never by the guest. chat_summary says in English, in at most two short sentences, what this guest wants and what is still open across the whole conversation, so a colleague can pick it up without reading it all. guest_mood is "unhappy" when the guest is frustrated, disappointed, complaining or threatening a bad review, even politely; "positive" when they are clearly pleased; otherwise "neutral". suggested_reply is for ask_team and maintenance: write the reply you would send if the likely answer is right, in the guest's language, so the team member can confirm or correct it instead of starting from nothing. Here, unlike in reply, you may propose what is probably true from the approved replies, the property facts and common practice, because a person checks it before anything is sent. Leave it empty when you have no reasonable basis for a proposal, and never put a code, password or price in it that is not in the facts.
 
 Set confidence to high only when the facts answer the question directly. Use medium when you had to interpret, and low when you are unsure the facts apply.
 
@@ -149,6 +155,9 @@ export async function decide(ctx) {
     category: CATEGORIES.includes(d.category) ? d.category : 'other',
     language: String(d.language || '').trim() || 'English',
     knowledgeIds: Array.isArray(d.knowledge_ids) ? d.knowledge_ids.filter(Number.isInteger) : [],
+    suggestedReply: ['ask_team', 'maintenance'].includes(d.action) ? String(d.suggested_reply || '').trim() : '',
+    chatSummary: String(d.chat_summary || '').trim(),
+    mood: ['positive', 'neutral', 'unhappy'].includes(d.guest_mood) ? d.guest_mood : 'neutral',
   };
 }
 
@@ -242,7 +251,9 @@ function mockDecide(ctx) {
 
 function mockDecideAsAssistant(ctx) {
   const text = ctx.latest;
-  const base = { team_question: '', summary: text.slice(0, 80) || 'Guest sent a photo', category: 'other', language: 'English', knowledge_ids: [] };
+  const unhappy = /\b(unacceptable|disappointed|disgusting|terrible|awful|refund|complain|complaint|bad review|not happy|angry)\b/i.test(text);
+  const base = { team_question: '', summary: text.slice(0, 80) || 'Guest sent a photo', category: 'other', language: 'English', knowledge_ids: [],
+    suggested_reply: '', chat_summary: `Guest asked: ${text.slice(0, 120)}`, guest_mood: unhappy ? 'unhappy' : 'neutral' };
   if (URGENT.test(text)) {
     return {
       ...base, action: 'urgent', confidence: 'high', category: 'maintenance',
@@ -286,5 +297,6 @@ function mockDecideAsAssistant(ctx) {
     ...base, action: 'ask_team', confidence: 'low',
     reply: 'Thank you for your message. I do not have that information to hand, so I have asked the team and will reply here as soon as they answer.',
     team_question: `${text}${ctx.images?.length ? ` [the guest sent ${ctx.images.length} image(s)]` : ''}`.trim(),
+    suggested_reply: ctx.examples?.[0] ? ctx.examples[0].approved_reply : '',
   };
 }

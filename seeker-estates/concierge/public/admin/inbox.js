@@ -397,7 +397,24 @@ function answerForm(ticket, { autoMode, card }) {
     });
   });
 
+  // The assistant's best attempt at the reply, for the team member to confirm or correct.
+  const useSuggestion = ticket.suggestion && button('Use this', { variant: 'primary', small: true, icon: 'check' });
+  useSuggestion?.addEventListener('click', () => {
+    answer.value = ticket.suggestion;
+    verbatim.input.checked = true; // it is already worded for the guest
+    answer.dispatchEvent(new Event('input'));
+    verbatim.input.dispatchEvent(new Event('change'));
+    answer.focus();
+  });
+  const suggestion = ticket.suggestion && h('div', { class: 'suggestion' },
+    h('p', { class: 'label' }, icon('bot', 16), 'Suggested reply · not confirmed'),
+    h('p', { class: 'pre' }, ticket.suggestion),
+    !isEnglish(ticket.language) && translateControl(ticket.suggestion, { label: 'Translate this suggestion to English' }),
+    h('p', { class: 'hint' }, 'The assistant\'s best guess. Check it is right for this property before sending. "Use this" puts it in the box below, to send as written or edit first.'),
+    h('div', { class: 'actions' }, useSuggestion));
+
   return h('div', { class: 'answer-form' },
+    suggestion,
     h('div', { class: 'field' }, h('label', { htmlFor: answerId }, answered ? 'Send another update' : 'Your answer'), answer, hint),
     attach.el,
     h('p', { class: 'hint' }, remember ? 'Files are sent to the guest with the reply. With "Save to knowledge base" ticked they are kept with the answer and sent to the next guest who asks.' : 'Files are sent to the guest with the reply.'),

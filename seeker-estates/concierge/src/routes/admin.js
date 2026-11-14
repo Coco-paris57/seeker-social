@@ -55,7 +55,7 @@ function conversationOut(c) {
   return {
     id: c.id, propertyId: c.property_id, propertyName: property ? property.display_name || property.name : null,
     guestName: c.guest_name || null, verified: !!c.verified, channel: c.channel, language: c.language,
-    botPaused: !!c.bot_paused, unread: !!c.needs_reply, archived: !!c.archived, stage: stageOf(c.verified ? reservation : null),
+    botPaused: !!c.bot_paused, unread: !!c.needs_reply, archived: !!c.archived, summary: c.summary || null, mood: c.mood || null, stage: stageOf(c.verified ? reservation : null),
     stay: reservation && c.verified ? { arrival: reservation.arrival, departure: reservation.departure, checkIn: reservation.check_in, checkOut: reservation.check_out, channel: reservation.channel, smoobuId: reservation.id, checkinLink: reservation.checkin_link || null, checkinCompleted: !!reservation.checkin_done, extras: parseJson(reservation.extras, []).map((x) => ({ title: x.title, status: x.status, note: x.note || '' })) } : null,
     createdAt: iso(c.created_at), lastMessageAt: iso(c.last_message_at),
     lastMessage: last ? { role: last.role === 'bot' ? 'assistant' : last.role, text: clip(last.body, 160) } : null,
@@ -69,7 +69,7 @@ function ticketOut(t, names = userNames()) {
   const property = t.property_id ? q.get('SELECT name, display_name FROM properties WHERE id = ?', t.property_id) : null;
   const guest = t.guest_message_id ? q.get('SELECT body FROM messages WHERE id = ?', t.guest_message_id) : null;
   return {
-    id: t.id, type: t.type, category: t.category, summary: t.summary, question: t.question, status: t.status,
+    id: t.id, type: t.type, category: t.category, summary: t.summary, question: t.question, status: t.status, suggestion: t.status === 'open' ? t.suggestion || null : null,
     answer: t.answer, createdAt: iso(t.created_at), answeredAt: iso(t.answered_at), answeredByName: names[t.answered_by] || null,
     savedToKnowledge: !!t.knowledge_id, conversationId: t.conversation_id, propertyId: t.property_id,
     propertyName: property ? property.display_name || property.name : null,
@@ -515,6 +515,83 @@ admin.post('/uploads', express.raw({ type: ['image/*', 'video/*'], limit: MAX_VI
   if (!Buffer.isBuffer(req.body) || !req.body.length) throw new HttpError(400, 'No file was received.');
   const f = saveUpload(req.body, { userId: req.user.id });
   res.status(201).json({ file: adminFile(f) });
+});
+
+/** Numbers for the Insights page: how fast guests are answered, by whom, about what, and where the gaps are. */
+admin.get('/insights', (req, res) => {
+  const days = Math.min(365, Math.max(1, parseInt(req.query.days, 10) || 30));
+  const since = `-${days} days`;
+  // Minutes a guest waited for a real reply: from the first unanswered guest message to the next
+  // sent reply in that chat. Holding notes ("confirming with the team") do not count as replies.
+  const waits = [];
+  let chat = null;
+  let waitingSince = null;
+  for (const m of q.all(
+    `SELECT conversation_id, role, kind, COALESCE(sent_at, created_at) AS at FROM messages
+     WHERE (role = 'guest' OR (status = 'sent' AND kind != 'holding')) AND conversation_id IN
+       (SELECT conversation_id FROM messages WHERE role = 'guest' AND created_at > datetime('now', ?))
+     ORDER BY conversation_id, COALESCE(sent_at, created_at), id`,
+    since,
+  )) {
+    if (m.conversation_id !== chat) {
+      chat = m.conversation_id;
+      waitingSince = null;
+    }
+    const at = Date.parse(`${m.at.replace(' ', 'T')}Z`);
+    if (m.role === 'guest') waitingSince ??= at;
+    else if (waitingSince != null) {
+      if (waitingSince > Date.now() - days * 86400_000) waits.push((at - waitingSince) / 60000);
+      waitingSince = null;
+    }
+  }
+  waits.sort((a, b) => a - b);
+  const median = waits.length ? waits[Math.floor((waits.length - 1) / 2)] : null;
+  const sent = q.get(
+    `SELECT
+       SUM(CASE WHEN role = 'bot' AND json_extract(meta, '$.auto') = 1 AND kind IN ('answer', 'checkin') THEN 1 ELSE 0 END) AS automatic,
+       SUM(CASE WHEN role = 'bot' AND json_extract(meta, '$.approvedBy') IS NOT NULL AND json_extract(meta, '$.edited') = 0 THEN 1 ELSE 0 END) AS approved,
+       SUM(CASE WHEN role = 'bot' AND json_extract(meta, '$.edited') = 1 THEN 1 ELSE 0 END) AS edited,
+       SUM(CASE WHEN role = 'team' OR kind = 'relay' THEN 1 ELSE 0 END) AS written
+     FROM messages WHERE status = 'sent' AND role != 'guest' AND kind != 'holding' AND sent_at > datetime('now', ?)`,
+    since,
+  );
+  const answers = { automatic: sent.automatic || 0, approved: sent.approved || 0, edited: sent.edited || 0, written: sent.written || 0 };
+  const total = answers.automatic + answers.approved + answers.edited + answers.written;
+  const topics = q.all(
+    `SELECT json_extract(meta, '$.category') AS category, COUNT(*) AS n FROM messages
+     WHERE role = 'bot' AND json_extract(meta, '$.guestMessageId') IS NOT NULL AND status != 'superseded' AND created_at > datetime('now', ?)
+     GROUP BY 1 HAVING category IS NOT NULL ORDER BY n DESC LIMIT 8`,
+    since,
+  );
+  // Questions the assistant had to pass to the team: each is a gap in that property's knowledge.
+  const gaps = q.all(
+    `SELECT t.property_id AS propertyId, COALESCE(p.display_name, p.name, 'No property') AS propertyName, t.summary, COUNT(*) AS n,
+            MAX(t.knowledge_id IS NOT NULL) AS saved
+     FROM tickets t LEFT JOIN properties p ON p.id = t.property_id
+     WHERE t.type = 'question' AND t.created_at > datetime('now', ?)
+     GROUP BY t.property_id, lower(t.summary) ORDER BY saved ASC, n DESC, MAX(t.id) DESC LIMIT 20`,
+    since,
+  ).map((g) => ({ ...g, saved: !!g.saved }));
+  const properties = q.all('SELECT * FROM properties WHERE active = 1 ORDER BY COALESCE(ref, name)').map((p) => {
+    const stats = approvalStats(p.id, days);
+    return {
+      id: p.id, name: p.display_name || p.name, mode: propertyMode(p),
+      chats: q.get("SELECT COUNT(*) AS n FROM conversations WHERE property_id = ? AND last_message_at > datetime('now', ?) AND id IN (SELECT conversation_id FROM messages)", p.id, since).n,
+      questions: q.get("SELECT COUNT(*) AS n FROM tickets WHERE property_id = ? AND type = 'question' AND created_at > datetime('now', ?)", p.id, since).n,
+      issues: q.get("SELECT COUNT(*) AS n FROM tickets WHERE property_id = ? AND type != 'question' AND created_at > datetime('now', ?)", p.id, since).n,
+      reviewed: stats.reviewed, approvalRate: stats.approvalRate, knowledge: q.get('SELECT COUNT(*) AS n FROM knowledge WHERE property_id = ?', p.id).n,
+    };
+  }).filter((p) => p.chats || p.questions || p.issues);
+  res.json({
+    days,
+    chats: q.get("SELECT COUNT(*) AS n FROM conversations WHERE last_message_at > datetime('now', ?) AND id IN (SELECT conversation_id FROM messages)", since).n,
+    guestMessages: q.get("SELECT COUNT(*) AS n FROM messages WHERE role = 'guest' AND created_at > datetime('now', ?)", since).n,
+    medianReplyMinutes: median == null ? null : Math.round(median * 10) / 10,
+    repliesMeasured: waits.length,
+    answers, withoutTeamPercent: total ? Math.round((answers.automatic / total) * 100) : null,
+    unhappy: q.get("SELECT COUNT(*) AS n FROM conversations WHERE mood = 'unhappy' AND last_message_at > datetime('now', ?)", since).n,
+    topics, gaps, properties,
+  });
 });
 
 const translations = new Map(); // recent translations, so pressing the button twice costs nothing

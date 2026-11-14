@@ -114,7 +114,7 @@ export function propertiesView() {
   const el = h('div', { class: 'page' },
     pageHeader('Properties', {
       sub: session.smoobuMode === 'live' ? 'Properties and bookings come from Smoobu.' : 'Smoobu is not connected, so properties are not synced.',
-      actions: session.smoobuMode === 'live' ? [sync] : [],
+      actions: [h('a', { class: 'btn btn-secondary', href: '#/insights' }, icon('sliders', 18), h('span', null, 'Insights')), session.smoobuMode === 'live' && sync].filter(Boolean),
     }),
     body);
 

@@ -339,6 +339,13 @@ async function processPending(conversationId, reuse) {
     emitConversation(conversation.id, 'typing', { on: false });
   }
   markHandled();
+  // Kept for the team: where the chat stands, and how the guest sounds.
+  if (decision.chatSummary || decision.mood) {
+    q.run('UPDATE conversations SET summary = COALESCE(NULLIF(?, \'\'), summary), mood = ? WHERE id = ?', clip(decision.chatSummary || '', 400), decision.mood || 'neutral', conversation.id);
+    if (decision.mood === 'unhappy' && conversation.mood !== 'unhappy') {
+      await notifyTeam({ title: `Guest sounds unhappy · ${where}`, body: clip(decision.chatSummary || latest, 160), url, tag: `mood-${conversation.id}` });
+    }
+  }
   if (decision.language && decision.language !== conversation.language) {
     q.run('UPDATE conversations SET language = ? WHERE id = ?', decision.language, conversation.id);
   }
@@ -392,6 +399,7 @@ async function processPending(conversationId, reuse) {
   if (open) {
     ticketId = open.id;
     q.run("UPDATE tickets SET question = substr(question || char(10) || char(10) || 'Follow-up: ' || ?, 1, 4000), guest_message_id = ? WHERE id = ?", decision.teamQuestion || latest, lastGuest.id, ticketId);
+    if (decision.suggestedReply) q.run('UPDATE tickets SET suggestion = ? WHERE id = ?', withLink(decision.suggestedReply, checkinLinkOf(conversation)), ticketId);
   } else {
     ticketId = q.insert(
       `INSERT INTO tickets(conversation_id, property_id, type, category, summary, question, guest_message_id)
@@ -399,6 +407,7 @@ async function processPending(conversationId, reuse) {
       conversation.id, conversation.property_id, type, decision.category, clip(decision.summary, 200),
       decision.teamQuestion || latest, lastGuest.id,
     );
+    if (decision.suggestedReply) q.run('UPDATE tickets SET suggestion = ? WHERE id = ?', withLink(decision.suggestedReply, checkinLinkOf(conversation)), ticketId);
   }
   if (!liveChat && learning) {
     // On a booking channel in approval mode even the first reply to a problem waits for a person.

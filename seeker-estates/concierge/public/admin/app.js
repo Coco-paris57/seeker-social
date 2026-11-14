@@ -7,6 +7,7 @@ import { conversationsView } from './conversations.js';
 import { propertiesView, propertyView } from './properties.js';
 import { knowledgeView } from './knowledge.js';
 import { settingsView } from './settings.js';
+import { insightsView } from './insights.js';
 import { disablePush, registerServiceWorker, syncSubscription } from './push.js';
 
 const root = document.getElementById('app');
@@ -30,6 +31,7 @@ function parseRoute() {
     case 'properties': return num
       ? { nav: 'properties', view: `property-${num}`, title: 'Property', params: { id: num } }
       : { nav: 'properties', view: 'properties', title: 'Properties', params: {} };
+    case 'insights': return { nav: 'properties', view: 'insights', title: 'Insights', params: {} };
     case 'knowledge': return { nav: 'knowledge', view: 'knowledge', title: 'Knowledge', params: {} };
     case 'settings': return { nav: 'settings', view: 'settings', title: 'Settings', params: {} };
     default: return { nav: 'inbox', view: 'inbox', title: 'Inbox', params: {} };
@@ -41,6 +43,7 @@ function createView(route) {
   if (route.view === 'conversations') return conversationsView(route.params);
   if (route.view === 'properties') return propertiesView();
   if (route.view.startsWith('property-')) return propertyView(route.params);
+  if (route.view === 'insights') return insightsView();
   if (route.view === 'knowledge') return knowledgeView();
   return settingsView({ onSignOut: signOut });
 }
