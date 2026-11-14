@@ -218,13 +218,16 @@ export function scheduledView() {
 // Paid extras
 
 const EXTRA = {
-  early_checkin: { label: 'Early check-in', priceHint: 'For example £30', detailsHint: 'For example: from 13:00', rule: 'Offered only when nobody is checking out that morning.' },
-  late_checkout: { label: 'Late checkout', priceHint: 'For example £30', detailsHint: 'For example: until 13:00', rule: 'Offered only when nobody is arriving that day.' },
-  extra_night: { label: 'Extra night at the end of the stay', priceHint: 'For example £120, or "at the nightly rate"', detailsHint: 'For example: subject to confirmation', rule: 'Offered only when the following night is free.' },
+  early_checkin: { label: 'Early check-in', priceHint: 'From ChargeAutomation', detailsHint: 'For example: from 13:00', rule: 'Offered only when nobody is checking out that morning.' },
+  late_checkout: { label: 'Late checkout', priceHint: 'From ChargeAutomation', detailsHint: 'For example: until 13:00', rule: 'Offered only when nobody is arriving that day.' },
+  extra_night: { label: 'Extra night at the end of the stay', priceHint: 'From ChargeAutomation', detailsHint: 'For example: subject to confirmation', rule: 'Offered only when the following night is free.' },
 };
 
-function extraForm(type, row, propertyId, reload) {
+const money = (s) => (s.amount == null ? 'price not seen' : `${s.currency || '£'}${s.amount}${s.qty > 1 ? ` for ${s.qty}` : ''}`);
+
+function extraForm(type, row, propertyId, reload, seen) {
   const meta = EXTRA[type];
+  const last = seen.find((s) => s.type === type && (!propertyId || s.propertyId === propertyId));
   const on = check(meta.label, { switchStyle: true, checked: !!row?.enabled, disabled: !isAdmin() });
   const price = h('input', { type: 'text', value: row?.price || '', maxLength: 60, placeholder: meta.priceHint, disabled: !isAdmin() });
   const details = h('input', { type: 'text', value: row?.details || '', maxLength: 300, placeholder: meta.detailsHint, disabled: !isAdmin() });
@@ -232,7 +235,8 @@ function extraForm(type, row, propertyId, reload) {
   const form = h('form', { class: 'extra-form' },
     on.wrap,
     h('p', { class: 'hint' }, meta.rule),
-    h('div', { class: 'form-grid' }, field('Price told to the guest', price), field('Conditions', details)),
+    last && h('p', { class: 'seen-price' }, icon('info', 16), `Last charged in ChargeAutomation: ${money(last)} (${last.title}, ${last.propertyName}).`),
+    h('div', { class: 'form-grid' }, field('Price (optional)', price, { hint: 'Leave empty to use the price on the guest\'s ChargeAutomation check-in page.' }), field('Conditions', details)),
     h('div', { class: 'actions' }, save,
       row && propertyId && button('Use the setting for every property', { small: true, variant: 'ghost', onclick: async () => {
         try { await api(`/offers/${row.id}`, { method: 'DELETE', body: {} }); toast('Removed'); } catch (err) { showError(err); }
@@ -258,7 +262,7 @@ export function extrasView() {
   const el = h('div', { class: 'page page-narrow' },
     pageHeader('Paid extras', {
       back: { href: '#/settings', label: 'Settings' },
-      sub: 'What the assistant may offer when a guest asks to arrive early, leave late or stay longer. It quotes your price, checks the calendar first, and passes a "yes" to the team. It never confirms or takes payment itself.',
+      sub: 'What the assistant may offer when a guest asks to arrive early, leave late or stay longer. It checks the calendar, then sends the guest to their ChargeAutomation check-in page to add and pay for it. Prices come from ChargeAutomation unless you type one here.',
     }),
     body);
   let picker = null;
@@ -279,7 +283,15 @@ export function extrasView() {
       adminOnly(),
       h('section', { class: 'card section' },
         field('Settings for', picker, { hint: propertyId ? 'Anything saved here replaces the setting for every property, for this property only.' : 'These apply to every property unless a property has its own.' }),
-        d.types.map((type) => extraForm(type, rows.find((o) => o.type === type), propertyId, load))),
+        d.types.map((type) => extraForm(type, rows.find((o) => o.type === type), propertyId, load, d.seen))),
+      h('section', { class: 'card section' },
+        h('h2', null, 'Seen in ChargeAutomation'),
+        h('p', { class: 'hint' }, 'Extras guests have bought or requested on their check-in page. The assistant may mention these to guests at the same property, with the last single-item price.'),
+        d.seen.length
+          ? h('ul', { class: 'plain-list' }, d.seen.map((s) => h('li', null, h('strong', null, s.title), ` · ${money(s)} · ${s.propertyName}`)))
+          : h('p', { class: 'muted' }, session.chargeAutomationWebhook
+            ? 'Nothing yet. This fills in as guests buy extras, once the "Upsell Purchased" and "Upsell Requested" webhooks in ChargeAutomation point to the address shown in Settings.'
+            : 'Nothing yet.')),
       overrides.length > 0 && h('section', { class: 'card section' },
         h('h2', null, 'Properties with their own settings'),
         h('ul', { class: 'plain-list' }, overrides.map((o) => h('li', null, h('strong', null, o.propertyName), ` · ${EXTRA[o.type].label}: ${o.enabled ? `${o.price}${o.details ? ` (${o.details})` : ''}` : 'off'}`)))));

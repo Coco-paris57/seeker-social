@@ -185,6 +185,15 @@ CREATE TABLE IF NOT EXISTS offers (        -- paid extras the assistant may offe
   details TEXT NOT NULL DEFAULT '',
   enabled INTEGER NOT NULL DEFAULT 1
 );
+CREATE TABLE IF NOT EXISTS ca_upsells (    -- extras seen in ChargeAutomation (from its purchase/request webhooks), with the last price paid
+  property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  amount REAL,
+  currency TEXT NOT NULL DEFAULT '',
+  qty INTEGER NOT NULL DEFAULT 1,
+  seen_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (property_id, title)
+);
 CREATE TABLE IF NOT EXISTS blocks (        -- owner blocks from Smoobu: dates that are not free, with no guest
   id INTEGER PRIMARY KEY,
   property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,

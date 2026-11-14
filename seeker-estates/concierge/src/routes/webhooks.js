@@ -43,11 +43,23 @@ export function recordExtra(event) {
   const d = event?.data;
   if (!kind || !d || typeof d !== 'object') return false;
   const bookingId = parseInt(String(d.pms_booking_id ?? '').split('-').pop(), 10); // "1079-14567017" or "14567017"
-  const reservation = Number.isInteger(bookingId) ? q.get('SELECT id, extras FROM reservations WHERE id = ?', bookingId) : null;
+  const reservation = Number.isInteger(bookingId) ? q.get('SELECT id, extras, property_id FROM reservations WHERE id = ?', bookingId) : null;
   if (!reservation) return false;
   const clean = (v, n) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, n);
   const title = clean(d.title || d.internal_name, 120);
   if (!title) return false;
+  // Remember the extra and what was paid: ChargeAutomation has no price list to read, so this
+  // is how the assistant learns what is on sale at each property and roughly what it costs.
+  const order = d.order_details && typeof d.order_details === 'object' ? d.order_details : {};
+  const amount = Number(order.amount);
+  if (reservation.property_id) {
+    q.run(
+      `INSERT INTO ca_upsells(property_id, title, amount, currency, qty, seen_at) VALUES(?, ?, ?, ?, ?, datetime('now'))
+       ON CONFLICT(property_id, title) DO UPDATE SET amount = COALESCE(excluded.amount, amount), currency = excluded.currency, qty = excluded.qty, seen_at = excluded.seen_at`,
+      reservation.property_id, title, Number.isFinite(amount) && amount > 0 ? amount : null, clean(d.currency_symbol, 4),
+      Math.max(1, Number(order.qty) || 1) * Math.max(1, Number(order.num_nights) || 1) * Math.max(1, Number(order.persons) || 1),
+    );
+  }
   const approval = clean(d.client_approval_status, 30).toLowerCase();
   const status = approval === 'declined' ? 'declined' : kind === 'purchased' || approval === 'approved' ? 'purchased' : 'requested, awaiting the team';
   const note = clean(d.note, 200);

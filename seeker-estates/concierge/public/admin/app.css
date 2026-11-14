@@ -483,3 +483,6 @@ table.data thead th { font-size: 13px; color: var(--text-2); font-weight: 600; }
 .plain-list li:last-child { border-bottom: 0; }
 .page > div > .note { margin: 0 0 12px; align-items: flex-start; }
 .page > div > .note svg { flex: none; margin-top: 3px; }
+.update-bar { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0; padding: 8px 12px; background: var(--brand); color: var(--white); font-weight: 500; }
+.update-bar .btn { background: var(--white); color: var(--brand); border-color: var(--white); }
+.seen-price { display: flex; gap: 6px; align-items: center; margin: 0; font-size: 14px; color: var(--text-2); }

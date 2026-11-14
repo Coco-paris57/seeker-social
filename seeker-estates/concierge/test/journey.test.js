@@ -121,7 +121,6 @@ test('a guest writing in does not replace a scheduled message waiting for approv
 test('paid extras: only offered when switched on, priced by the team, and checked against the calendar', async () => {
   const r = () => q.get('SELECT * FROM reservations WHERE id = 501');
   assert.equal(offersFor(r()), undefined);
-  assert.equal((await team('PUT', '/api/admin/offers', { type: 'early_checkin' })).status, 400); // a price is required
   await team('PUT', '/api/admin/offers', { type: 'early_checkin', price: '£30', details: 'from 13:00' });
   await team('PUT', '/api/admin/offers', { type: 'late_checkout', price: '£30', details: 'until 13:00' });
   assert.deepEqual(offersFor(r()).map((o) => [o.extra, o.price, o.calendar]), [['Early check-in', '£30', 'possible'], ['Late checkout', '£30', 'possible']]);
@@ -150,6 +149,33 @@ test('paid extras: only offered when switched on, priced by the team, and checke
   const stranger = await openChat(srv.base);
   const them = await say(stranger, 'Can we have a late checkout?');
   assert.ok(!JSON.stringify((await team('GET', '/api/admin/inbox')).json).includes('Late checkout is available') || them.conversation.id === me.conversation.id);
+  // Linked to ChargeAutomation: with no price typed, the price comes from what its check-in page last charged,
+  // and the guest is sent to their own check-in page to add it. Other extras sold there are offered too.
+  const { recordExtra } = await import('../src/routes/webhooks.js');
+  await team('PUT', '/api/admin/offers', { type: 'late_checkout', price: '', details: 'until 13:00' });
+  q.run("UPDATE reservations SET checkin_link = 'https://app.chargeautomation.com/securelink/abc' WHERE id = 501");
+  q.run('DELETE FROM blocks');
+  let late = offersFor(r()).find((o) => o.extra === 'Late checkout');
+  assert.equal(late.price, undefined);
+  assert.equal(late.last_price_on_checkin_page, undefined); // nothing seen yet: the bot must not invent one
+  assert.equal(late.how_to_get_it, 'guest adds and pays for it on their online check-in page');
+  const sale = (title, amount, extra = {}) => recordExtra({ event: 'booking.upsell.purchased', data: { pms_booking_id: '1079-501', title, charge_ref_no: title, currency_symbol: '£', order_details: { amount, qty: 1, ...extra } } });
+  assert.ok(sale('Late Check-out', 35));
+  assert.ok(sale('Parking space', 20));
+  assert.ok(sale('Breakfast', 60, { persons: 3 })); // a total for three people is not a unit price
+  const offers = offersFor(r());
+  assert.equal(offers.find((o) => o.extra === 'Late checkout').last_price_on_checkin_page, '£35');
+  assert.equal(offers.find((o) => o.extra === 'Parking space').last_price_on_checkin_page, '£20');
+  assert.equal(offers.find((o) => o.extra === 'Breakfast').last_price_on_checkin_page, undefined);
+  const seen = (await team('GET', '/api/admin/offers')).json.seen;
+  assert.deepEqual(seen.map((s) => s.title).sort(), ['Breakfast', 'Late Check-out', 'Parking space']);
+  assert.equal(seen.find((s) => s.title === 'Late Check-out').type, 'late_checkout');
+  await team('POST', `/api/admin/messages/${draft.id}/approve`, {}); // the first question is dealt with
+  const again = await say(guest, 'Is a late checkout possible?');
+  const d2 = (await team('GET', '/api/admin/inbox')).json.approvals.find((a) => a.conversation.id === again.conversation.id).draft;
+  assert.match(d2.text, /Late checkout is available for your stay, currently £35 \(until 13:00\)\. You can add and pay for it on your online check-in page/);
+  assert.match(d2.text, /securelink\/abc/);
+
   // Once the stay is over, nothing is offered.
   assert.equal(offersFor({ ...r(), arrival: addDays(ctx.today, -9), departure: addDays(ctx.today, -5) }), undefined);
 });

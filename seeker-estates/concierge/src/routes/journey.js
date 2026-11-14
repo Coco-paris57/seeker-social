@@ -6,6 +6,7 @@ import { requireAdmin } from '../auth.js';
 import { CATEGORIES } from '../llm.js';
 import { decideSuggestion, PLACEHOLDERS, runTidy, seedTemplates } from '../journey.js';
 import { clip, HttpError } from '../util.js';
+import { upsellType } from '../bot.js';
 import { iso } from './shared.js';
 
 export const journey = express.Router();
@@ -127,7 +128,10 @@ const OFFER_TYPES = ['early_checkin', 'late_checkout', 'extra_night'];
 const offerOut = (o) => ({ id: o.id, propertyId: o.property_id, propertyName: propertyName(o.property_id), type: o.type, price: o.price, details: o.details, enabled: !!o.enabled });
 
 journey.get('/offers', (req, res) => {
-  res.json({ offers: q.all('SELECT * FROM offers ORDER BY property_id IS NOT NULL, property_id, id').map(offerOut), types: OFFER_TYPES });
+  // What ChargeAutomation has told us is on sale, and the last amount paid, per property.
+  const seen = q.all('SELECT u.*, p.name, p.display_name FROM ca_upsells u JOIN properties p ON p.id = u.property_id ORDER BY u.seen_at DESC LIMIT 200')
+    .map((u) => ({ propertyId: u.property_id, propertyName: u.display_name || u.name, title: u.title, type: upsellType(u.title), amount: u.amount, currency: u.currency, qty: u.qty, at: iso(u.seen_at) }));
+  res.json({ offers: q.all('SELECT * FROM offers ORDER BY property_id IS NOT NULL, property_id, id').map(offerOut), types: OFFER_TYPES, seen });
 });
 
 /** Set one extra for every property (propertyId null) or for one property, which then overrides. */
@@ -138,7 +142,6 @@ journey.put('/offers', requireAdmin, (req, res) => {
   const price = clip(String(b.price || '').trim(), 60);
   const details = clip(String(b.details || '').trim(), 300);
   const enabled = b.enabled === false ? 0 : 1;
-  if (enabled && !price) throw new HttpError(400, 'Enter the price guests should be told, for example £30.');
   const existing = q.get('SELECT id FROM offers WHERE type = ? AND property_id IS ?', b.type, propertyId);
   if (existing) q.run('UPDATE offers SET price = ?, details = ?, enabled = ? WHERE id = ?', price, details, enabled, existing.id);
   else q.run('INSERT INTO offers(property_id, type, price, details, enabled) VALUES(?, ?, ?, ?, ?)', propertyId, b.type, price, details, enabled);

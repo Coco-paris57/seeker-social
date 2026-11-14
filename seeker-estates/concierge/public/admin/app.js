@@ -270,6 +270,30 @@ document.addEventListener('visibilitychange', () => {
 });
 setInterval(refreshTimes, 30000);
 
+// A new version was deployed while this app was open (an installed app can stay open for days):
+// reload by itself when nothing is being typed, otherwise offer a button.
+let build = null;
+let updateBar = null;
+const typing = () => [...document.querySelectorAll('textarea, input[type="text"]')].some((el) => el.value.trim() && (el === document.activeElement || el.closest('.approval, .ticket, .composer, dialog')));
+async function checkVersion() {
+  let version;
+  try {
+    ({ version } = await (await fetch('/api/admin/setup', { cache: 'no-store' })).json());
+  } catch {
+    return; // offline: try again later
+  }
+  if (!version) return;
+  if (build === null) { build = version; return; }
+  if (version === build) return;
+  if (!typing()) { location.reload(); return; }
+  if (updateBar) return;
+  updateBar = h('p', { class: 'update-bar', role: 'status' }, icon('refresh', 16), 'A new version is ready.', h('button', { type: 'button', class: 'btn btn-small btn-primary', onclick: () => location.reload() }, 'Reload'));
+  document.body.prepend(updateBar);
+}
+checkVersion();
+setInterval(checkVersion, 5 * 60_000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkVersion(); });
+
 fill(root, loading('Starting'));
 registerServiceWorker();
 start();

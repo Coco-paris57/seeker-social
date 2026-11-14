@@ -20,6 +20,8 @@ import { sha256 } from '../util.js';
 import { journey } from './journey.js';
 
 export const admin = express.Router();
+// Changes on every deploy. The team app compares it with the one it started with and reloads itself.
+const BUILD = (process.env.RENDER_GIT_COMMIT || '').slice(0, 12) || String(Date.now());
 const loginIpLimit = rateLimiter(40, 15 * 60_000); // all attempts per IP
 const loginFailures = failureLimiter(8, 15 * 60_000); // wrong passwords per IP and email
 const DUMMY_HASH = hashPassword(newToken()); // keeps response time the same for unknown emails
@@ -106,7 +108,7 @@ const knowledgeOut = (k) => ({
 // --- sign-in ----------------------------------------------------------------------------
 
 admin.get('/setup', (req, res) => {
-  res.json({ needsSetup: q.get('SELECT COUNT(*) AS n FROM users').n === 0, setupCodeRequired: !!setupToken });
+  res.json({ needsSetup: q.get('SELECT COUNT(*) AS n FROM users').n === 0, setupCodeRequired: !!setupToken, version: BUILD });
 });
 
 /** First run only: create the first administrator. */

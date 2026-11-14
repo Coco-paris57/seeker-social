@@ -101,7 +101,8 @@ under the Archived filter, and it comes back by itself if the guest writes again
 - **Insights** (Properties > Insights): time to a real reply, share answered without the team, what guests ask about, the questions each property could not answer, and a per-property table.
 - **Weekly tidy-up** (Knowledge > Suggestions): on Monday mornings the assistant reads the replies the team approved and proposes knowledge entries to add or update. Nothing is saved until someone accepts; a dismissed proposal is not made again.
 - **Scheduled messages** (Settings > Scheduled messages): fixed texts sent at set points of a stay through the booking channel. Each is off until switched on, and waits in the Inbox for approval unless "Send without approval" is on. A message more than 12 hours late is skipped.
-- **Paid extras** (Settings > Paid extras): early check-in, late checkout and an extra night, with the team's price, for every property or one. The assistant only offers one when the calendar allows it (other bookings and owner blocks), and passes a "yes" to the team. It never confirms or takes payment.
+- **Paid extras** (Settings > Paid extras): early check-in, late checkout and an extra night, for every property or one. The assistant only offers one when the calendar allows it (other bookings and owner blocks), then sends the guest to their ChargeAutomation check-in page to add and pay for it. ChargeAutomation has no price list to read, so prices are learned from its "Upsell Purchased" and "Upsell Requested" webhooks (last single-item amount per property); a price typed by the team overrides that, and with neither the assistant says the price is shown on the page. Other extras seen through those webhooks are offered at the same property too.
+- **Updates.** The team app checks the server version when it is opened or brought back to the front, and reloads itself after a deploy (or shows a Reload bar if someone is typing).
 
 ## Run it locally
 

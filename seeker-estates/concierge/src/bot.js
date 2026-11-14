@@ -82,6 +82,11 @@ function onFile(property, verified) {
 }
 
 /** Everything the model is allowed to see for this conversation. */
+/** Which of our three extras a ChargeAutomation upsell title is, if any. */
+export const upsellType = (title) => (/early/i.test(title) ? 'early_checkin' : /late/i.test(title) ? 'late_checkout' : /night|extend|extension|longer/i.test(title) ? 'extra_night' : null);
+/** A price is only quoted when it was for a single unit; otherwise the page is the source. */
+const priceOf = (u) => (u.amount != null && u.qty === 1 ? `${u.currency || '£'}${Number.isInteger(u.amount) ? u.amount : u.amount.toFixed(2)}` : undefined);
+
 const OFFER_LABEL = { early_checkin: 'Early check-in', late_checkout: 'Late checkout', extra_night: 'Extra night at the end of the stay' };
 
 /**
@@ -100,11 +105,26 @@ export function offersFor(reservation, today = londonDate()) {
     extra_night: !taken('arrival <= ? AND departure > ?', [reservation.departure, reservation.departure]),
   };
   const rows = q.all('SELECT * FROM offers WHERE property_id = ? OR property_id IS NULL ORDER BY property_id IS NULL', reservation.property_id);
+  const upsells = q.all('SELECT * FROM ca_upsells WHERE property_id = ? ORDER BY seen_at DESC', reservation.property_id);
+  const bookable = !!reservation.checkin_link; // extras are bought on the guest's ChargeAutomation page
   const out = [];
   for (const type of Object.keys(OFFER_LABEL)) {
     const row = rows.find((r) => r.type === type); // the property's own setting wins over the one for every property
     if (!row || !row.enabled) continue;
-    out.push({ extra: OFFER_LABEL[type], price: row.price || 'to be confirmed by the team', conditions: row.details || undefined, calendar: free[type] ? 'possible' : 'not possible for these dates' });
+    const seen = upsells.find((u) => upsellType(u.title) === type);
+    out.push({
+      extra: OFFER_LABEL[type],
+      // The team's own price if they typed one; otherwise what ChargeAutomation last charged for it here.
+      price: row.price || undefined,
+      last_price_on_checkin_page: !row.price && seen ? priceOf(seen) : undefined,
+      conditions: row.details || undefined,
+      calendar: free[type] ? 'possible' : 'not possible for these dates',
+      how_to_get_it: bookable ? 'guest adds and pays for it on their online check-in page' : 'ask the team',
+    });
+  }
+  // Anything else sold on the check-in page at this property (parking, a cot, luggage storage...).
+  for (const u of upsells.filter((x) => !upsellType(x.title)).slice(0, 12)) {
+    if (bookable) out.push({ extra: u.title, last_price_on_checkin_page: priceOf(u), how_to_get_it: 'guest adds and pays for it on their online check-in page' });
   }
   return out.length ? out : undefined;
 }
