@@ -1,6 +1,6 @@
 // Inbox: drafts waiting for approval and requests from the assistant (urgent, maintenance,
 // questions). The approval and request cards are also used inside a conversation thread.
-import { add, api, ApiError, attachmentsView, autoGrow, busy, button, check, chip, confirmDialog, fill, guestLabel, h, icon, loadError, loading, openDialog, pageHeader, reconcile, showError, TICKET_TYPES, timeEl, toast, uid } from './lib.js';
+import { add, api, ApiError, attachmentsView, autoGrow, busy, button, check, chip, confirmDialog, fill, guestLabel, h, icon, loadError, loading, openDialog, pageHeader, reconcile, showError, TICKET_TYPES, timeEl, toast, uid , isEnglish, translateControl } from './lib.js';
 import { inbox } from './state.js';
 import { attachControl, CHANNEL_TEXT_ONLY } from './attach.js';
 
@@ -179,6 +179,7 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
     !inThread && (asked.length > 0 || guestFiles) && h('div', { class: 'quote' },
       h('p', { class: 'label' }, asked.length ? 'Guest asked' : 'Guest sent'),
       asked.map((text, i) => h('p', { class: i < asked.length - 1 ? 'pre earlier' : 'pre' }, text)),
+      asked.length > 0 && !isEnglish(conversation.language) && translateControl(asked.join('\n\n')),
       guestFiles),
     h('div', { class: 'draft' },
       h('div', { class: 'draft-head' },
@@ -186,6 +187,8 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
         confidence ? chip(confidence.label, confidence) : null),
       news,
       textarea,
+      // The draft is written in the guest's language: read it in English before approving.
+      !isEnglish(conversation.language) && translateControl(() => textarea.value, { label: 'Translate this reply to English' }),
       // Pictures and the video link of the knowledge entry the answer came from.
       attachmentsView(draft.attachments, { links: draft.links, label: 'Picture from the knowledge base', caption: 'Shown to the guest with this reply' }),
       attach.el,
@@ -267,6 +270,7 @@ export function ticketCard(ticket, { isOpen = false, onToggle = () => {}, showCh
     (ticket.guestMessage || ticketFiles) && h('div', { class: 'quote' },
       h('p', { class: 'label' }, ticket.guestMessage ? 'Guest wrote' : 'Guest sent'),
       ticket.guestMessage && h('p', { class: 'pre' }, ticket.guestMessage),
+      ticket.guestMessage && !isEnglish(ticket.language) && translateControl(ticket.guestMessage),
       ticketFiles),
     ticket.question && h('div', { class: 'ask' }, h('p', { class: 'label' }, icon('bot', 16), 'The assistant asks'), h('p', { class: 'pre' }, ticket.question)),
     ticket.answer && h('div', { class: 'quote' },

@@ -81,6 +81,11 @@ ChargeAutomation, Integrations, Webhooks, for "Upsell Purchased" and "Upsell Req
 
 A team member can take over any chat (the assistant pauses) and hand it back later.
 
+**Translate to English.** Where a guest writes in another language, the Inbox and Chats show a
+"Translate to English" button under their message, and one under the assistant's drafted reply
+(which is written in the guest's language). The translation is shown to the team member only;
+nothing is stored or sent.
+
 **Read and unread.** A chat is unread while the guest is waiting for a real answer: a guest
 message marks it unread, and a reply that is sent (not the "confirming with the team" note) marks
 it read. The Chats tab shows the unread count, unread chats are highlighted, the list can be

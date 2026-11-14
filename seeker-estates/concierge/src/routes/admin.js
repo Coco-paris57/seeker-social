@@ -15,7 +15,8 @@ import { clip, failureLimiter, HttpError, newToken, rateLimiter } from '../util.
 import { iso, sse } from './shared.js';
 import { posterHtml } from '../poster.js';
 import { adminFile, getFile, MAX_VIDEO, modelImages, saveUpload, sendFile, sweepFiles } from '../media.js';
-import { describePictures } from '../llm.js';
+import { describePictures, translate } from '../llm.js';
+import { sha256 } from '../util.js';
 
 export const admin = express.Router();
 const loginIpLimit = rateLimiter(40, 15 * 60_000); // all attempts per IP
@@ -72,7 +73,7 @@ function ticketOut(t, names = userNames()) {
     answer: t.answer, createdAt: iso(t.created_at), answeredAt: iso(t.answered_at), answeredByName: names[t.answered_by] || null,
     savedToKnowledge: !!t.knowledge_id, conversationId: t.conversation_id, propertyId: t.property_id,
     propertyName: property ? property.display_name || property.name : null,
-    guestName: c?.guest_name || null, guestVerified: !!c?.verified, channel: c?.channel || 'web', guestMessage: guest?.body || null,
+    guestName: c?.guest_name || null, guestVerified: !!c?.verified, channel: c?.channel || 'web', language: c?.language || null, guestMessage: guest?.body || null,
     // Photos and videos the guest sent in this chat up to the message that raised the request.
     attachments: t.guest_message_id ? q.all('SELECT token, kind FROM files WHERE conversation_id = ? AND message_id IS NOT NULL AND message_id <= ? ORDER BY message_id DESC LIMIT 8', t.conversation_id, t.guest_message_id).map(adminFile) : [],
   };
@@ -514,6 +515,36 @@ admin.post('/uploads', express.raw({ type: ['image/*', 'video/*'], limit: MAX_VI
   if (!Buffer.isBuffer(req.body) || !req.body.length) throw new HttpError(400, 'No file was received.');
   const f = saveUpload(req.body, { userId: req.user.id });
   res.status(201).json({ file: adminFile(f) });
+});
+
+const translations = new Map(); // recent translations, so pressing the button twice costs nothing
+const translateLimit = rateLimiter(120, 60 * 60_000); // per team member per hour
+
+/**
+ * Translate a guest message or a drafted reply into English for the team member reading it.
+ * Nothing is stored or sent to the guest. A guest's private check-in link is kept out of the
+ * model: it is swapped for a placeholder and put back in the result.
+ */
+admin.post('/translate', async (req, res) => {
+  const text = String(req.body?.text || '').trim();
+  if (!text) throw new HttpError(400, 'There is nothing to translate.');
+  if (text.length > 6000) throw new HttpError(400, 'That text is too long to translate.');
+  const key = sha256(text);
+  if (translations.has(key)) return res.json(translations.get(key));
+  if (!translateLimit(`u${req.user.id}`)) throw new HttpError(429, 'That is a lot of translations in one hour. Please try again later.');
+  const links = [];
+  const masked = text.replace(/https:\/\/app\.chargeautomation\.com\/[A-Za-z0-9\/_-]+/g, (url) => `[LINK_${links.push(url)}]`);
+  let out;
+  try {
+    out = await translate(masked);
+  } catch (e) {
+    console.error(`Translate failed: ${e.message}`);
+    throw new HttpError(502, 'The translation is not available just now. Please try again.');
+  }
+  const result = { language: out.language, translation: out.translation.replace(/\[LINK_(\d+)\]/g, (m, n) => links[Number(n) - 1] || m) };
+  translations.set(key, result);
+  if (translations.size > 500) translations.delete(translations.keys().next().value);
+  res.json(result);
 });
 
 /** Any stored picture or video, for the team app. */

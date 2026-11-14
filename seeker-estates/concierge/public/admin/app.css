@@ -432,3 +432,9 @@ td:first-child { white-space: nowrap; }
 .attach-busy { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(255, 255, 255, .8); font-size: 11px; font-weight: 600; }
 .attach-remove { position: absolute; top: 0; right: 0; width: 28px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 0 0 0 var(--radius-s); background: rgba(19, 34, 28, .8); color: #fff; cursor: pointer; }
 .attach-note { color: var(--warn); }
+
+/* Translation shown to the team under a message. */
+.translate { margin-top: 4px; }
+.translation { margin-top: 6px; padding: 8px 12px; border-left: 3px solid var(--brand-600); background: var(--surface-2); border-radius: 0 var(--radius-s) var(--radius-s) 0; }
+.translation p { margin: 0; }
+.translation .label { font-size: 12.5px; color: var(--text-2); margin-bottom: 2px; }

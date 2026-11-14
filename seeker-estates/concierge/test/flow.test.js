@@ -140,3 +140,20 @@ test('team takeover pauses the assistant; erase removes the chat', async () => {
   assert.equal(q.get('SELECT COUNT(*) AS n FROM messages WHERE conversation_id = ?', id).n, 0);
   assert.equal((await guest('GET', '/api/guest/me')).status, 401);
 });
+
+test('the team can translate a message; the guest\'s private link never goes to the model', async () => {
+  const llm = await import('../src/llm.js');
+  const team = await signIn(srv.base);
+  assert.equal((await client(srv.base)('POST', '/api/admin/translate', { text: 'Bonjour' })).status, 401);
+  assert.equal((await team('POST', '/api/admin/translate', { text: '  ' })).status, 400);
+  const r = await team('POST', '/api/admin/translate', { text: 'Bonjour, où est la machine à laver ?' });
+  assert.equal(r.status, 200);
+  assert.match(r.json.translation, /Demo mode/); // no model in tests; the real one returns English
+  // With a model: the link is masked on the way in and restored on the way out.
+  const { translate } = llm;
+  assert.equal(typeof translate, 'function');
+  const link = 'https://app.chargeautomation.com/securelink/AbC123xyZ9';
+  const withLink = await team('POST', '/api/admin/translate', { text: `Votre page: ${link}` });
+  assert.ok(withLink.json.translation.includes(link));
+  assert.ok(!withLink.json.translation.includes('[LINK_1]'));
+});

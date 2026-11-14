@@ -185,3 +185,5 @@ then pass `attachments: token[]` (at most 6) to `POST /messages/:id/approve`,
 `knowledge.videos`) and sent with that answer to later guests. Booking-channel chats
 (`channel: 'smoobu'`) are text only: attachments there return `400`. `ticket.channel` and
 `conversation.channel` say which kind of chat it is.
+
+`POST /api/admin/translate` `{ text }` returns `{ language, translation }`: the text in English, for the team member reading it. Nothing is stored or sent. `429` after 120 an hour, `502` if the model is unavailable. `ticket.language` and `conversation.language` hold the language the guest writes in, once known.

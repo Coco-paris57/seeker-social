@@ -189,6 +189,41 @@ export function check(label, { checked = false, onchange, switchStyle = false, .
   return { wrap, input };
 }
 
+/** True when a chat's language is known to be English, so no translate button is needed. */
+export const isEnglish = (language) => /^en(glish)?\b/i.test(String(language || ''));
+
+/**
+ * "Translate to English" for a guest message or a drafted reply. `text` is the words to
+ * translate, or a function returning them (for an editable draft). The translation appears
+ * under the button and is only for the team member: nothing is saved or sent.
+ */
+export function translateControl(text, { label = 'Translate to English' } = {}) {
+  const btn = button(label, { variant: 'ghost', small: true, icon: 'chat' });
+  const out = h('div', { class: 'translation', role: 'status', hidden: true });
+  let shownFor = null;
+  btn.addEventListener('click', () => busy(btn, async () => {
+    const source = (typeof text === 'function' ? text() : text || '').trim();
+    if (!source) return;
+    if (!out.hidden && shownFor === source) {
+      out.hidden = true;
+      btn.lastChild.textContent = label;
+      return;
+    }
+    try {
+      const result = await api('/translate', { method: 'POST', body: { text: source } });
+      fill(out,
+        h('p', { class: 'label' }, result.language && result.language !== 'unknown' ? `Translated from ${result.language}` : 'Translation'),
+        h('p', { class: 'pre' }, result.translation));
+      out.hidden = false;
+      shownFor = source;
+      btn.lastChild.textContent = 'Hide translation';
+    } catch (err) {
+      showError(err);
+    }
+  }));
+  return h('div', { class: 'translate' }, btn, out);
+}
+
 /** Text area that grows with its content. */
 export function autoGrow(textarea) {
   const fit = () => {
