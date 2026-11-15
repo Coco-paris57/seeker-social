@@ -1,5 +1,6 @@
 // Copies apartments and reservations from Smoobu into the local database.
 // Only the fields the concierge needs are kept: no email, phone, price or payment data.
+import { emitAdmin } from './notify.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { q, parseJson, getRaw, setRaw } from './db.js';
@@ -58,7 +59,9 @@ export function upsertReservation(b) {
   if (!property) return;
   if (b['is-blocked-booking']) {
     // Owner blocks are not guests, but the dates are taken: kept so extras are not offered into them.
-    q.run('INSERT OR REPLACE INTO blocks(id, property_id, arrival, departure) VALUES(?, ?, ?, ?)', b.id, property.id, b.arrival, b.departure);
+    // A block that was removed in Smoobu frees the dates again.
+    if (b.type === 'cancellation') q.run('DELETE FROM blocks WHERE id = ?', b.id);
+    else q.run('INSERT OR REPLACE INTO blocks(id, property_id, arrival, departure) VALUES(?, ?, ?, ?)', b.id, property.id, b.arrival, b.departure);
     return;
   }
   const first = b.firstname || '';
@@ -118,6 +121,7 @@ export async function syncReservations() {
   const bookings = await api.reservations(addDays(today, -35), addDays(today, 180));
   q.run('DELETE FROM blocks');
   for (const b of bookings) upsertReservation(b);
+  emitAdmin('todo'); // open calendars and to-do lists show the change at once
   // Guest names are not needed once a stay is long over.
   q.run('DELETE FROM reservations WHERE departure < ?', addDays(today, -120));
   return { reservations: bookings.length };
@@ -188,4 +192,5 @@ export async function syncReservation(id) {
   const api = smoobu();
   if (!api) return;
   upsertReservation(await api.reservation(id));
+  emitAdmin('todo');
 }

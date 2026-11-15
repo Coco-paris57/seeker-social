@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 import express from 'express';
 import { q, setRaw } from '../db.js';
 import { handleGuestMessage } from '../bot.js';
-import { emitConversation, notifyTeam } from '../notify.js';
+import { emitAdmin, emitConversation, notifyTeam } from '../notify.js';
 import { smoobu } from '../smoobu.js';
 import { syncReservation } from '../sync.js';
 import { htmlToText } from '../util.js';
@@ -95,6 +95,8 @@ export async function handleSmoobuEvent(event) {
     await syncReservation(data.id);
   } else if (action === 'deleteReservation' && Number.isInteger(data.id)) {
     q.run('DELETE FROM reservations WHERE id = ?', data.id);
+    q.run('DELETE FROM blocks WHERE id = ?', data.id);
+    emitAdmin('todo');
   } else if (action === 'newMessage' && data.sender === 'guest' && channelInboxOn()) {
     await importGuestMessage(Number(data.booking?.id), Number(data.id));
   }

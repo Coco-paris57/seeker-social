@@ -75,3 +75,22 @@ test('from a free gap, an extra night can be proposed to the guest before it and
   assert.ok(!list.includes('501:upsell_night') && !list.includes('601:upsell_before'));
   assert.equal((await team('POST', '/api/admin/reservations/601/tasks', { type: 'upsell_before' })).status, 409);
 });
+
+test('a new booking, a cancellation and a removed owner block change the calendar straight away', async () => {
+  const { upsertReservation } = await import('../src/sync.js');
+  const { handleSmoobuEvent } = await import('../src/routes/webhooks.js');
+  q.run('UPDATE properties SET smoobu_id = 77 WHERE id = ?', ctx.propertyId);
+  const ids = async () => (await team('GET', `/api/admin/calendar?from=${addDays(ctx.today, 20)}&days=14`)).json;
+  const booking = { id: 800, apartment: { id: 77 }, arrival: addDays(ctx.today, 22), departure: addDays(ctx.today, 25), firstname: 'New', lastname: 'Guest', channel: { name: 'Airbnb' } };
+  upsertReservation(booking); // as Smoobu's "new reservation" message does
+  assert.deepEqual((await ids()).reservations.map((r) => r.id), [800]);
+  upsertReservation({ ...booking, type: 'cancellation' });
+  assert.deepEqual((await ids()).reservations, []);
+  upsertReservation({ id: 801, apartment: { id: 77 }, arrival: addDays(ctx.today, 26), departure: addDays(ctx.today, 28), 'is-blocked-booking': true });
+  assert.equal((await ids()).blocks.length, 1);
+  upsertReservation({ id: 801, apartment: { id: 77 }, arrival: addDays(ctx.today, 26), departure: addDays(ctx.today, 28), 'is-blocked-booking': true, type: 'cancellation' });
+  assert.equal((await ids()).blocks.length, 0);
+  upsertReservation(booking);
+  await handleSmoobuEvent({ action: 'deleteReservation', data: { id: 800 } });
+  assert.deepEqual((await ids()).reservations, []);
+});
