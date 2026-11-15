@@ -15,7 +15,7 @@ function messageChips(m) {
   if (m.status === 'withheld') chips.push(chip(`Not sent · ${m.withheldReason || 'already covered in the conversation'}`, { tone: 'warn', icon: 'x' }));
   if (m.kind === 'holding') chips.push(chip('Holding note', { icon: 'clock' }));
   if (m.kind === 'scheduled') chips.push(chip('Scheduled message', { icon: 'clock' }));
-  if (m.kind === 'urgent') chips.push(chip('Urgent reply, sent automatically', { tone: 'danger', icon: 'alert' }));
+  if (m.kind === 'urgent' && m.status === 'sent') chips.push(chip('Urgent reply, sent automatically', { tone: 'danger', icon: 'alert' }));
   if (m.kind === 'relay') chips.push(chip(m.authorName ? `Team answer from ${m.authorName}` : 'Team answer', { icon: 'user' }));
   if (m.automatic && m.kind !== 'urgent') chips.push(chip('Sent automatically', { tone: 'brand', icon: 'bolt' }));
   if (m.edited) chips.push(chip(`Edited by ${m.authorName || 'the team'}`, { tone: 'warn', icon: 'edit' }));
@@ -52,6 +52,8 @@ function threadPane(id, { onGone }) {
   const detailsBtn = h('button', { type: 'button', class: 'btn btn-secondary btn-small details-toggle', 'aria-expanded': 'false', 'aria-controls': detailsId }, icon('info', 18), h('span', null, 'Details'));
   const takeover = h('div', { class: 'takeover' });
   const readBar = h('div', { class: 'read-bar' });
+  let showRejected = false;
+  const rejectedToggle = h('button', { type: 'button', class: 'link-button rejected-toggle', hidden: true, onclick: () => { showRejected = !showRejected; load(); } });
   const summaryBox = h('div', { class: 'chat-summary', hidden: true });
   // A check-in message for an unhappy guest: proposed by the assistant, sent only if the team schedules it.
   const followBox = h('div', { class: 'follow-up', hidden: true });
@@ -276,6 +278,7 @@ function threadPane(id, { onGone }) {
         row('Started', fullTime(c.createdAt))),
       h('h2', null, `Requests (${tickets.length})`),
       tickets.length ? ticketList : h('p', { class: 'muted' }, 'No requests in this conversation.'),
+      rejectedToggle,
       h('h2', null, 'Privacy'),
       h('p', { class: 'muted' }, 'If the guest asks for their messages to be deleted, erase the conversation.'),
       erase);
@@ -300,7 +303,11 @@ function threadPane(id, { onGone }) {
     renderHead(data.conversation);
     renderTakeover(data.conversation);
     renderDetails(data.conversation, data.tickets);
-    reconcile(list, data.messages, {
+    // Rejected suggestions were never sent: hidden so the thread shows only what the guest and the team said.
+    const rejected = data.messages.filter((m) => m.status === 'rejected').length;
+    rejectedToggle.hidden = !rejected;
+    rejectedToggle.textContent = showRejected ? 'Hide rejected suggestions' : `Show ${rejected} rejected ${rejected === 1 ? 'suggestion' : 'suggestions'}`;
+    reconcile(list, showRejected ? data.messages : data.messages.filter((m) => m.status !== 'rejected'), {
       key: (m) => m.id,
       signature: (m) => `${m.status}|${m.text}|${m.deliveryError || ''}`,
       create: (m) => messageEl(m, data.conversation, load),

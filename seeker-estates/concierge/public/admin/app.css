@@ -657,3 +657,4 @@ table.data thead th { font-size: 13px; color: var(--text-2); font-weight: 600; }
 .pair-value { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 22px; color: var(--brand); }
 .dash-pair .muted { margin: 0; font-size: 13px; }
 .dash-shortcuts { display: flex; flex-wrap: wrap; gap: 8px; }
+.link-button { display: block; margin: 12px 0 0; padding: 4px 0; border: 0; background: none; font: inherit; font-size: 14px; color: var(--brand); text-decoration: underline; cursor: pointer; text-align: left; }
