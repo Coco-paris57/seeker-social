@@ -276,6 +276,7 @@ export function openDb(file) {
   if (!has('conversations', 'summary')) db.exec('ALTER TABLE conversations ADD COLUMN summary TEXT');
   if (!has('conversations', 'mood')) db.exec('ALTER TABLE conversations ADD COLUMN mood TEXT');
   if (!has('properties', 'position')) db.exec('ALTER TABLE properties ADD COLUMN position INTEGER'); // the property's place in Smoobu's own list
+  if (!has('tasks', 'scheduled_at')) db.exec('ALTER TABLE tasks ADD COLUMN scheduled_at TEXT'); // when a person scheduled it: only what is said after this can stop it
   if (!has('tasks', 'manual')) db.exec('ALTER TABLE tasks ADD COLUMN manual INTEGER NOT NULL DEFAULT 0'); // 1 = created by a person from the calendar
   if (!has('knowledge', 'video_url')) db.exec('ALTER TABLE knowledge ADD COLUMN video_url TEXT');
   if (!has('knowledge', 'media_notes')) db.exec('ALTER TABLE knowledge ADD COLUMN media_notes TEXT');

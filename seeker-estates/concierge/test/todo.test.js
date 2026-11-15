@@ -85,7 +85,12 @@ test('no offer goes to an unhappy guest; a happy guest gets a thank-you proposed
   q.run("UPDATE conversations SET mood = 'neutral' WHERE id = ?", cid);
   const late = (await todo()).tasks.find((t) => t.type === 'upsell_departure'); // late checkout and an extra night, as one message
   const at = new Date(Date.now() + 3600_000).toISOString();
-  await team('POST', `/api/admin/tasks/${late.id}/schedule`, { text: late.text, at });
+  // The chat already has an offer in it, so the assistant warns once; scheduling again is the person's call and goes ahead.
+  const warned = await team('POST', `/api/admin/tasks/${late.id}/schedule`, { text: late.text, at });
+  assert.equal(warned.status, 409);
+  assert.match(warned.json.error, /^Not scheduled yet\. .*Press Schedule again to send it anyway\.$/);
+  assert.match((await todo()).tasks.find((t) => t.id === late.id).note, /advises against sending this now/);
+  assert.equal((await team('POST', `/api/admin/tasks/${late.id}/schedule`, { text: late.text, at })).status, 200);
   q.run("INSERT INTO reservations(id, property_id, first_name, last_name, guest_name, arrival, departure) VALUES(503, ?, 'C', 'D', 'C D', ?, ?)", ctx.propertyId, addDays(ctx.today, 3), addDays(ctx.today, 5));
   const before = outbox.length;
   assert.equal(await runTasks(Date.parse(at) + 1000), 0);
@@ -222,4 +227,21 @@ test('a scheduled offer goes back to the to-do list as soon as the guest raises 
   const before = outbox.length;
   assert.equal(await runTasks(Date.parse(at) + 1000), 0);
   assert.equal(outbox.length, before);
+});
+
+test('once a person has scheduled an offer after the warning, it is sent unless something new is said', async () => {
+  q.run('DELETE FROM tasks'); q.run('DELETE FROM messages'); q.run('DELETE FROM offers'); q.run('DELETE FROM reservations WHERE id != 520');
+  await team('PUT', '/api/admin/offers', { type: 'late_checkout', price: '£30' });
+  const cid = q.get('SELECT id FROM conversations WHERE reservation_id = 520').id;
+  // An earlier, unresolved exchange in the chat that touches the same words.
+  q.run("INSERT INTO messages(conversation_id, role, body, sent_at) VALUES(?, 'guest', 'Is late checkout available on the online check-in page for our last morning?', datetime('now', '-2 hours'))", cid);
+  q.run(`UPDATE messages SET meta = '{"handled":1}'`);
+  const late = (await todo()).tasks.find((t) => t.reservationId === 520 && t.type === 'upsell_late');
+  const at = new Date(Date.now() + 3600_000).toISOString();
+  assert.equal((await team('POST', `/api/admin/tasks/${late.id}/schedule`, { text: late.text, at })).status, 409); // warned once
+  assert.equal((await team('POST', `/api/admin/tasks/${late.id}/schedule`, { text: late.text, at })).status, 200); // the person decides
+  const before = outbox.length;
+  assert.equal(await runTasks(Date.parse(at) + 1000), 1); // nothing new was said: it goes, and is not undone again
+  assert.equal(outbox.length, before + 1);
+  assert.ok(!(await todo()).tasks.some((t) => t.id === late.id));
 });

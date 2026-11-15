@@ -251,7 +251,10 @@ export async function runTasks(now = Date.now()) {
           continue;
         }
       }
-      const needed = await checkStillNeeded(conversation, t.body);
+      // A person scheduled this knowing the conversation as it stood. Only something said since then can stop it.
+      const since = t.scheduled_at || t.created_at;
+      const news = q.get("SELECT 1 FROM messages WHERE conversation_id = ? AND (role = 'guest' OR (status = 'sent' AND kind != 'holding')) AND COALESCE(sent_at, created_at) > ?", conversation.id, since);
+      const needed = news ? await checkStillNeeded(conversation, t.body) : { verdict: 'send' };
       if (needed.verdict === 'hold') {
         withholdMessage(conversation, t.body, needed.reason, { task: t.type });
         continue;

@@ -6,7 +6,7 @@ import { requireAdmin } from '../auth.js';
 import { CATEGORIES } from '../llm.js';
 import { decideSuggestion, PLACEHOLDERS, runTidy, seedTemplates } from '../journey.js';
 import { clip, HttpError } from '../util.js';
-import { upsellType } from '../bot.js';
+import { checkStillNeeded, upsellType } from '../bot.js';
 import { refreshTasks, TASK_TYPES } from '../tasks.js';
 import { iso } from './shared.js';
 
@@ -153,7 +153,7 @@ journey.get('/todo', (req, res) => {
     count: tasks.length + followUps.length + unhappy.length + tickets.length + approvals + (tidy ? 1 : 0) });
 });
 
-journey.post('/tasks/:id/schedule', (req, res) => {
+journey.post('/tasks/:id/schedule', async (req, res) => {
   const t = q.get("SELECT * FROM tasks WHERE id = ? AND status IN ('suggested', 'scheduled')", Number(req.params.id));
   if (!t) throw new HttpError(409, 'This is no longer on the list.');
   const text = String(req.body?.text || '').trim().slice(0, 2000);
@@ -161,7 +161,17 @@ journey.post('/tasks/:id/schedule', (req, res) => {
   if (!text) throw new HttpError(400, 'Write the message to send.');
   if (!Number.isFinite(at) || at < Date.now() - 60_000) throw new HttpError(400, 'Choose a time in the future.');
   if (at > Date.now() + 30 * 86400_000) throw new HttpError(400, 'Choose a time within the next month.');
-  q.run("UPDATE tasks SET body = ?, send_at = ?, status = 'scheduled', note = '', created_by = ? WHERE id = ?", text, new Date(at).toISOString(), req.user.id, t.id);
+  // First time: the assistant reads the conversation and says so if this looks like the wrong moment.
+  // It warns once. Scheduling again after reading the warning is the person's decision and goes ahead.
+  if (!t.note) {
+    const conversation = q.get('SELECT * FROM conversations WHERE reservation_id = ? ORDER BY last_message_at DESC LIMIT 1', t.reservation_id);
+    const v = conversation ? await checkStillNeeded(conversation, text) : { verdict: 'send' };
+    if (v.verdict !== 'send') {
+      q.run('UPDATE tasks SET body = ?, send_at = ?, note = ? WHERE id = ?', text, new Date(at).toISOString(), `The assistant advises against sending this now: ${v.reason || 'the conversation touches this topic.'} Press Schedule again to send it anyway.`, t.id);
+      throw new HttpError(409, `Not scheduled yet. ${v.reason || 'The conversation touches this topic.'} Press Schedule again to send it anyway.`);
+    }
+  }
+  q.run("UPDATE tasks SET body = ?, send_at = ?, status = 'scheduled', note = '', created_by = ?, scheduled_at = strftime('%Y-%m-%d %H:%M:%f', 'now') WHERE id = ?", text, new Date(at).toISOString(), req.user.id, t.id);
   audit(req.user.id, 'task.schedule', `${t.type} booking ${t.reservation_id}`);
   res.json({ task: taskOut(q.get('SELECT * FROM tasks WHERE id = ?', t.id)) });
 });
