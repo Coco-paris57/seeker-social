@@ -9,6 +9,7 @@ import { knowledgeView } from './knowledge.js';
 import { settingsView } from './settings.js';
 import { insightsView } from './insights.js';
 import { extrasView, scheduledView, tidyView } from './journey.js';
+import { todoView } from './planner.js';
 import { disablePush, registerServiceWorker, syncSubscription } from './push.js';
 
 const root = document.getElementById('app');
@@ -17,6 +18,7 @@ const TITLE = 'Seeker Concierge';
 const NAV = [
   { key: 'inbox', href: '#/inbox', label: 'Inbox', icon: 'inbox' },
   { key: 'conversations', href: '#/conversations', label: 'Chats', icon: 'chat' },
+  { key: 'todo', href: '#/todo', label: 'To do', icon: 'check' },
   { key: 'properties', href: '#/properties', label: 'Properties', icon: 'home' },
   { key: 'knowledge', href: '#/knowledge', label: 'Knowledge', icon: 'book' },
   { key: 'insights', href: '#/insights', label: 'Insights', icon: 'eye' }, // side menu on wide screens; on phones it is under Properties and Settings
@@ -34,6 +36,7 @@ function parseRoute() {
       ? { nav: 'properties', view: `property-${num}`, title: 'Property', params: { id: num } }
       : { nav: 'properties', view: 'properties', title: 'Properties', params: {} };
     case 'insights': return { nav: innerWidth >= 900 ? 'insights' : 'properties', view: 'insights', title: 'Insights', params: {} };
+    case 'todo': return { nav: 'todo', view: 'todo', title: 'To do', params: {} };
     case 'tidy': return { nav: 'knowledge', view: 'tidy', title: 'Weekly tidy-up', params: {} };
     case 'scheduled': return { nav: 'settings', view: 'scheduled', title: 'Scheduled messages', params: {} };
     case 'extras': return { nav: 'settings', view: 'extras', title: 'Paid extras', params: {} };
@@ -49,6 +52,7 @@ function createView(route) {
   if (route.view === 'properties') return propertiesView();
   if (route.view.startsWith('property-')) return propertyView(route.params);
   if (route.view === 'insights') return insightsView();
+  if (route.view === 'todo') return todoView();
   if (route.view === 'tidy') return tidyView();
   if (route.view === 'scheduled') return scheduledView();
   if (route.view === 'extras') return extrasView();
@@ -64,12 +68,14 @@ let stream = null;
 let streamRetry = null;
 let pendingEvents = new Map(); // event type -> data, flushed together
 
+let todoBadge = null; // count of suggested messages on the To do tab
 let unreadBadge = null; // count of unread chats on the Chats tab
 
 function buildShell() {
   const badges = [];
   const links = NAV.map((item) => {
-    const badge = item.key === 'inbox' || item.key === 'conversations' ? h('span', { class: 'badge', hidden: true }) : null;
+    const badge = ['inbox', 'conversations', 'todo'].includes(item.key) ? h('span', { class: 'badge', hidden: true }) : null;
+    if (item.key === 'todo') todoBadge = badge;
     if (item.key === 'inbox') badges.push(badge);
     if (item.key === 'conversations') unreadBadge = badge;
     return h('a', { href: item.href, dataset: { nav: item.key } }, h('span', { class: 'nav-icon' }, icon(item.icon, 22), badge), h('span', { class: 'nav-label' }, item.label));
@@ -99,6 +105,10 @@ function renderBadge() {
     badge.hidden = !total;
     badge.textContent = total > 99 ? '99+' : total;
     badge.classList.toggle('badge-urgent', !!counts?.urgent);
+  }
+  if (todoBadge) {
+    todoBadge.hidden = !counts?.todo;
+    todoBadge.textContent = counts?.todo > 99 ? '99+' : counts?.todo || '';
   }
   const unread = counts?.unread || 0;
   if (unreadBadge) {
@@ -168,7 +178,7 @@ function connectStream() {
   clearTimeout(streamRetry);
   stream?.close();
   stream = new EventSource('/api/admin/stream');
-  for (const type of ['message', 'draft', 'ticket', 'conversation', 'typing', 'properties', 'alert']) {
+  for (const type of ['message', 'draft', 'ticket', 'conversation', 'typing', 'properties', 'alert', 'todo']) {
     stream.addEventListener(type, (e) => {
       let data = {};
       try { data = JSON.parse(e.data); } catch { /* an event without data still means "refetch" */ }

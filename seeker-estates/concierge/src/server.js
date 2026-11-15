@@ -1,6 +1,7 @@
 // Seeker Concierge: HTTP server. Guest chat at /g/<qr token> and /stay, team app at /admin/.
 import { runFollowups, runScheduled, weeklyTidy } from './journey.js';
 import { backfillMoods } from './bot.js';
+import { refreshTasks, runTasks } from './tasks.js';
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -116,6 +117,7 @@ async function main() {
   // Scheduled stay messages every five minutes; the knowledge tidy-up on Monday mornings.
   setInterval(() => runScheduled().catch((e) => console.error(`Scheduled messages: ${e.message}`)), 5 * 60_000).unref();
   setInterval(() => runFollowups().catch((e) => console.error(`Follow-ups: ${e.message}`)), 60_000).unref();
+  setInterval(() => { try { refreshTasks(); } catch (e) { console.error(`To-do list: ${e.message}`); } runTasks().catch((e) => console.error(`To-do messages: ${e.message}`)); }, 60_000).unref();
   setInterval(() => weeklyTidy().catch((e) => console.error(`Weekly tidy-up: ${e.message}`)), 60_000).unref();
   if (config.llmMode === 'claude') backfillMoods().then((n) => { if (n) console.log(`Moods: read ${n} earlier conversation(s)`); }).catch((e) => console.error(`Moods: ${e.message}`));
   runRetention();

@@ -195,6 +195,19 @@ CREATE TABLE IF NOT EXISTS followups (     -- a check-in message for an unhappy 
   created_by INTEGER,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE TABLE IF NOT EXISTS tasks (         -- messages worth sending for a booking (an upsell offer, thanks to a happy guest), proposed with a time
+  id INTEGER PRIMARY KEY,
+  reservation_id INTEGER NOT NULL,
+  type TEXT NOT NULL,              -- 'upsell_early' | 'upsell_late' | 'upsell_night' | 'happy'
+  body TEXT NOT NULL,
+  send_at TEXT NOT NULL,           -- ISO time, UTC
+  why TEXT NOT NULL DEFAULT '',    -- why this moment was chosen
+  status TEXT NOT NULL DEFAULT 'suggested',   -- 'suggested' | 'scheduled' | 'dismissed' | 'done'
+  note TEXT NOT NULL DEFAULT '',
+  created_by INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (reservation_id, type)
+);
 CREATE TABLE IF NOT EXISTS ca_upsells (    -- extras seen in ChargeAutomation (from its purchase/request webhooks), with the last price paid
   property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
   title TEXT NOT NULL,

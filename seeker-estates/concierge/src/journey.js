@@ -141,7 +141,7 @@ export function dueAt(template, reservation) {
 
 const WINDOW = 12 * 3600_000; // a message that could not go out within 12 hours of its time is skipped
 
-function channelConversation(reservation) {
+export function channelConversation(reservation) {
   const found = q.get("SELECT * FROM conversations WHERE channel = 'smoobu' AND reservation_id = ?", reservation.id);
   if (found) return found;
   const id = q.insert(

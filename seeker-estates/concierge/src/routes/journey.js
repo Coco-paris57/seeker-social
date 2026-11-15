@@ -7,6 +7,7 @@ import { CATEGORIES } from '../llm.js';
 import { decideSuggestion, PLACEHOLDERS, runTidy, seedTemplates } from '../journey.js';
 import { clip, HttpError } from '../util.js';
 import { upsellType } from '../bot.js';
+import { refreshTasks, TASK_TYPES } from '../tasks.js';
 import { iso } from './shared.js';
 
 export const journey = express.Router();
@@ -119,6 +120,56 @@ journey.delete('/templates/:id', requireAdmin, (req, res) => {
   q.run('DELETE FROM template_sends WHERE template_id = ?', id);
   q.run('DELETE FROM templates WHERE id = ?', id);
   audit(req.user.id, 'template.delete', `template ${id}`);
+  res.json({ ok: true });
+});
+
+// --- to-do list --------------------------------------------------------------------------
+
+function taskOut(t) {
+  const r = q.get('SELECT * FROM reservations WHERE id = ?', t.reservation_id);
+  const c = q.get('SELECT id FROM conversations WHERE reservation_id = ? ORDER BY channel = \'smoobu\' DESC, id DESC LIMIT 1', t.reservation_id);
+  return {
+    id: t.id, type: t.type, label: TASK_TYPES[t.type]?.label || t.type, kind: t.type === 'happy' ? 'happy' : 'upsell',
+    reservationId: t.reservation_id, guestName: r?.guest_name || 'Guest', propertyName: propertyName(r?.property_id), arrival: r?.arrival, departure: r?.departure,
+    channel: r?.channel || null, text: t.body, at: t.send_at, why: t.why, status: t.status, note: t.note || null, conversationId: c?.id ?? null,
+  };
+}
+
+/** Everything waiting for a person. An item leaves the list by itself once it is dealt with. */
+journey.get('/todo', (req, res) => {
+  refreshTasks();
+  const tasks = q.all("SELECT * FROM tasks WHERE status = 'suggested' ORDER BY send_at").map(taskOut);
+  const scheduled = q.all("SELECT * FROM tasks WHERE status = 'scheduled' ORDER BY send_at").map(taskOut);
+  const followUps = q.all("SELECT f.*, c.guest_name, c.property_id, c.mood FROM followups f JOIN conversations c ON c.id = f.conversation_id WHERE f.status = 'suggested' ORDER BY f.send_at")
+    .map((f) => ({ conversationId: f.conversation_id, guestName: f.guest_name || 'Unverified guest', propertyName: propertyName(f.property_id), text: f.body, at: f.send_at, note: f.note || null }));
+  const unhappy = q.all("SELECT id, guest_name, property_id, summary FROM conversations WHERE mood = 'unhappy' AND archived = 0 AND last_message_at > datetime('now', '-14 days') AND id NOT IN (SELECT conversation_id FROM followups WHERE status IN ('suggested', 'scheduled')) ORDER BY last_message_at DESC LIMIT 20")
+    .map((c) => ({ conversationId: c.id, guestName: c.guest_name || 'Unverified guest', propertyName: propertyName(c.property_id), summary: c.summary || '' }));
+  const tickets = q.all("SELECT * FROM tickets WHERE status = 'open' ORDER BY CASE type WHEN 'urgent' THEN 0 WHEN 'maintenance' THEN 1 ELSE 2 END, id LIMIT 50")
+    .map((t) => ({ id: t.id, type: t.type, summary: t.summary, propertyName: propertyName(t.property_id), conversationId: t.conversation_id, at: iso(t.created_at) }));
+  const approvals = q.get("SELECT COUNT(*) AS n FROM messages WHERE status = 'pending'").n;
+  const unread = q.get('SELECT COUNT(*) AS n FROM conversations WHERE needs_reply = 1 AND archived = 0').n;
+  const tidy = q.get("SELECT COUNT(*) AS n FROM suggestions WHERE status = 'open'").n;
+  res.json({ tasks, scheduled, followUps, unhappy, tickets, approvals, unread, tidy,
+    count: tasks.length + followUps.length + unhappy.length + tickets.length + approvals + (tidy ? 1 : 0) });
+});
+
+journey.post('/tasks/:id/schedule', (req, res) => {
+  const t = q.get("SELECT * FROM tasks WHERE id = ? AND status IN ('suggested', 'scheduled')", Number(req.params.id));
+  if (!t) throw new HttpError(409, 'This is no longer on the list.');
+  const text = String(req.body?.text || '').trim().slice(0, 2000);
+  const at = Date.parse(req.body?.at);
+  if (!text) throw new HttpError(400, 'Write the message to send.');
+  if (!Number.isFinite(at) || at < Date.now() - 60_000) throw new HttpError(400, 'Choose a time in the future.');
+  if (at > Date.now() + 30 * 86400_000) throw new HttpError(400, 'Choose a time within the next month.');
+  q.run("UPDATE tasks SET body = ?, send_at = ?, status = 'scheduled', note = '', created_by = ? WHERE id = ?", text, new Date(at).toISOString(), req.user.id, t.id);
+  audit(req.user.id, 'task.schedule', `${t.type} booking ${t.reservation_id}`);
+  res.json({ task: taskOut(q.get('SELECT * FROM tasks WHERE id = ?', t.id)) });
+});
+
+/** Dismiss a proposal, or cancel a scheduled one. It is not proposed again for this booking. */
+journey.delete('/tasks/:id', (req, res) => {
+  q.run("UPDATE tasks SET status = 'dismissed', note = '' WHERE id = ? AND status IN ('suggested', 'scheduled')", Number(req.params.id));
+  audit(req.user.id, 'task.dismiss', `task ${req.params.id}`);
   res.json({ ok: true });
 });
 

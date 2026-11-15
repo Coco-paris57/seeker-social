@@ -181,7 +181,7 @@ function inbox() {
   const tickets = q.all(`SELECT * FROM tickets WHERE status != 'closed' ORDER BY ${order}, id`).map((t) => ticketOut(t, names));
   return {
     approvals, tickets,
-    counts: { approvals: approvals.length, tickets: tickets.length, urgent: tickets.filter((t) => t.type === 'urgent').length, total: approvals.length + tickets.length,
+    counts: { todo: q.get("SELECT (SELECT COUNT(*) FROM tasks WHERE status = 'suggested') + (SELECT COUNT(*) FROM followups WHERE status = 'suggested') AS n").n, approvals: approvals.length, tickets: tickets.length, urgent: tickets.filter((t) => t.type === 'urgent').length, total: approvals.length + tickets.length,
       unread: q.get('SELECT COUNT(*) AS n FROM conversations WHERE needs_reply = 1 AND archived = 0 AND id IN (SELECT conversation_id FROM messages)').n },
   };
 }
