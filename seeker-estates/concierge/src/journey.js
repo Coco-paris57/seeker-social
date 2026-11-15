@@ -241,13 +241,22 @@ export async function runFollowups(now = Date.now()) {
 
 /** Three starting points, switched off, so the page is not empty the first time it is opened. */
 export function seedTemplates() {
+  // The name guests see is now the flat's full address, which reads badly in a greeting: the
+  // starter messages no longer mention it. Applied once to messages that still have the old wording.
+  if (!getRaw('templates_without_address')) {
+    setRaw('templates_without_address', '1');
+    for (const [from, to] of [['welcoming you to {property} on {arrival}', 'welcoming you on {arrival}'], ['We hope you enjoyed your stay at {property}.', 'We hope you enjoyed your stay.'], ['Thank you for staying at {property}.', 'Thank you for staying with us.']]) {
+      q.run('UPDATE templates SET body = replace(body, ?, ?) WHERE instr(body, ?) > 0', from, to, from);
+    }
+    q.run("DELETE FROM tasks WHERE status = 'suggested' AND note = ''"); // re-proposed with the new wording
+  }
   if (getRaw('templates_seeded')) return;
   setRaw('templates_seeded', '1');
   if (q.get('SELECT 1 FROM templates')) return;
   const rows = [
-    ['Before arrival', 'arrival', -3, '10:00', 'Hello {first_name},\n\nWe are looking forward to welcoming you to {property} on {arrival}. Check-in is from {check_in}.\n\nEverything you need for your arrival is on your online check-in page: {checkin_link}\n\nIf you have any questions before you travel, just reply to this message.'],
-    ['Morning of checkout', 'departure', 0, '08:30', 'Good morning {first_name},\n\nWe hope you enjoyed your stay at {property}. A quick reminder that checkout is by {check_out} today.\n\nSafe travels, and thank you for staying with us.'],
-    ['After the stay', 'departure', 1, '11:00', 'Hello {first_name},\n\nThank you for staying at {property}. We hope everything was as you expected. If anything could have been better, we would be glad to hear it: just reply to this message.'],
+    ['Before arrival', 'arrival', -3, '10:00', 'Hello {first_name},\n\nWe are looking forward to welcoming you on {arrival}. Check-in is from {check_in}.\n\nEverything you need for your arrival is on your online check-in page: {checkin_link}\n\nIf you have any questions before you travel, just reply to this message.'],
+    ['Morning of checkout', 'departure', 0, '08:30', 'Good morning {first_name},\n\nWe hope you enjoyed your stay. A quick reminder that checkout is by {check_out} today.\n\nSafe travels, and thank you for staying with us.'],
+    ['After the stay', 'departure', 1, '11:00', 'Hello {first_name},\n\nThank you for staying with us. We hope everything was as you expected. If anything could have been better, we would be glad to hear it: just reply to this message.'],
   ];
   for (const r of rows) q.run('INSERT INTO templates(name, anchor, days, time, body) VALUES(?, ?, ?, ?, ?)', ...r);
 }

@@ -77,7 +77,8 @@ test('no offer goes to an unhappy guest; a happy guest gets a thank-you proposed
   d = await todo();
   const happy = d.tasks.find((t) => t.type === 'happy');
   assert.equal(happy.kind, 'happy');
-  assert.match(happy.text, /Thank you for staying at Test Flat/);
+  assert.match(happy.text, /Thank you for staying with us/);
+  assert.ok(!(await todo()).tasks.some((t) => t.text.includes('Test Flat'))); // no message spells out the address
 
   // Scheduled late checkout, then another booking takes the departure day: held back, with the reason in the chat.
   q.run('UPDATE reservations SET arrival = ?, departure = ? WHERE id = 501', ctx.today, addDays(ctx.today, 3));

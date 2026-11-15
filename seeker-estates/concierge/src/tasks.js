@@ -77,7 +77,7 @@ function combinedBody(type, r, property, offers) {
   const how = r.checkin_link ? 'You can add it on your online check-in page, where the exact price is shown: {checkin_link}' : 'Just reply to this message and we will arrange it.';
   const text = type === 'upsell_departure'
     ? `Hello {first_name},\n\nWe hope you are enjoying your stay. If you would like a more relaxed last morning, late checkout is available${priceText(day)}${termsText(day)}. ${how}\n\nThe apartment is also free after your checkout, so if you wish to extend your stay, just let us know.`
-    : `Hello {first_name},\n\nWe are looking forward to welcoming you to {property} on {arrival}. If it would help to arrive earlier on the day, early check-in is available${priceText(day)}${termsText(day)}. ${how}\n\nThe apartment is also free the night before, so if you wish to arrive a day earlier, just let us know.`;
+    : `Hello {first_name},\n\nWe are looking forward to welcoming you. If it would help to arrive earlier on the day, early check-in is available${priceText(day)}${termsText(day)}. ${how}\n\nThe apartment is also free the night before, so if you wish to arrive a day earlier, just let us know.`;
   return fillTemplate(text, r, property);
 }
 
@@ -86,13 +86,13 @@ function bodyFor(type, r, property, offer) {
   const price = offer ? (offer.price ? ` at ${offer.price}` : offer.last_price_on_checkin_page ? `, currently ${offer.last_price_on_checkin_page}` : '') : '';
   const terms = offer?.conditions ? ` (${offer.conditions})` : '';
   const text = {
-    upsell_early: `Hello {first_name},\n\nWe are looking forward to welcoming you to {property} on {arrival}. If it would help to arrive earlier, early check-in is available for your stay${price}${terms}. ${how}`,
+    upsell_early: `Hello {first_name},\n\nWe are looking forward to welcoming you. If it would help to arrive earlier, early check-in is available for your stay${price}${terms}. ${how}`,
     upsell_late: `Hello {first_name},\n\nWe hope you are enjoying your stay. If you would like a more relaxed last morning, late checkout is available${price}${terms}. ${how}`,
     upsell_night: r.checkin_link && freeNightsAfter(r) === 1
       ? `Hello {first_name},\n\nWe hope you are enjoying your stay. The apartment is free the night after your checkout, so if you would like to stay one more night it is available${price}${terms}. ${how}`
       : 'Hello {first_name},\n\nWe hope you are enjoying your stay. The apartment is free after your checkout, so if you wish to extend your stay, just let us know and we will arrange it.',
-    upsell_before: `Hello {first_name},\n\nWe are looking forward to welcoming you to {property}. The apartment is free the night before your arrival, so if you would like to arrive a day earlier it is available${price}${terms}. Just reply to this message and we will arrange it.`,
-    happy: 'Hello {first_name},\n\nThank you for staying at {property}. We are so glad you enjoyed it. If you have a moment, a short review would mean a great deal to us and helps future guests. We would be delighted to welcome you back.',
+    upsell_before: `Hello {first_name},\n\nWe are looking forward to welcoming you. The apartment is free the night before your arrival, so if you would like to arrive a day earlier it is available${price}${terms}. Just reply to this message and we will arrange it.`,
+    happy: 'Hello {first_name},\n\nThank you for staying with us. We are so glad you enjoyed it. If you have a moment, a short review would mean a great deal to us and helps future guests. We would be delighted to welcome you back.',
   }[type];
   return fillTemplate(text, r, property);
 }
