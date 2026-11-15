@@ -2,7 +2,7 @@
 // the payload is treated only as a hint: bookings and messages are re-read from the API.
 import crypto from 'node:crypto';
 import express from 'express';
-import { q } from '../db.js';
+import { q, setRaw } from '../db.js';
 import { handleGuestMessage } from '../bot.js';
 import { emitConversation, notifyTeam } from '../notify.js';
 import { smoobu } from '../smoobu.js';
@@ -33,7 +33,13 @@ webhooks.post('/chargeautomation/:token', (req, res) => {
   if (!same(given, webhookTokenPlain()) && !same(given, webhookToken())) return res.status(404).end();
   res.json({ ok: true });
   try {
-    for (const event of Array.isArray(req.body) ? req.body : [req.body || {}]) recordExtra(event) || recordCheckin(event);
+    for (const event of Array.isArray(req.body) ? req.body : [req.body || {}]) {
+      const used = recordExtra(event) || recordCheckin(event);
+      // Kept so the team can see the connection is alive, and why a message was not used.
+      const name = String(event?.event || 'unknown').slice(0, 60);
+      setRaw('ca_webhook_last', JSON.stringify({ at: new Date().toISOString(), event: name, used: !!used }));
+      console.log(`ChargeAutomation webhook: ${name} ${used ? 'recorded' : `not used (booking ${String(event?.data?.pms_booking_id ?? event?.data?.id ?? '?').slice(0, 40)})`}`);
+    }
   } catch (e) {
     console.error(`ChargeAutomation webhook: ${e.message}`);
   }

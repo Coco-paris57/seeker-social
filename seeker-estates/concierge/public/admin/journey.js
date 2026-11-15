@@ -1,6 +1,6 @@
 // Three screens: the weekly tidy-up of what the assistant has learned, messages scheduled
 // through a stay, and the paid extras the assistant may offer.
-import { api, autoGrow, busy, button, categoryLabel, check, chip, confirmDialog, field, fill, h, icon, loadError, loading, openDialog, pageHeader, showError, toast } from './lib.js';
+import { api, autoGrow, fullTime, busy, button, categoryLabel, check, chip, confirmDialog, field, fill, h, icon, loadError, loading, openDialog, pageHeader, showError, toast } from './lib.js';
 import { isAdmin, session } from './state.js';
 
 const adminOnly = () => !isAdmin() && h('p', { class: 'note' }, icon('lock', 16), 'Only administrators can change this.');
@@ -223,6 +223,7 @@ const EXTRA = {
   extra_night: { label: 'Extra night at the end of the stay', priceHint: 'From ChargeAutomation', detailsHint: 'For example: subject to confirmation', rule: 'Offered only when the following night is free.' },
 };
 
+const EVENT = { 'booking.pre_checkin.completed': 'online check-in completed', 'booking.upsell.purchased': 'extra purchased', 'booking.upsell.requested': 'extra requested' };
 const money = (s) => (s.amount == null ? 'price not seen' : `${s.currency || '£'}${s.amount}${s.qty > 1 ? ` for ${s.qty}` : ''}`);
 
 function extraForm(type, row, propertyId, reload, seen) {
@@ -287,6 +288,9 @@ export function extrasView() {
       h('section', { class: 'card section' },
         h('h2', null, 'Seen in ChargeAutomation'),
         h('p', { class: 'hint' }, 'Extras guests have bought or requested on their check-in page. The assistant may mention these to guests at the same property, with the last single-item price.'),
+        h('p', { class: 'seen-price' }, icon(d.lastWebhook ? 'check' : 'clock', 16), d.lastWebhook
+          ? `Connection working. Last message from ChargeAutomation: ${EVENT[d.lastWebhook.event] || d.lastWebhook.event}, ${fullTime(d.lastWebhook.at)}${d.lastWebhook.used ? '' : ' (not for a booking the app knows)'}.`
+          : 'No message received from ChargeAutomation yet. The first arrives when a guest completes online check-in or buys an extra.'),
         d.seen.length
           ? h('ul', { class: 'plain-list' }, d.seen.map((s) => h('li', null, h('strong', null, s.title), ` · ${money(s)} · ${s.propertyName}`)))
           : h('p', { class: 'muted' }, session.chargeAutomationWebhook

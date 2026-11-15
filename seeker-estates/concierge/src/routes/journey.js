@@ -1,7 +1,7 @@
 // Team API for the weekly tidy-up, scheduled messages and paid extras. Mounted inside the
 // team router, after sign-in is checked.
 import express from 'express';
-import { q, getRaw, audit } from '../db.js';
+import { q, getRaw, audit, parseJson } from '../db.js';
 import { requireAdmin } from '../auth.js';
 import { CATEGORIES } from '../llm.js';
 import { decideSuggestion, PLACEHOLDERS, runTidy, seedTemplates } from '../journey.js';
@@ -131,7 +131,7 @@ journey.get('/offers', (req, res) => {
   // What ChargeAutomation has told us is on sale, and the last amount paid, per property.
   const seen = q.all('SELECT u.*, p.name, p.display_name FROM ca_upsells u JOIN properties p ON p.id = u.property_id ORDER BY u.seen_at DESC LIMIT 200')
     .map((u) => ({ propertyId: u.property_id, propertyName: u.display_name || u.name, title: u.title, type: upsellType(u.title), amount: u.amount, currency: u.currency, qty: u.qty, at: iso(u.seen_at) }));
-  res.json({ offers: q.all('SELECT * FROM offers ORDER BY property_id IS NOT NULL, property_id, id').map(offerOut), types: OFFER_TYPES, seen });
+  res.json({ offers: q.all('SELECT * FROM offers ORDER BY property_id IS NOT NULL, property_id, id').map(offerOut), types: OFFER_TYPES, seen, lastWebhook: parseJson(getRaw('ca_webhook_last'), null) });
 });
 
 /** Set one extra for every property (propertyId null) or for one property, which then overrides. */
