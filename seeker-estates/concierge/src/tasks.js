@@ -15,6 +15,9 @@ export const TASK_TYPES = {
   upsell_late: { label: 'Offer late checkout', offer: 'Late checkout', extra: 'late_checkout' },
   upsell_night: { label: 'Offer an extra night', offer: 'Extra night', extra: 'extra_night' },
   upsell_before: { label: 'Offer arriving a night earlier', extra: 'extra_night', manualOnly: true },
+  // One message instead of two when both apply to the same guest.
+  upsell_departure: { label: 'Offer late checkout or an extra night', parts: ['upsell_late', 'upsell_night'] },
+  upsell_arrival: { label: 'Offer an earlier arrival or early check-in', parts: ['upsell_before', 'upsell_early'] },
   happy: { label: 'Thank a happy guest' },
 };
 
@@ -47,6 +50,18 @@ function bestTime(type, r, now, manual = false) {
     return { at: at(r.departure, '14:00') || soon(), why: 'Just after checkout, while the stay is fresh in their mind.' };
   }
   return null;
+}
+
+const priceText = (offer) => (offer ? (offer.price ? ` at ${offer.price}` : offer.last_price_on_checkin_page ? `, currently ${offer.last_price_on_checkin_page}` : '') : '');
+const termsText = (offer) => (offer?.conditions ? ` (${offer.conditions})` : '');
+
+/** One message for two offers to the same guest: late checkout with an extra night, or an earlier arrival with early check-in. */
+function combinedBody(type, r, property, offers) {
+  const [a, b] = TASK_TYPES[type].parts.map((part) => offers[part]);
+  const text = type === 'upsell_departure'
+    ? `Hello {first_name},\n\nWe hope you are enjoying your stay. If you would like more time with us, there are two options: a late checkout${priceText(a)}${termsText(a)}, or one more night, as the apartment is free the night after your checkout${priceText(b)}${termsText(b)}. ${r.checkin_link ? 'You can add either on your online check-in page, where the exact price is shown: {checkin_link}' : 'Just reply to this message and we will arrange it.'}`
+    : `Hello {first_name},\n\nWe are looking forward to welcoming you to {property} on {arrival}. If you would like to arrive sooner, there are two options: the apartment is free the night before, so you could arrive a day earlier${priceText(a)}${termsText(a)}, or you could check in early on the day${priceText(b)}${termsText(b)}. Just reply to this message and we will arrange it.`;
+  return fillTemplate(text, r, property);
 }
 
 function bodyFor(type, r, property, offer) {
@@ -94,8 +109,10 @@ export function createTask(r, type, user, now = Date.now()) {
      ON CONFLICT(reservation_id, type) DO UPDATE SET body = excluded.body, send_at = excluded.send_at, why = excluded.why, status = 'suggested', note = '', manual = 1`,
     r.id, type, body, when.at, when.why, user?.id ?? null,
   );
-  emitAdmin('todo');
-  return q.get('SELECT * FROM tasks WHERE reservation_id = ? AND type = ?', r.id, type);
+  refreshTasks(now); // may fold it into one message with another offer for the same guest
+  const combo = Object.keys(TASK_TYPES).find((k) => TASK_TYPES[k].parts?.includes(type));
+  return q.get("SELECT * FROM tasks WHERE reservation_id = ? AND type IN (?, ?) AND status = 'suggested' ORDER BY type = ? DESC", r.id, type, combo, combo)
+    || q.get('SELECT * FROM tasks WHERE reservation_id = ? AND type = ?', r.id, type);
 }
 
 /** The extra, if it can still be offered for this booking: switched on, calendar free, not already bought. */
@@ -107,8 +124,12 @@ function offerOpen(r, type, now) {
   return offer && offer.calendar === 'possible' && !bought ? offer : null;
 }
 
-/** What should be proposed for this booking right now, by type. */
-function candidates(r, now) {
+/**
+ * What should be proposed for this booking right now, by type. `rows` are the proposals already
+ * stored for it. An extra night (before or after) that a person added from the calendar counts
+ * for as long as the night stays free.
+ */
+function candidates(r, now, rows = {}) {
   const out = {};
   const moods = q.all('SELECT mood FROM conversations WHERE reservation_id = ?', r.id).map((c) => c.mood);
   const property = q.get('SELECT * FROM properties WHERE id = ? AND active = 1', r.property_id);
@@ -118,12 +139,30 @@ function candidates(r, now) {
     if (when) out.happy = { ...when, body: bodyFor('happy', r, property) };
   }
   if (moods.includes('unhappy')) return out; // never sell to a guest with an open complaint
+  const offers = {};
+  const added = (type) => !!rows[type]?.manual || Object.entries(TASK_TYPES).some(([combo, t]) => t.parts?.includes(type) && rows[combo]?.manual);
   for (const [type, t] of Object.entries(TASK_TYPES)) {
-    if (!t.offer) continue;
-    const offer = offerOpen(r, type, now);
-    if (!offer) continue;
-    const when = bestTime(type, r, now);
-    if (when) out[type] = { ...when, body: bodyFor(type, r, property, offer) };
+    if (t.parts || type === 'happy') continue;
+    const manual = added(type);
+    const offer = t.offer ? offerOpen(r, type, now) : null;
+    // Switched on by the team, or added by hand from the calendar; either way the dates must be free and it must not be bought already.
+    if (!(offer || (manual && calendarFree(r, type) && !bought(r, type)))) continue;
+    const when = bestTime(type, r, now, manual);
+    if (!when) continue;
+    offers[type] = offer || (offersFor(r, londonDate(new Date(now))) || []).find((o) => o.extra.startsWith('Extra night')) || null;
+    out[type] = { ...when, manual, body: bodyFor(type, type === 'upsell_before' ? { ...r, checkin_link: null } : r, property, offers[type]) };
+  }
+  // Two offers for the same end of the stay go out as one message, unless one of them has already been handled on its own.
+  for (const [combo, t] of Object.entries(TASK_TYPES)) {
+    if (!t.parts) continue;
+    const settled = (row) => row && row.status !== 'suggested';
+    if (settled(rows[combo])) { for (const part of t.parts) delete out[part]; continue; } // sent, scheduled or dismissed as one: not proposed again in pieces
+    if (!t.parts.every((part) => out[part]) || t.parts.some((part) => settled(rows[part]))) continue;
+    const [a, b] = t.parts.map((part) => out[part]);
+    // Late checkout sets the moment for the departure pair; the earlier of the two for the arrival pair.
+    const lead = combo === 'upsell_departure' ? a : (a.at <= b.at ? a : b);
+    out[combo] = { at: lead.at, why: lead.why, manual: a.manual || b.manual, body: combinedBody(combo, r, property, offers) };
+    for (const part of t.parts) delete out[part];
   }
   return out;
 }
@@ -136,18 +175,16 @@ export function refreshTasks(now = Date.now()) {
   const live = new Set();
   for (const r of bookings) {
     live.add(r.id);
-    const want = candidates(r, now);
+    const rows = Object.fromEntries(q.all('SELECT * FROM tasks WHERE reservation_id = ?', r.id).map((t) => [t.type, t]));
+    const want = candidates(r, now, rows);
     for (const type of Object.keys(TASK_TYPES)) {
-      const row = q.get('SELECT * FROM tasks WHERE reservation_id = ? AND type = ?', r.id, type);
+      const row = rows[type];
       const c = want[type];
       if (!row && c) {
-        q.run('INSERT INTO tasks(reservation_id, type, body, send_at, why) VALUES(?, ?, ?, ?, ?)', r.id, type, c.body, c.at, c.why);
+        q.run('INSERT INTO tasks(reservation_id, type, body, send_at, why, manual) VALUES(?, ?, ?, ?, ?, ?)', r.id, type, c.body, c.at, c.why, c.manual ? 1 : 0);
         changed++;
-      } else if (row?.status === 'suggested' && row.manual) {
-        // Added by a person: kept until the night is taken, it is bought, or the moment has passed.
-        if (!calendarFree(r, type) || bought(r, type) || !bestTime(type, r, now, true)) { q.run('DELETE FROM tasks WHERE id = ?', row.id); changed++; }
       } else if (row?.status === 'suggested' && !c) {
-        q.run('DELETE FROM tasks WHERE id = ?', row.id); // no longer possible, already bought, or too late
+        q.run('DELETE FROM tasks WHERE id = ?', row.id); // no longer possible, already bought, too late, or now part of a combined message
         changed++;
       } else if (row?.status === 'suggested' && !row.note && Date.parse(row.send_at) < now) {
         q.run('UPDATE tasks SET send_at = ?, why = ? WHERE id = ?', c.at, c.why, row.id); // the proposed moment has passed: propose the next good one
@@ -176,9 +213,21 @@ export async function runTasks(now = Date.now()) {
       if (!r) continue;
       const conversation = channelConversation(r);
       // An offer is only sent if it can still be honoured and has not been bought in the meantime.
-      if (t.type !== 'happy' && (!calendarFree(r, t.type) || bought(r, t.type))) {
-        withholdMessage(conversation, t.body, 'No longer available for these dates, or the guest has already bought it.', { task: t.type });
-        continue;
+      if (t.type !== 'happy') {
+        const parts = TASK_TYPES[t.type]?.parts || [t.type];
+        const open = parts.filter((part) => calendarFree(r, part) && !bought(r, part));
+        if (!open.length) {
+          withholdMessage(conversation, t.body, 'No longer available for these dates, or the guest has already bought it.', { task: t.type });
+          continue;
+        }
+        if (open.length < parts.length) {
+          // The message offers two things and one has gone. It is not sent; the offer that remains comes back
+          // to the to-do list as its own suggestion, so the guest is never offered something we cannot give.
+          q.run('DELETE FROM tasks WHERE id = ?', t.id);
+          refreshTasks(now);
+          await notifyTeam({ title: 'Scheduled offer not sent', body: clip(`${r.guest_name || 'A guest'}: one of the two offers is no longer available. The other is back on the to-do list.`, 160), url: '/admin/#/todo', tag: `task-${t.id}` });
+          continue;
+        }
       }
       const needed = await checkStillNeeded(conversation, t.body);
       if (needed.verdict === 'hold') {

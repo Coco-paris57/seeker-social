@@ -82,7 +82,7 @@ test('no offer goes to an unhappy guest; a happy guest gets a thank-you proposed
   // Scheduled late checkout, then another booking takes the departure day: held back, with the reason in the chat.
   q.run('UPDATE reservations SET arrival = ?, departure = ? WHERE id = 501', ctx.today, addDays(ctx.today, 3));
   q.run("UPDATE conversations SET mood = 'neutral' WHERE id = ?", cid);
-  const late = (await todo()).tasks.find((t) => t.type === 'upsell_late');
+  const late = (await todo()).tasks.find((t) => t.type === 'upsell_departure'); // late checkout and an extra night, as one message
   const at = new Date(Date.now() + 3600_000).toISOString();
   await team('POST', `/api/admin/tasks/${late.id}/schedule`, { text: late.text, at });
   q.run("INSERT INTO reservations(id, property_id, first_name, last_name, guest_name, arrival, departure) VALUES(503, ?, 'C', 'D', 'C D', ?, ?)", ctx.propertyId, addDays(ctx.today, 3), addDays(ctx.today, 5));
@@ -91,4 +91,41 @@ test('no offer goes to an unhappy guest; a happy guest gets a thank-you proposed
   assert.equal(outbox.length, before);
   const held = q.get("SELECT meta FROM messages WHERE status = 'withheld' ORDER BY id DESC LIMIT 1");
   assert.match(held.meta, /No longer available/);
+});
+
+test('two offers for the same end of a stay are one message; if one of them goes before sending, the team is asked', async () => {
+  q.run('DELETE FROM tasks');
+  q.run('DELETE FROM reservations WHERE id IN (502, 503)');
+  q.run("UPDATE reservations SET extras = '[]', checkin_link = 'https://x.test/l', arrival = ?, departure = ? WHERE id = 501", addDays(ctx.today, 3), addDays(ctx.today, 6));
+  let d = await todo();
+  // Early check-in on its own (nobody added "arrive a night earlier"); late checkout and the extra night together.
+  assert.deepEqual(d.tasks.map((t) => t.type).sort(), ['upsell_departure', 'upsell_early']);
+  const both = d.tasks.find((t) => t.type === 'upsell_departure');
+  assert.equal(both.label, 'Offer late checkout or an extra night');
+  assert.match(both.text, /a late checkout, currently £30, or one more night[\s\S]*You can add either on your online check-in page, where the exact price is shown: https:\/\/x\.test\/l$/);
+  // Sent at the late-checkout moment: the day before checkout at 13:00.
+  assert.equal(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' }).format(new Date(both.at)), '13:00');
+  assert.equal(new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(both.at)), addDays(ctx.today, 5));
+
+  // Added from the calendar: arriving a night earlier joins early check-in in one message.
+  const made = await team('POST', '/api/admin/reservations/501/tasks', { type: 'upsell_before' });
+  assert.equal(made.json.task.type, 'upsell_arrival');
+  assert.match(made.json.task.text, /two options: the apartment is free the night before, so you could arrive a day earlier at £120, or you could check in early on the day at £30 \(from 13:00\)/);
+  d = await todo();
+  assert.deepEqual(d.tasks.map((t) => t.type).sort(), ['upsell_arrival', 'upsell_departure']);
+
+  // Scheduled, then the guest buys late checkout themselves: the message would offer something already bought, so it comes back to the team.
+  const at = new Date(Date.now() + 3600_000).toISOString();
+  await team('POST', `/api/admin/tasks/${both.id}/schedule`, { text: both.text, at });
+  recordExtra({ event: 'booking.upsell.purchased', data: { pms_booking_id: '1-501', title: 'Late Check-out', charge_ref_no: 'y', order_details: { amount: 30 } } });
+  const before = outbox.length;
+  assert.equal(await runTasks(Date.parse(at) + 1000), 0);
+  assert.equal(outbox.length, before);
+  const left = (await todo()).tasks.filter((t) => ['upsell_late', 'upsell_night', 'upsell_departure'].includes(t.type));
+  assert.deepEqual(left.map((t) => t.type), ['upsell_night']); // only what can still be offered, as its own suggestion
+  assert.ok(!/late checkout/i.test(left[0].text));
+  // Dismissed as one: the pieces are not proposed separately afterwards.
+  const arrival = (await todo()).tasks.find((t) => t.type === 'upsell_arrival');
+  await team('DELETE', `/api/admin/tasks/${arrival.id}`, {});
+  assert.ok(!(await todo()).tasks.some((t) => ['upsell_early', 'upsell_before', 'upsell_arrival'].includes(t.type)));
 });

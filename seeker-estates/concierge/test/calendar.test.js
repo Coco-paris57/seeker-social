@@ -63,18 +63,21 @@ test('from a free gap, an extra night can be proposed to the guest before it and
   assert.equal((await team('POST', '/api/admin/reservations/501/tasks', { type: 'upsell_early' })).status, 400);
   const after501 = await team('POST', '/api/admin/reservations/501/tasks', { type: 'upsell_night' });
   assert.equal(after501.status, 201);
-  assert.match(after501.json.task.text, /free the night after your checkout/);
+  // 501 can also have late checkout, so the two go out as one message.
+  assert.equal(after501.json.task.type, 'upsell_departure');
+  assert.match(after501.json.task.text, /two options: a late checkout at £30 \(until 13:00\), or one more night, as the apartment is free the night after your checkout/);
   const before601 = await team('POST', '/api/admin/reservations/601/tasks', { type: 'upsell_before' });
   assert.match(before601.json.task.text, /free the night before your arrival/);
   assert.equal(before601.json.task.label, 'Offer arriving a night earlier');
   let list = (await team('GET', '/api/admin/todo')).json.tasks.map((t) => `${t.reservationId}:${t.type}`);
-  assert.ok(list.includes('501:upsell_night') && list.includes('601:upsell_before'));
+  assert.ok(list.includes('501:upsell_departure') && list.includes('601:upsell_before'));
+  assert.ok(!list.includes('501:upsell_late') && !list.includes('501:upsell_night')); // not twice
   assert.ok((await team('GET', '/api/admin/calendar')).json.reservations.find((r) => r.id === 601).tasks.some((t) => t.type === 'upsell_before'));
   // The gap is filled by a new booking: both proposals disappear, and the night cannot be offered any more.
   res(604, addDays(ctx.today, 4), addDays(ctx.today, 6), 'Filler');
   refreshTasks();
   list = (await team('GET', '/api/admin/todo')).json.tasks.map((t) => `${t.reservationId}:${t.type}`);
-  assert.ok(!list.includes('501:upsell_night') && !list.includes('601:upsell_before'));
+  assert.ok(!list.includes('501:upsell_departure') && !list.includes('501:upsell_night') && !list.includes('601:upsell_before'));
   assert.equal((await team('POST', '/api/admin/reservations/601/tasks', { type: 'upsell_before' })).status, 409);
 });
 
