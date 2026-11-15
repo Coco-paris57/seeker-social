@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Seeker Concierge promo</title>
+<style>
+@font-face { font-family: "Fraunces"; font-weight: 300 900; src: url("../../concierge/public/shared/fonts/fraunces-latin-wght-normal.woff2") format("woff2"); }
+@font-face { font-family: "Jakarta"; font-weight: 400; src: url("../../concierge/public/shared/fonts/plus-jakarta-sans-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Jakarta"; font-weight: 500; src: url("../../concierge/public/shared/fonts/plus-jakarta-sans-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Jakarta"; font-weight: 600; src: url("../../concierge/public/shared/fonts/plus-jakarta-sans-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Jakarta"; font-weight: 700; src: url("../../concierge/public/shared/fonts/plus-jakarta-sans-latin-700-normal.woff2") format("woff2"); }
+:root { --brand: #0F3D2E; --brand-600: #1F5A44; --tint: #DDE9E1; --b50: #EEF4EF; --ivory: #F6F1E7; --ground: #FBF8F2; --clay: #C8582F; --clay-100: #F6DDD0; --ink: #13221C; --text2: #4E5E56; --line: #D3DCD5; }
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--brand); font-family: "Jakarta", sans-serif; color: var(--ink); }
+.scene { position: absolute; inset: 0; opacity: 0; animation: fadeIn .6s ease var(--s) forwards, fadeOut .5s ease var(--e) forwards; }
+.dark { background: var(--brand); color: #fff; }
+.light { background: var(--ground); }
+@keyframes fadeIn { to { opacity: 1; } }
+@keyframes fadeOut { to { opacity: 0; } }
+@keyframes up { from { opacity: 0; transform: translateY(46px); } to { opacity: 1; transform: none; } }
+@keyframes pop { 0% { opacity: 0; transform: scale(.6); } 70% { opacity: 1; transform: scale(1.06); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes left { from { opacity: 0; transform: translateX(-70px); } to { opacity: 1; transform: none; } }
+@keyframes right { from { opacity: 0; transform: translateX(70px); } to { opacity: 1; transform: none; } }
+@keyframes gone { to { opacity: 0; transform: translateY(-30px); height: 0; padding: 0; margin-top: -16px; } }
+@keyframes press { 0%, 100% { transform: scale(1); } 50% { transform: scale(.94); filter: brightness(1.25); } }
+@keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes scan { 0% { top: 6%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 90%; opacity: 0; } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+.a { opacity: 0; animation: up .8s cubic-bezier(.2, .8, .2, 1) var(--d) forwards; }
+.p { opacity: 0; animation: pop .7s cubic-bezier(.2, .8, .2, 1) var(--d) forwards; }
+.l { opacity: 0; animation: left .8s cubic-bezier(.2, .8, .2, 1) var(--d) forwards; }
+.r { opacity: 0; animation: right .8s cubic-bezier(.2, .8, .2, 1) var(--d) forwards; }
+.o { animation-name: up, gone; animation-duration: .8s, .5s; animation-delay: var(--d), var(--x); animation-fill-mode: forwards, forwards; animation-timing-function: cubic-bezier(.2, .8, .2, 1), ease; }
+h1 { font-family: "Fraunces", serif; font-weight: 600; font-size: 104px; line-height: 1.06; letter-spacing: -.01em; }
+h2 { font-family: "Fraunces", serif; font-weight: 600; font-size: 78px; line-height: 1.08; color: var(--brand); }
+.dark h2 { color: #fff; }
+.kicker { font-size: 26px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--clay); }
+.dark .kicker { color: #F1B79E; }
+.lead { font-size: 38px; line-height: 1.35; color: var(--text2); max-width: 760px; }
+.dark .lead { color: #CFE0D6; }
+.center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 28px; padding: 0 160px; }
+.split { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; align-items: center; padding: 0 130px; gap: 80px; }
+.copy { display: flex; flex-direction: column; gap: 26px; }
+.ticks { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 18px; font-size: 34px; font-weight: 500; }
+.ticks li { display: flex; align-items: center; gap: 18px; }
+.ticks li::before { content: ""; flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--brand) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center/22px no-repeat; }
+/* chat bubbles */
+.bubble { position: absolute; padding: 26px 34px; border-radius: 34px 34px 34px 8px; background: #fff; color: var(--ink); font-size: 38px; font-weight: 500; box-shadow: 0 18px 50px rgba(0, 0, 0, .28); white-space: nowrap; }
+.bubble small { display: block; font-size: 22px; font-weight: 600; color: var(--text2); margin-bottom: 4px; }
+.clock { position: absolute; top: 70px; right: 110px; font-family: "Fraunces", serif; font-size: 64px; font-weight: 600; color: #F1B79E; }
+/* phone */
+.phone { position: relative; width: 470px; height: 900px; margin: 0 auto; border-radius: 62px; border: 14px solid #16241D; background: var(--ground); overflow: hidden; box-shadow: 0 40px 90px rgba(15, 61, 46, .35); display: flex; flex-direction: column; }
+.phone-head { display: flex; align-items: center; gap: 14px; padding: 26px 24px 18px; background: #fff; border-bottom: 2px solid var(--line); }
+.phone-head img { width: 54px; height: 54px; border-radius: 14px; background: var(--brand); }
+.phone-head b { display: block; font-size: 25px; }
+.phone-head span { font-size: 18px; color: var(--text2); }
+.msgs { flex: 1; padding: 22px; display: flex; flex-direction: column; gap: 16px; }
+.m { max-width: 86%; padding: 16px 20px; font-size: 22px; line-height: 1.35; border-radius: 24px; }
+.m.g { align-self: flex-end; background: var(--brand); color: #fff; border-bottom-right-radius: 8px; }
+.m.b { align-self: flex-start; background: #fff; border: 2px solid var(--line); border-bottom-left-radius: 8px; }
+.m.b b { color: var(--brand); }
+.typing { align-self: flex-start; display: flex; gap: 8px; padding: 18px 22px; background: #fff; border: 2px solid var(--line); border-radius: 24px; }
+.typing i { width: 12px; height: 12px; border-radius: 50%; background: var(--text2); opacity: .5; }
+.poster { position: absolute; inset: 0; background: var(--ivory); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; padding: 40px; text-align: center; animation: fadeOut .5s ease 14.2s forwards; z-index: 3; }
+.poster h3 { font-family: "Fraunces", serif; font-size: 40px; color: var(--brand); line-height: 1.15; }
+.qrbox { position: relative; width: 270px; height: 270px; padding: 20px; background: #fff; border-radius: 26px; border: 3px solid var(--line); }
+.qrbox img { width: 100%; height: 100%; }
+.qrbox::after { content: ""; position: absolute; left: 6%; right: 6%; height: 6px; border-radius: 3px; background: var(--clay); box-shadow: 0 0 22px var(--clay); opacity: 0; animation: scan 1.3s ease-in-out 12.6s 1 forwards; }
+/* team cards */
+.card { background: #fff; border: 2px solid var(--line); border-radius: 30px; padding: 34px; box-shadow: 0 30px 70px rgba(15, 61, 46, .16); display: flex; flex-direction: column; gap: 20px; width: 760px; }
+.card .who { display: flex; justify-content: space-between; align-items: center; font-size: 28px; font-weight: 700; }
+.chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 18px; border-radius: 999px; font-size: 21px; font-weight: 700; background: var(--b50); color: var(--brand); }
+.chip.red { background: #FCE8E6; color: #A32020; } .chip.clay { background: var(--clay-100); color: #8A3716; } .chip.air { background: #F6DDD0; color: #8A3716; }
+.q { background: var(--tint); border-radius: 22px 22px 22px 8px; padding: 18px 22px; font-size: 26px; align-self: flex-start; max-width: 92%; }
+.draft { border: 3px dashed var(--clay); background: #FFFAF6; border-radius: 20px; padding: 18px 22px; font-size: 25px; line-height: 1.4; }
+.draft small, .tiny { display: block; font-size: 19px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #8A3716; margin-bottom: 6px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; height: 76px; padding: 0 34px; border-radius: 20px; background: var(--brand); color: #fff; font-size: 28px; font-weight: 700; align-self: flex-start; }
+.sent { position: absolute; right: -24px; top: -52px; padding: 14px 26px; border-radius: 999px; background: var(--clay); color: #fff; font-size: 26px; font-weight: 700; box-shadow: 0 12px 30px rgba(200, 88, 47, .4); }
+.rel { position: relative; }
+.money { font-family: "Fraunces", serif; font-weight: 600; font-size: 150px; line-height: 1; color: var(--clay); }
+.cal { display: grid; grid-template-columns: 150px repeat(7, 1fr); gap: 8px; align-items: center; font-size: 20px; font-weight: 600; color: var(--text2); }
+.cal span { text-align: center; }
+.bar { height: 46px; border-radius: 12px; color: #fff; font-size: 20px; font-weight: 700; display: flex; align-items: center; padding: 0 14px; transform-origin: left; animation: grow .7s cubic-bezier(.2, .8, .2, 1) var(--d) both; }
+.gap { height: 46px; border-radius: 12px; border: 3px dashed var(--clay); background: var(--clay-100); color: #8A3716; font-size: 20px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; width: 760px; }
+.tile { background: #fff; border: 2px solid var(--line); border-radius: 26px; padding: 28px; }
+.tile b { display: block; font-family: "Fraunces", serif; font-size: 66px; line-height: 1; color: var(--brand); }
+.tile span { font-size: 24px; font-weight: 600; color: var(--text2); }
+.tile.alert { border-left: 10px solid #A32020; }
+.logos { display: flex; gap: 22px; align-items: center; justify-content: center; flex-wrap: nowrap; }
+.pill { padding: 22px 34px; white-space: nowrap; border-radius: 26px; background: rgba(255, 255, 255, .1); border: 2px solid rgba(255, 255, 255, .28); font-size: 36px; font-weight: 700; }
+.plus { font-size: 54px; color: #F1B79E; font-weight: 300; }
+.price { font-family: "Fraunces", serif; font-weight: 600; font-size: 250px; line-height: .95; color: #fff; }
+.price small { font-size: 84px; color: #F1B79E; }
+.mark { width: 120px; height: 120px; border-radius: 30px; }
+.wordmark { font-family: "Fraunces", serif; font-size: 70px; font-weight: 600; }
+.url { font-size: 44px; font-weight: 700; padding: 22px 50px; border-radius: 999px; background: var(--clay); color: #fff; }
+.note { font-size: 24px; color: #A9C2B5; }
+</style></head>
+<body>
+
+<!-- 1. The problem: 0 to 6 s -->
+<section class="scene dark" style="--s:0s;--e:5.6s">
+  <div class="clock a" style="--d:.2s">23:47</div>
+  <div class="bubble l" style="--d:.5s;left:150px;top:210px"><small>Airbnb guest</small>What's the WiFi password?</div>
+  <div class="bubble r" style="--d:1.1s;right:170px;top:360px"><small>Booking.com guest</small>Can we check in early tomorrow?</div>
+  <div class="bubble l" style="--d:1.7s;left:260px;top:520px"><small>Guest in the flat</small>How does the washing machine work?</div>
+  <div class="bubble r" style="--d:2.3s;right:260px;top:670px"><small>Airbnb guest</small>The heating isn't coming on…</div>
+  <div class="center" style="justify-content:flex-end;padding-bottom:90px"><h2 class="a" style="--d:3.2s">Guests message at every hour.</h2></div>
+</section>
+
+<!-- 2. The answer: 6 to 11 s -->
+<section class="scene light" style="--s:5.8s;--e:10.6s">
+  <div class="center">
+    <img class="p" style="--d:6.2s;width:150px;height:150px;border-radius:38px" src="../../concierge/public/shared/mark-reversed.svg" alt="">
+    <p class="kicker a" style="--d:6.7s">Seeker Concierge</p>
+    <h1 class="a" style="--d:7s;color:var(--brand)">An AI guest assistant<br>for short-let agencies.</h1>
+    <p class="lead a" style="--d:7.7s;max-width:1100px">It answers your guests, sells your extras and keeps your team in control.</p>
+  </div>
+</section>
+
+<!-- 3. For the guest: 11 to 21 s -->
+<section class="scene light" style="--s:10.8s;--e:20.6s">
+  <div class="split">
+    <div class="copy">
+      <p class="kicker a" style="--d:11.2s">For your guests</p>
+      <h2 class="a" style="--d:11.5s">Scan the QR code in the flat. Get an answer in seconds.</h2>
+      <ul class="ticks">
+        <li class="a" style="--d:15.2s">Day or night, no app to download</li>
+        <li class="a" style="--d:16.2s">Replies in the guest's own language</li>
+        <li class="a" style="--d:17.2s">Step-by-step help, with your photos and videos</li>
+        <li class="a" style="--d:18.2s">Repairs and emergencies go straight to your team</li>
+      </ul>
+    </div>
+    <div class="a" style="--d:11.6s">
+      <div class="phone">
+        <div class="poster"><p class="tiny">In every apartment</p><h3>Need a hand during your stay?</h3><div class="qrbox"><img src="qr.svg" alt=""></div><p style="font-size:24px;color:var(--text2)">Scan to chat</p></div>
+        <div class="phone-head"><img src="../../concierge/public/shared/mark-reversed.svg" alt=""><div><b>Your apartment</b><span>AI assistant, backed by the team</span></div></div>
+        <div class="msgs">
+          <div class="m g p" style="--d:14.8s">How do I use the washing machine?</div>
+          <div class="typing o" style="--d:15.5s;--x:16.5s"><i></i><i></i><i></i></div>
+          <div class="m b a" style="--d:16.6s"><b>1.</b> Pods are under the kitchen sink.<br><b>2.</b> Close the door until it clicks.<br><b>3.</b> Turn the dial to Cotton 40, press Start.<br><br>See the picture below.</div>
+          <div class="m g p" style="--d:18.6s">Perfect, thank you!</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. For the team: 21 to 31 s -->
+<section class="scene light" style="--s:20.8s;--e:30.6s">
+  <div class="split">
+    <div class="rel a" style="--d:21.3s">
+      <div class="card">
+        <div class="who"><span>Valentina · Airbnb</span><span class="chip">Draft ready</span></div>
+        <div class="q">Is there somewhere to leave our bags after checkout?</div>
+        <div class="draft a" style="--d:22.4s"><small>Drafted in your voice</small>Yes, you are welcome to leave your bags in the lobby store until 6pm. We will send you the code on the morning of your checkout.</div>
+        <div class="btn a" style="--d:23.2s;animation:up .8s cubic-bezier(.2,.8,.2,1) 23.2s forwards, press .5s ease 25s">✓ Approve &amp; send</div>
+      </div>
+      <div class="sent p" style="--d:25.4s">Sent on Airbnb</div>
+    </div>
+    <div class="copy">
+      <p class="kicker a" style="--d:21.2s">For your team</p>
+      <h2 class="a" style="--d:21.5s">Every reply written for you. One tap to send.</h2>
+      <ul class="ticks">
+        <li class="a" style="--d:26s">Airbnb, Booking.com and direct in one inbox</li>
+        <li class="a" style="--d:27s">Learns each property from the replies you approve</li>
+        <li class="a" style="--d:28s">Switch a property to automatic when you trust it</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 5. Upsells: 31 to 41 s -->
+<section class="scene light" style="--s:30.8s;--e:40.6s">
+  <div class="split">
+    <div class="copy">
+      <p class="kicker a" style="--d:31.2s">More revenue per stay</p>
+      <h2 class="a" style="--d:31.5s">It sells your extras at the right moment.</h2>
+      <ul class="ticks">
+        <li class="a" style="--d:35.6s">Early check-in, late checkout, extra nights</li>
+        <li class="a" style="--d:36.6s">Only when the calendar is free</li>
+        <li class="a" style="--d:37.6s">Fills short gaps between bookings</li>
+        <li class="a" style="--d:38.6s">Tracks what guests accept and what it earns</li>
+      </ul>
+    </div>
+    <div class="copy" style="align-items:center;gap:30px">
+      <div class="card a" style="--d:31.8s">
+        <div class="who"><span>Halisi · leaves Tuesday</span><span class="chip clay">Offer late checkout</span></div>
+        <div class="draft"><small>Suggested for Monday 13:00</small>If you would like a more relaxed last morning, late checkout is available.</div>
+        <div class="cal">
+          <span></span><span>Sat</span><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span>
+          <span style="text-align:left">Flat 4</span>
+          <div class="bar" style="--d:32.6s;grid-column:2 / span 3;background:#C8582F">Halisi</div>
+          <div class="gap p" style="--d:33.6s;grid-column:5 / span 2">2 free nights</div>
+          <div class="bar" style="--d:33s;grid-column:7 / span 2;background:#1D4E89">Next guest</div>
+        </div>
+      </div>
+      <div class="money p" style="--d:34.4s">+ £30</div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. Stay ahead: 41 to 48 s -->
+<section class="scene light" style="--s:40.8s;--e:47.6s">
+  <div class="split">
+    <div class="tiles a" style="--d:41.3s">
+      <div class="tile p" style="--d:41.6s"><b>3</b><span>replies to approve</span></div>
+      <div class="tile p" style="--d:41.9s"><b>8 min</b><span>typical time to reply</span></div>
+      <div class="tile alert p" style="--d:42.4s"><b style="color:#A32020">1</b><span>guest sounds unhappy</span></div>
+      <div class="tile p" style="--d:42.7s"><b>13/15</b><span>occupied tonight</span></div>
+    </div>
+    <div class="copy">
+      <p class="kicker a" style="--d:41.2s">Stay ahead</p>
+      <h2 class="a" style="--d:41.5s">Spot an unhappy guest before the review.</h2>
+      <ul class="ticks">
+        <li class="a" style="--d:43.6s">Mood and a summary on every conversation</li>
+        <li class="a" style="--d:44.6s">A check-in message suggested for you</li>
+        <li class="a" style="--d:45.6s">Dashboard, calendar and to-do list, on your phone</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 7. Connects: 48 to 53 s -->
+<section class="scene dark" style="--s:47.8s;--e:52.6s">
+  <div class="center">
+    <p class="kicker a" style="--d:48.2s">Works with what you already use</p>
+    <div class="logos">
+      <div class="pill p" style="--d:48.6s">Smoobu</div><span class="plus a" style="--d:48.9s">+</span>
+      <div class="pill p" style="--d:49.1s">Airbnb</div><span class="plus a" style="--d:49.4s">+</span>
+      <div class="pill p" style="--d:49.6s">Booking.com</div><span class="plus a" style="--d:49.9s">+</span>
+      <div class="pill p" style="--d:50.1s">ChargeAutomation</div>
+    </div>
+    <h2 class="a" style="--d:50.6s">Your bookings, messages and check-in pages, connected.</h2>
+  </div>
+</section>
+
+<!-- 8. Price and close: 53 to 60 s -->
+<section class="scene dark" style="--s:52.8s;--e:99s">
+  <div class="center" style="gap:22px">
+    <p class="kicker a" style="--d:53.2s">Simple pricing</p>
+    <div class="price p" style="--d:53.6s">£5 <small>+ VAT</small></div>
+    <p class="lead a" style="--d:54.4s;color:#fff;font-weight:600;max-width:none">per property, per month</p>
+    <div class="a" style="--d:55.8s;display:flex;align-items:center;gap:26px;margin-top:40px">
+      <img class="mark" src="../../concierge/public/shared/mark-reversed.svg" alt=""><span class="wordmark">Seeker Concierge</span>
+    </div>
+    <div class="url p" style="--d:56.8s">seekerestates.com</div>
+  </div>
+</section>
+</body></html>
