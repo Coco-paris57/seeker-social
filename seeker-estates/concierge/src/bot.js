@@ -303,16 +303,26 @@ async function applyAssessment(conversation, a, { guestWrote = false } = {}) {
   }
 }
 
+/** Chats from before moods existed: read the recent ones once, a few at a time, so every chat shows a face. */
+export async function backfillMoods(limit = 80) {
+  const rows = q.all("SELECT id FROM conversations WHERE mood IS NULL AND last_message_at > datetime('now', '-21 days') AND id IN (SELECT conversation_id FROM messages WHERE role = 'guest') ORDER BY last_message_at DESC LIMIT ?", limit);
+  for (const r of rows) await reassess(r.id, { force: true });
+  return rows.length;
+}
+
 const reassessing = new Map();
 /**
  * Look at the conversation again after the team has acted, so the mood and the summary follow
  * what happened and not only what the guest last wrote. Only worth a model call when the guest
  * was unhappy or a check-in is pending.
  */
-export function reassess(conversationId) {
+export function reassess(conversationId, { force = false } = {}) {
   const run = (reassessing.get(conversationId) || Promise.resolve()).then(async () => {
     const conversation = q.get('SELECT * FROM conversations WHERE id = ?', conversationId);
-    if (!conversation || (conversation.mood !== 'unhappy' && !q.get("SELECT 1 FROM followups WHERE conversation_id = ? AND status = 'suggested'", conversationId))) return;
+    if (!conversation) return;
+    // force: the chat has never been read (older chats, or ones a person is handling), so read it once.
+    if (!(force && !conversation.mood) && conversation.mood !== 'unhappy' && !q.get("SELECT 1 FROM followups WHERE conversation_id = ? AND status = 'suggested'", conversationId)) return;
+    if (!q.get("SELECT 1 FROM messages WHERE conversation_id = ? AND role = 'guest'", conversationId)) return;
     await applyAssessment(conversation, await llm.assess(buildContext(conversation, { latest: '' })));
   }).catch((e) => console.error(`Reassess ${conversationId}: ${e.message}`)).finally(() => { if (reassessing.get(conversationId) === run) reassessing.delete(conversationId); });
   reassessing.set(conversationId, run);
@@ -420,6 +430,9 @@ async function processPending(conversationId, reuse) {
 
   if (conversation.bot_paused) {
     markHandled();
+    // A person is handling this chat, so no reply is drafted, but the mood and summary still follow it.
+    q.run('UPDATE conversations SET mood = NULL WHERE id = ? AND mood IS NOT \'unhappy\'', conversation.id);
+    reassess(conversation.id, { force: true });
     await notifyTeam({ title: `${guestLabel(conversation)} · ${where}`, body: clip(latest, 140), url, tag: `conversation-${conversation.id}` });
     return;
   }

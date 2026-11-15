@@ -135,6 +135,7 @@ function threadPane(id, { onGone }) {
       c.verified ? chip('Verified guest', { tone: 'ok', icon: 'shield' }) : chip('Not verified', { icon: 'help' }),
       STAGES[c.stage] && chip(STAGES[c.stage], { icon: 'clock' }),
       chip(CHANNELS[c.channel] || c.channel, { icon: 'chat' }),
+      c.stay && (c.stay.checkinCompleted ? chip('Check-in form completed', { tone: 'ok', icon: 'check' }) : c.stay.checkinLink ? chip('Check-in form not completed', { tone: 'warn', icon: 'clock' }) : null),
       moodChip(c.mood));
     fill(summaryBox, c.summary && h('p', null, h('strong', null, 'Where this stands: '), c.summary));
     summaryBox.hidden = !c.summary;
@@ -241,7 +242,7 @@ function threadPane(id, { onGone }) {
     fill(details,
       h('h2', null, 'Guest and stay'),
       h('dl', { class: 'facts' },
-        row('Mood', moodChip(c.mood) || h('span', { class: 'muted' }, 'Not read yet. Shows after the guest\'s next message.')),
+        row('Mood', moodChip(c.mood) || h('span', { class: 'muted' }, 'Reading the conversation…')),
         row('Online check-in', !c.stay ? h('span', { class: 'muted' }, c.verified ? 'No booking linked' : 'Not known (guest not verified)')
           : c.stay.checkinCompleted ? chip('Form completed', { tone: 'ok', icon: 'check' })
             : c.stay.checkinLink ? chip('Form not completed', { tone: 'warn', icon: 'clock' })

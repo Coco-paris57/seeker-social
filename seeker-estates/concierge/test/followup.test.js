@@ -98,3 +98,20 @@ test('from Insights, a quick answer is filed in the right section and the gap is
   const code = await team('POST', '/api/admin/knowledge/from-gap', { propertyId: ctx.propertyId, question: 'Where is the key safe', answer: 'By the front door, code 1234', sensitive: false });
   assert.equal(code.json.knowledge.sensitive, true);
 });
+
+test('an older chat with no mood is read when it is opened, and a chat a person has taken over still gets a mood', async () => {
+  const guest = await openChat(srv.base);
+  const me = await say(guest, 'How do I use the washing machine?');
+  const id = me.conversation.id;
+  q.run('UPDATE conversations SET mood = NULL, summary = NULL WHERE id = ?', id); // as chats from before this feature are
+  assert.equal((await chatOf(id)).mood, null);
+  await reassess(id); // the read started by opening it has finished
+  const c = await chatOf(id);
+  assert.equal(c.mood, 'neutral');
+  assert.match(c.summary, /washing machine/);
+
+  await team('POST', `/api/admin/conversations/${id}/takeover`, { paused: true });
+  await say(guest, 'This is unacceptable, nobody came');
+  await reassess(id);
+  assert.equal((await chatOf(id)).mood, 'unhappy');
+});

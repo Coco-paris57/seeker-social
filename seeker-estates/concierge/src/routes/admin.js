@@ -5,7 +5,7 @@ import QRCode from 'qrcode';
 import { config, SETTING_DEFAULTS } from '../config.js';
 import { q, getSettings, setSetting, audit, parseJson } from '../db.js';
 import { createUser, endTeamSession, hashPassword, requireAdmin, requireUser, startTeamSession, currentUser, verifyPassword } from '../auth.js';
-import { teamAttachments, answerTicket, approvalStats, approveDraft, closeTicket, previewTicketReply, propertyMode, rejectDraft, sendMessage, SENSITIVE_CATEGORIES, stageOf } from '../bot.js';
+import { reassess, teamAttachments, answerTicket, approvalStats, approveDraft, closeTicket, previewTicketReply, propertyMode, rejectDraft, sendMessage, SENSITIVE_CATEGORIES, stageOf } from '../bot.js';
 import { CATEGORIES } from '../llm.js';
 import { bus, emitAdmin, emitConversation, notifyTeam, vapidPublicKey } from '../notify.js';
 import { refreshTeamRecords, syncAll } from '../sync.js';
@@ -262,6 +262,7 @@ function conversationOr404(id) {
 
 admin.get('/conversations/:id', (req, res) => {
   const c = conversationOr404(req.params.id);
+  if (!c.mood) reassess(c.id, { force: true }); // an older chat: read it now, the face appears when done
   const names = userNames();
   res.json({
     conversation: conversationOut(c),
