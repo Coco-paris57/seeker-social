@@ -1,11 +1,42 @@
 // Insights: how fast guests are answered, how much the assistant handles alone, what guests
 // ask about, and which questions each property could not answer.
-import { api, categoryLabel, chip, fill, h, icon, loadError, loading, pageHeader } from './lib.js';
+import { api, autoGrow, busy, button, categoryLabel, check, chip, field, fill, h, loadError, loading, openDialog, pageHeader, showError, toast } from './lib.js';
 
 const minutes = (m) => (m == null ? 'No replies yet' : m < 1 ? 'Under 1 min' : m < 90 ? `${Math.round(m)} min` : `${Math.round(m / 6) / 10} h`);
 
 function tile(value, label, hint) {
   return h('div', { class: 'tile' }, h('p', { class: 'tile-value' }, value), h('p', { class: 'tile-label' }, label), hint && h('p', { class: 'hint' }, hint));
+}
+
+/** Answer a question the assistant could not: the team types what they know, the assistant files it. */
+function answerGap(g) {
+  return openDialog({
+    title: 'Answer for next time',
+    build: (close) => {
+      const answer = autoGrow(h('textarea', { rows: 4, required: true, placeholder: 'Type what you know, in your own words.' }));
+      const verified = check('Only for guests who have verified their booking', { checked: false });
+      const save = button('Save', { variant: 'primary', type: 'submit', icon: 'check' });
+      const form = h('form', { class: 'stack' },
+        h('div', { class: 'quote' }, h('p', { class: 'label' }, `Guests asked · ${g.propertyName}`), h('p', { class: 'pre' }, g.summary)),
+        field('Your answer', answer, { hint: 'No need to tidy it. The assistant corrects the wording and files it in the right section of this property\'s knowledge.' }),
+        verified.wrap,
+        h('div', { class: 'actions' }, save, button('Cancel', { onclick: () => close() })));
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        busy(save, async () => {
+          try {
+            const { knowledge } = await api('/knowledge/from-gap', { method: 'POST', body: { propertyId: g.propertyId, question: g.summary, answer: answer.value, sensitive: verified.input.checked } });
+            toast(`Saved under ${categoryLabel(knowledge.category)}`, { kind: 'ok' });
+            close(true);
+          } catch (err) {
+            showError(err);
+          }
+        });
+      });
+      setTimeout(() => answer.focus());
+      return form;
+    },
+  });
 }
 
 export function insightsView() {
@@ -51,7 +82,7 @@ export function insightsView() {
           ? h('ul', { class: 'gap-list' }, d.gaps.map((g) => h('li', null,
             h('div', null, h('strong', null, g.summary), h('p', { class: 'muted' }, `${g.propertyName}${g.n > 1 ? ` · asked ${g.n} times` : ''}`)),
             g.saved ? chip('Now in the knowledge base', { tone: 'ok', icon: 'check' })
-              : g.propertyId ? h('a', { class: 'btn btn-secondary btn-small', href: `#/properties/${g.propertyId}` }, icon('plus', 16), h('span', null, 'Add to knowledge')) : null)))
+              : g.propertyId ? button('Answer', { icon: 'plus', small: true, onclick: async () => { if (await answerGap(g)) load(); } }) : null)))
           : h('p', { class: 'muted' }, 'None in this period.')),
       h('section', { class: 'card section' },
         h('h2', null, 'By property'),

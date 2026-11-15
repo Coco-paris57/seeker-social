@@ -202,6 +202,20 @@ export async function runScheduled(now = Date.now()) {
   return out;
 }
 
+/** Send the check-in messages the team scheduled for unhappy guests. Call this every minute. */
+export async function runFollowups(now = Date.now()) {
+  let sent = 0;
+  for (const f of q.all("SELECT * FROM followups WHERE status = 'scheduled' AND send_at <= ?", new Date(now).toISOString())) {
+    // Claimed by marking it done. It stays as "dismissed" so another check-in is not proposed until the guest writes again.
+    if (q.run("UPDATE followups SET status = 'dismissed' WHERE id = ? AND status = 'scheduled'", f.id).changes === 0) continue;
+    const conversation = q.get('SELECT * FROM conversations WHERE id = ?', f.conversation_id);
+    if (!conversation) continue;
+    await sendMessage(conversation, 'team', f.body, { createdBy: f.created_by, meta: { followUp: true } });
+    sent++;
+  }
+  return sent;
+}
+
 /** Three starting points, switched off, so the page is not empty the first time it is opened. */
 export function seedTemplates() {
   if (getRaw('templates_seeded')) return;

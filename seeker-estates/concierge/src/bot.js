@@ -239,6 +239,7 @@ async function deliver(conversation, message) {
   // Read = the guest has had a real reply. "Confirming with the team" is not one.
   if (message.kind !== 'holding' && message.kind !== 'scheduled') q.run('UPDATE conversations SET needs_reply = 0 WHERE id = ?', conversation.id);
   emitConversation(conversation.id, 'message', { messageId: message.id });
+  if (message.kind !== 'holding' && message.kind !== 'scheduled') reassess(conversation.id); // in the background
   if (conversation.channel === 'smoobu' && conversation.reservation_id) {
     const api = smoobu();
     if (!api) return;
@@ -263,6 +264,59 @@ export function queueDraft(conversation, body, { kind = 'answer', meta = {} } = 
   const draft = insertMessage(conversation.id, 'bot', body, { status: 'pending', kind, meta });
   emitConversation(conversation.id, 'draft', { messageId: draft.id });
   return draft;
+}
+
+/** A sensible moment to send a check-in: the given hours from now, moved into 09:00-20:00 UK time. */
+export function followUpTime(hours, now = Date.now()) {
+  let at = now + Math.min(168, Math.max(1, hours)) * 3600_000;
+  const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: config.timezone, hour: '2-digit', hourCycle: 'h23' }).format(new Date(at)));
+  if (hour < 9) at = londonToUtc(londonDate(new Date(at)), '09:00');
+  else if (hour >= 20) at = londonToUtc(addDays(londonDate(new Date(at)), 1), '09:00');
+  return new Date(at).toISOString();
+}
+
+/**
+ * Store what the assistant makes of a conversation: summary, mood, and a proposed check-in
+ * message for an unhappy guest. The team decides whether and when the check-in is sent.
+ */
+async function applyAssessment(conversation, a, { guestWrote = false } = {}) {
+  if (!a || (!a.chatSummary && !a.mood)) return;
+  q.run("UPDATE conversations SET summary = COALESCE(NULLIF(?, ''), summary), mood = ? WHERE id = ?", clip(a.chatSummary || '', 400), a.mood || 'neutral', conversation.id);
+  const current = q.get('SELECT * FROM followups WHERE conversation_id = ?', conversation.id);
+  if (guestWrote && current?.status === 'dismissed') q.run('DELETE FROM followups WHERE id = ?', current.id);
+  if (guestWrote && current?.status === 'scheduled') {
+    // The guest has written since it was scheduled: it may no longer fit, so a person looks again.
+    q.run("UPDATE followups SET status = 'suggested', note = 'The guest has written since this was scheduled. Check it still fits.' WHERE id = ?", current.id);
+  } else if (a.followUp && (!current || (current.status === 'suggested' && !current.note) || (guestWrote && current.status === 'dismissed'))) {
+    q.run(
+      `INSERT INTO followups(conversation_id, body, send_at) VALUES(?, ?, ?)
+       ON CONFLICT(conversation_id) DO UPDATE SET body = excluded.body, send_at = excluded.send_at, status = 'suggested', note = ''`,
+      conversation.id, withLink(a.followUp.text, checkinLinkOf(conversation)).slice(0, 2000), followUpTime(a.followUp.hours),
+    );
+  } else if (!a.followUp && current?.status === 'suggested' && a.mood !== 'unhappy') {
+    q.run('DELETE FROM followups WHERE id = ?', current.id); // no longer needed
+  }
+  emitConversation(conversation.id, 'conversation');
+  if (a.mood === 'unhappy' && conversation.mood !== 'unhappy') {
+    const property = conversation.property_id ? q.get('SELECT name, display_name FROM properties WHERE id = ?', conversation.property_id) : null;
+    await notifyTeam({ title: `Guest sounds unhappy · ${property ? property.display_name || property.name : guestLabel(conversation)}`, body: clip(a.chatSummary || '', 160), url: `/admin/#/conversations/${conversation.id}`, tag: `mood-${conversation.id}` });
+  }
+}
+
+const reassessing = new Map();
+/**
+ * Look at the conversation again after the team has acted, so the mood and the summary follow
+ * what happened and not only what the guest last wrote. Only worth a model call when the guest
+ * was unhappy or a check-in is pending.
+ */
+export function reassess(conversationId) {
+  const run = (reassessing.get(conversationId) || Promise.resolve()).then(async () => {
+    const conversation = q.get('SELECT * FROM conversations WHERE id = ?', conversationId);
+    if (!conversation || (conversation.mood !== 'unhappy' && !q.get("SELECT 1 FROM followups WHERE conversation_id = ? AND status = 'suggested'", conversationId))) return;
+    await applyAssessment(conversation, await llm.assess(buildContext(conversation, { latest: '' })));
+  }).catch((e) => console.error(`Reassess ${conversationId}: ${e.message}`)).finally(() => { if (reassessing.get(conversationId) === run) reassessing.delete(conversationId); });
+  reassessing.set(conversationId, run);
+  return run;
 }
 
 export async function sendMessage(conversation, role, body, opts = {}) {
@@ -395,12 +449,7 @@ async function processPending(conversationId, reuse) {
   }
   markHandled();
   // Kept for the team: where the chat stands, and how the guest sounds.
-  if (decision.chatSummary || decision.mood) {
-    q.run('UPDATE conversations SET summary = COALESCE(NULLIF(?, \'\'), summary), mood = ? WHERE id = ?', clip(decision.chatSummary || '', 400), decision.mood || 'neutral', conversation.id);
-    if (decision.mood === 'unhappy' && conversation.mood !== 'unhappy') {
-      await notifyTeam({ title: `Guest sounds unhappy · ${where}`, body: clip(decision.chatSummary || latest, 160), url, tag: `mood-${conversation.id}` });
-    }
-  }
+  await applyAssessment(conversation, decision, { guestWrote: true });
   if (decision.language && decision.language !== conversation.language) {
     q.run('UPDATE conversations SET language = ? WHERE id = ?', decision.language, conversation.id);
   }
@@ -778,6 +827,7 @@ export function closeTicket(ticketId, user) {
   if (!ticket) throw new HttpError(404, 'Request not found.');
   q.run("UPDATE tickets SET status = 'closed' WHERE id = ?", ticket.id);
   audit(user.id, 'ticket.close', `ticket ${ticket.id}`);
+  reassess(ticket.conversation_id);
   emitConversation(ticket.conversation_id, 'ticket', { ticketId: ticket.id });
   return q.get('SELECT * FROM tickets WHERE id = ?', ticket.id);
 }

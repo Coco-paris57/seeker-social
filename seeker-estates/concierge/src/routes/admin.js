@@ -15,7 +15,7 @@ import { clip, failureLimiter, HttpError, newToken, rateLimiter } from '../util.
 import { iso, sse } from './shared.js';
 import { posterHtml } from '../poster.js';
 import { adminFile, getFile, MAX_VIDEO, modelImages, saveUpload, sendFile, sweepFiles } from '../media.js';
-import { describePictures, translate } from '../llm.js';
+import { describePictures, fileKnowledge, translate } from '../llm.js';
 import { sha256 } from '../util.js';
 import { journey } from './journey.js';
 
@@ -50,6 +50,11 @@ function messageOut(m, names = userNames()) {
   };
 }
 
+function followUpOut(conversationId) {
+  const f = q.get("SELECT * FROM followups WHERE conversation_id = ? AND status != 'dismissed'", conversationId);
+  return f ? { text: f.body, at: f.send_at, status: f.status, note: f.note || null } : null;
+}
+
 function conversationOut(c) {
   const property = c.property_id ? q.get('SELECT id, name, display_name FROM properties WHERE id = ?', c.property_id) : null;
   const reservation = c.reservation_id ? q.get('SELECT * FROM reservations WHERE id = ?', c.reservation_id) : null;
@@ -58,7 +63,7 @@ function conversationOut(c) {
   return {
     id: c.id, propertyId: c.property_id, propertyName: property ? property.display_name || property.name : null,
     guestName: c.guest_name || null, verified: !!c.verified, channel: c.channel, language: c.language,
-    botPaused: !!c.bot_paused, unread: !!c.needs_reply, archived: !!c.archived, summary: c.summary || null, mood: c.mood || null, stage: stageOf(c.verified ? reservation : null),
+    botPaused: !!c.bot_paused, unread: !!c.needs_reply, archived: !!c.archived, summary: c.summary || null, mood: c.mood || null, followUp: followUpOut(c.id), stage: stageOf(c.verified ? reservation : null),
     stay: reservation && c.verified ? { arrival: reservation.arrival, departure: reservation.departure, checkIn: reservation.check_in, checkOut: reservation.check_out, channel: reservation.channel, smoobuId: reservation.id, checkinLink: reservation.checkin_link || null, checkinCompleted: !!reservation.checkin_done, extras: parseJson(reservation.extras, []).map((x) => ({ title: x.title, status: x.status, note: x.note || '' })) } : null,
     createdAt: iso(c.created_at), lastMessageAt: iso(c.last_message_at),
     lastMessage: last ? { role: last.role === 'bot' ? 'assistant' : last.role, text: clip(last.body, 160) } : null,
@@ -288,6 +293,33 @@ admin.post('/conversations/:id/read', (req, res) => {
   res.json({ conversation: conversationOut(conversationOr404(c.id)) });
 });
 
+/** Schedule the check-in message for an unhappy guest (the assistant's proposal, edited or not). */
+admin.post('/conversations/:id/followup', (req, res) => {
+  const c = conversationOr404(req.params.id);
+  const text = String(req.body?.text || '').trim().slice(0, 2000);
+  const at = Date.parse(req.body?.at);
+  if (!text) throw new HttpError(400, 'Write the message to send.');
+  if (!Number.isFinite(at) || at < Date.now() - 60_000) throw new HttpError(400, 'Choose a time in the future.');
+  if (at > Date.now() + 14 * 86400_000) throw new HttpError(400, 'Choose a time within the next two weeks.');
+  q.run(
+    `INSERT INTO followups(conversation_id, body, send_at, status, note, created_by) VALUES(?, ?, ?, 'scheduled', '', ?)
+     ON CONFLICT(conversation_id) DO UPDATE SET body = excluded.body, send_at = excluded.send_at, status = 'scheduled', note = '', created_by = excluded.created_by`,
+    c.id, text, new Date(at).toISOString(), req.user.id,
+  );
+  audit(req.user.id, 'followup.schedule', `conversation ${c.id}`);
+  emitConversation(c.id, 'conversation');
+  res.json({ conversation: conversationOut(conversationOr404(c.id)) });
+});
+
+/** Dismiss the proposal, or cancel a scheduled check-in. It is not proposed again until the guest writes. */
+admin.delete('/conversations/:id/followup', (req, res) => {
+  const c = conversationOr404(req.params.id);
+  q.run("UPDATE followups SET status = 'dismissed', note = '' WHERE conversation_id = ?", c.id);
+  audit(req.user.id, 'followup.dismiss', `conversation ${c.id}`);
+  emitConversation(c.id, 'conversation');
+  res.json({ conversation: conversationOut(conversationOr404(c.id)) });
+});
+
 /** Withdraw the assistant's waiting suggestions in a chat. They are not counted as rejected. */
 function withdrawDrafts(conversationId) {
   const drafts = q.all("SELECT id FROM messages WHERE conversation_id = ? AND status = 'pending' AND kind != 'scheduled'", conversationId);
@@ -489,6 +521,33 @@ function setPictures(knowledgeId, tokens, user) {
   sweepFiles();
   audit(user.id, 'knowledge.pictures', `knowledge ${knowledgeId}: ${wanted.length} picture(s)`);
 }
+
+/**
+ * From Insights: a team member answers a question the assistant could not, in their own quick
+ * words. The assistant tidies it into an entry in the right section of that property's knowledge.
+ */
+admin.post('/knowledge/from-gap', async (req, res) => {
+  const b = req.body || {};
+  const property = b.propertyId ? propertyOr404(b.propertyId) : null;
+  const question = clip(String(b.question || '').trim(), 300);
+  const answer = String(b.answer || '').trim().slice(0, 4000);
+  if (!question || !answer) throw new HttpError(400, 'Write the answer first.');
+  let entry;
+  try {
+    entry = await fileKnowledge({ propertyName: property ? property.display_name || property.name : '', question, answer });
+  } catch (e) {
+    console.error(`Filing knowledge failed: ${e.message}`);
+    entry = { category: 'other', question, answer }; // saved as written rather than lost
+  }
+  // Door codes and WiFi details are for verified guests only, whatever was ticked.
+  const sensitive = b.sensitive === true || SENSITIVE_CATEGORIES.has(entry.category);
+  const id = q.insert("INSERT INTO knowledge(property_id, category, question, answer, sensitive, source, created_by) VALUES(?, ?, ?, ?, ?, 'team', ?)",
+    property?.id ?? null, entry.category, clip(entry.question, 500), entry.answer, sensitive ? 1 : 0, req.user.id);
+  // The requests that raised this question now count as covered.
+  q.run("UPDATE tickets SET knowledge_id = ? WHERE type = 'question' AND knowledge_id IS NULL AND property_id IS ? AND lower(summary) = lower(?)", id, property?.id ?? null, question);
+  audit(req.user.id, 'knowledge.create', `knowledge ${id} from insights`);
+  res.status(201).json({ knowledge: knowledgeOut(q.get('SELECT * FROM knowledge WHERE id = ?', id)) });
+});
 
 admin.post('/knowledge', (req, res) => {
   const b = req.body || {};

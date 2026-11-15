@@ -185,6 +185,16 @@ CREATE TABLE IF NOT EXISTS offers (        -- paid extras the assistant may offe
   details TEXT NOT NULL DEFAULT '',
   enabled INTEGER NOT NULL DEFAULT 1
 );
+CREATE TABLE IF NOT EXISTS followups (     -- a check-in message for an unhappy guest: proposed by the assistant, scheduled by the team
+  id INTEGER PRIMARY KEY,
+  conversation_id INTEGER NOT NULL UNIQUE REFERENCES conversations(id) ON DELETE CASCADE,
+  body TEXT NOT NULL,
+  send_at TEXT NOT NULL,           -- ISO time, UTC
+  status TEXT NOT NULL DEFAULT 'suggested',   -- 'suggested' | 'scheduled' | 'dismissed'
+  note TEXT NOT NULL DEFAULT '',
+  created_by INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 CREATE TABLE IF NOT EXISTS ca_upsells (    -- extras seen in ChargeAutomation (from its purchase/request webhooks), with the last price paid
   property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
   title TEXT NOT NULL,

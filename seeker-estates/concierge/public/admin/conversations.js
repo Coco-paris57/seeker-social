@@ -52,6 +52,51 @@ function threadPane(id, { onGone }) {
   const takeover = h('div', { class: 'takeover' });
   const readBar = h('div', { class: 'read-bar' });
   const summaryBox = h('div', { class: 'chat-summary', hidden: true });
+  // A check-in message for an unhappy guest: proposed by the assistant, sent only if the team schedules it.
+  const followBox = h('div', { class: 'follow-up', hidden: true });
+  let followShown = null;
+  const wide = () => innerWidth >= 900; // on a phone it starts folded, so the messages stay in view
+  const localInput = (iso) => { const d = new Date(iso); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
+  function renderFollowUp(c) {
+    const f = c.followUp;
+    const signature = f ? `${f.status}|${f.at}|${f.text}|${f.note}` : '';
+    if (signature === followShown || (followShown && followBox.contains(document.activeElement))) return; // do not disturb someone editing
+    followShown = signature;
+    followBox.hidden = !f;
+    if (!f) return fill(followBox);
+    const act = (btn, method, body) => busy(btn, async () => {
+      try {
+        const out = await api(`/conversations/${id}/followup`, { method, body });
+        followShown = null;
+        renderFollowUp(out.conversation);
+        toast(method === 'DELETE' ? (f.status === 'scheduled' ? 'Cancelled' : 'Dismissed') : 'Scheduled', { kind: 'ok' });
+      } catch (err) {
+        showError(err);
+      }
+    });
+    if (f.status === 'scheduled') {
+      const cancel = button('Cancel', { icon: 'x', small: true });
+      cancel.addEventListener('click', () => act(cancel, 'DELETE', {}));
+      return fill(followBox, h('details', { open: wide() },
+        h('summary', { class: 'label' }, icon('clock', 16), `Check-in message scheduled for ${fullTime(f.at)}`),
+        h('p', { class: 'pre' }, f.text),
+        h('div', { class: 'actions' }, cancel)));
+    }
+    const text = autoGrow(h('textarea', { rows: 3, value: f.text, 'aria-label': 'Check-in message' }));
+    const at = h('input', { type: 'datetime-local', value: localInput(f.at), 'aria-label': 'Send at' });
+    const schedule = button('Schedule', { variant: 'primary', icon: 'clock', small: true });
+    const dismiss = button('Dismiss', { icon: 'x', small: true });
+    schedule.addEventListener('click', () => act(schedule, 'POST', { text: text.value, at: at.value ? new Date(at.value).toISOString() : '' }));
+    dismiss.addEventListener('click', () => act(dismiss, 'DELETE', {}));
+    return fill(followBox, h('details', { open: wide() || !!f.note },
+      h('summary', { class: 'label' }, icon('bot', 16), 'Suggested check-in message · tap to review'),
+      h('p', { class: 'hint' }, 'Nothing is sent unless you schedule it.'),
+      f.note && h('p', { class: 'note' }, icon('alert', 16), f.note),
+      text,
+      !isEnglish(c.language) && translateControl(() => text.value, { label: 'Translate to English' }),
+      h('div', { class: 'follow-when' }, h('span', null, 'Send at'), at),
+      h('div', { class: 'actions' }, schedule, dismiss)));
+  }
   const list = h('ol', { class: 'messages', 'aria-label': 'Messages' });
   const scroller = h('div', { class: 'thread-scroll', tabIndex: 0, role: 'region', 'aria-label': 'Message history' }, loading('Loading the conversation'), list);
   const details = h('aside', { class: 'thread-details', id: detailsId, 'aria-label': 'Guest details and requests' });
@@ -70,7 +115,7 @@ function threadPane(id, { onGone }) {
     h('header', { class: 'thread-head' },
       h('a', { class: 'back-link', href: '#/conversations' }, icon('back', 18), 'All conversations'),
       h('div', { class: 'thread-head-row' }, h('div', null, title, headChips), detailsBtn),
-      sub, summaryBox),
+      sub, summaryBox, followBox),
     readBar,
     takeover,
     h('div', { class: 'thread-main' }, scroller, details),
@@ -93,6 +138,7 @@ function threadPane(id, { onGone }) {
       moodChip(c.mood));
     fill(summaryBox, c.summary && h('p', null, h('strong', null, 'Where this stands: '), c.summary));
     summaryBox.hidden = !c.summary;
+    renderFollowUp(c);
     fill(sub,
       c.propertyId ? h('a', { href: `#/properties/${c.propertyId}` }, c.propertyName) : 'No property',
       c.stay && ` · ${stayDate(c.stay.arrival)} to ${stayDate(c.stay.departure)}`,

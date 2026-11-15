@@ -97,7 +97,9 @@ under the Archived filter, and it comes back by itself if the guest writes again
 ### Help for the team, and the stay around the chat
 
 - **Suggested reply.** Every request the assistant sends to the team carries its best-guess reply, marked as not confirmed. "Use this" puts it in the answer box.
-- **Summary and mood.** Each chat shows one line on where it stands, and a flag (with one notification) when a guest sounds unhappy.
+- **Summary and mood.** Each chat shows one line on where it stands and a face (happy, neutral, unhappy) judged from the whole conversation. It is read again when the guest writes and, for an unhappy guest, after the team replies or closes a request. One notification when a guest turns unhappy.
+- **Check-in for an unhappy guest.** The assistant proposes a follow-up message and a time (never at night). It is sent only if a team member schedules it, and is held back for a second look if the guest writes first.
+- **Answering a gap.** On Insights, "Answer" next to a question the assistant could not answer opens a box; the team types what they know and the assistant tidies it into the right section of that property's knowledge.
 - **Insights** (Properties > Insights): time to a real reply, share answered without the team, what guests ask about, the questions each property could not answer, and a per-property table.
 - **Weekly tidy-up** (Knowledge > Suggestions): on Monday mornings the assistant reads the replies the team approved and proposes knowledge entries to add or update. Nothing is saved until someone accepts; a dismissed proposal is not made again.
 - **Scheduled messages** (Settings > Scheduled messages): fixed texts sent at set points of a stay through the booking channel. Each is off until switched on, and waits in the Inbox for approval unless "Send without approval" is on. A message more than 12 hours late is skipped.

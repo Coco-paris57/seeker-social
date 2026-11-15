@@ -1,5 +1,5 @@
 // Seeker Concierge: HTTP server. Guest chat at /g/<qr token> and /stay, team app at /admin/.
-import { runScheduled, weeklyTidy } from './journey.js';
+import { runFollowups, runScheduled, weeklyTidy } from './journey.js';
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -114,6 +114,7 @@ async function main() {
   setInterval(() => dailyTeamRecords().catch((e) => console.error(`ChargeAutomation daily update: ${e.message}`)), 60_000).unref();
   // Scheduled stay messages every five minutes; the knowledge tidy-up on Monday mornings.
   setInterval(() => runScheduled().catch((e) => console.error(`Scheduled messages: ${e.message}`)), 5 * 60_000).unref();
+  setInterval(() => runFollowups().catch((e) => console.error(`Follow-ups: ${e.message}`)), 60_000).unref();
   setInterval(() => weeklyTidy().catch((e) => console.error(`Weekly tidy-up: ${e.message}`)), 60_000).unref();
   runRetention();
   setInterval(runRetention, 6 * 3600_000).unref();
