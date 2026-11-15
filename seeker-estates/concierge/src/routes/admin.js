@@ -44,7 +44,7 @@ function messageOut(m, names = userNames()) {
     status: m.status, kind: m.kind, at: iso(m.created_at), sentAt: iso(m.sent_at),
     confidence: meta.confidence || null, category: meta.category || null, summary: meta.summary || null,
     automatic: !!meta.auto, edited: !!meta.edited, original: meta.original || null, ticketId: meta.ticketId || null,
-    deliveryError: meta.deliveryError || null,
+    deliveryError: meta.deliveryError || null, withheldReason: meta.withheldReason || null,
     attachments: (m.role === 'guest' ? q.all('SELECT token, kind FROM files WHERE message_id = ?', m.id) : meta.attachments || []).map((a) => adminFile(a)), links: meta.links || [],
     authorName: names[m.created_by] || names[meta.approvedBy] || names[meta.answeredBy] || null,
   };
@@ -303,8 +303,8 @@ admin.post('/conversations/:id/followup', (req, res) => {
   if (!Number.isFinite(at) || at < Date.now() - 60_000) throw new HttpError(400, 'Choose a time in the future.');
   if (at > Date.now() + 14 * 86400_000) throw new HttpError(400, 'Choose a time within the next two weeks.');
   q.run(
-    `INSERT INTO followups(conversation_id, body, send_at, status, note, created_by) VALUES(?, ?, ?, 'scheduled', '', ?)
-     ON CONFLICT(conversation_id) DO UPDATE SET body = excluded.body, send_at = excluded.send_at, status = 'scheduled', note = '', created_by = excluded.created_by`,
+    `INSERT INTO followups(conversation_id, body, send_at, status, note, created_by, created_at) VALUES(?, ?, ?, 'scheduled', '', ?, strftime('%Y-%m-%d %H:%M:%f', 'now'))
+     ON CONFLICT(conversation_id) DO UPDATE SET body = excluded.body, send_at = excluded.send_at, status = 'scheduled', note = '', created_by = excluded.created_by, created_at = strftime('%Y-%m-%d %H:%M:%f', 'now')`,
     c.id, text, new Date(at).toISOString(), req.user.id,
   );
   audit(req.user.id, 'followup.schedule', `conversation ${c.id}`);

@@ -82,6 +82,7 @@ test('scheduled messages: off by default, queued for approval, sent once, filled
 
   // Automatic sending, a cancelled booking, and the 12-hour limit.
   q.run('DELETE FROM template_sends');
+  q.run('DELETE FROM messages'); // start from an empty chat again
   await team('PATCH', `/api/admin/templates/${t.id}`, { auto: true });
   assert.deepEqual(await runScheduled(due + 13 * 3600_000), { sent: 0, queued: 0 }); // too late: skipped, not sent at a silly hour
   q.run('UPDATE reservations SET cancelled = 1 WHERE id = 501');

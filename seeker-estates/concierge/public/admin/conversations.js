@@ -12,6 +12,7 @@ const ROLE_LABELS = { guest: 'Guest', assistant: 'Assistant', team: 'Team' };
 function messageChips(m) {
   const chips = [];
   if (m.status === 'rejected') chips.push(chip('Rejected, not sent', { tone: 'danger', icon: 'x' }));
+  if (m.status === 'withheld') chips.push(chip(`Not sent · ${m.withheldReason || 'already covered in the conversation'}`, { tone: 'warn', icon: 'x' }));
   if (m.kind === 'holding') chips.push(chip('Holding note', { icon: 'clock' }));
   if (m.kind === 'scheduled') chips.push(chip('Scheduled message', { icon: 'clock' }));
   if (m.kind === 'urgent') chips.push(chip('Urgent reply, sent automatically', { tone: 'danger', icon: 'alert' }));
@@ -32,7 +33,7 @@ function messageEl(m, conversation, onChange) {
   }
   const who = m.role === 'team' && m.authorName ? `Team · ${m.authorName}` : ROLE_LABELS[m.role];
   const chips = messageChips(m);
-  return h('li', { class: `msg msg-${m.role}${m.status === 'rejected' ? ' msg-rejected' : ''}` },
+  return h('li', { class: `msg msg-${m.role}${m.status === 'rejected' || m.status === 'withheld' ? ' msg-rejected' : ''}` },
     h('p', { class: 'msg-who' }, h('strong', null, who), ' ', timeEl(m.sentAt || m.at)),
     m.text && h('div', { class: 'bubble' }, h('p', { class: 'pre' }, m.text)),
     // Guest messages and replies in another language can be read in English.

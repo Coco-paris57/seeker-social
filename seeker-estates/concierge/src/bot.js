@@ -259,6 +259,27 @@ async function deliver(conversation, message) {
   }
 }
 
+/**
+ * A planned message that was not sent because the conversation had already dealt with it.
+ * Kept in the chat for the team, with the reason; the guest never sees it.
+ */
+export function withholdMessage(conversation, body, reason, meta = {}) {
+  const id = q.insert("INSERT INTO messages(conversation_id, role, body, status, kind, meta) VALUES(?, 'bot', ?, 'withheld', 'scheduled', ?)", conversation.id, body, JSON.stringify({ ...meta, withheldReason: clip(reason || 'Already covered in the conversation.', 300) }));
+  emitConversation(conversation.id, 'message', { messageId: id });
+  return id;
+}
+
+/** Is a planned message still needed, given what has been said? On a model error: not sure, so a person decides. */
+export async function checkStillNeeded(conversation, text) {
+  if (!q.get('SELECT 1 FROM messages WHERE conversation_id = ? AND (role = \'guest\' OR status = \'sent\')', conversation.id)) return { send: true, reason: '' };
+  try {
+    return await llm.stillNeeded(buildContext(conversation, { latest: '' }), text);
+  } catch (e) {
+    console.error(`Relevance check failed for conversation ${conversation.id}: ${e.message}`);
+    return { send: true, unsure: true, reason: '' };
+  }
+}
+
 /** Put a message in the Inbox for a team member to approve (used for scheduled stay messages). */
 export function queueDraft(conversation, body, { kind = 'answer', meta = {} } = {}) {
   const draft = insertMessage(conversation.id, 'bot', body, { status: 'pending', kind, meta });
