@@ -21,10 +21,10 @@ test('upsell messages are proposed only for extras that are on and free in the c
   const early = d.tasks.find((t) => t.type === 'upsell_early');
   assert.equal(early.label, 'Offer early check-in');
   assert.match(early.text, /^Hello Zoë,[\s\S]*early check-in is available for your stay at £30 \(from 13:00\)\. Just reply to this message/);
-  assert.match(early.why, /Two days before arrival/);
-  // Two days before arrival at 10:00 UK time.
-  assert.equal(new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(early.at)), addDays(ctx.arrival, -2));
-  assert.equal(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' }).format(new Date(early.at)), '10:00');
+  assert.match(early.why, /The day before arrival at 13:00/);
+  // One offer on its own: the day before arrival at 13:00 UK time.
+  assert.equal(new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(early.at)), addDays(ctx.arrival, -1));
+  assert.equal(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' }).format(new Date(early.at)), '13:00');
   assert.equal(d.count, 2);
   assert.equal((await team('GET', '/api/admin/inbox')).json.counts.todo, 2);
 
@@ -102,15 +102,18 @@ test('two offers for the same end of a stay are one message; if one of them goes
   assert.deepEqual(d.tasks.map((t) => t.type).sort(), ['upsell_departure', 'upsell_early']);
   const both = d.tasks.find((t) => t.type === 'upsell_departure');
   assert.equal(both.label, 'Offer late checkout or an extra night');
-  assert.match(both.text, /a late checkout, currently £30, or one more night[\s\S]*You can add either on your online check-in page, where the exact price is shown: https:\/\/x\.test\/l$/);
-  // Sent at the late-checkout moment: the day before checkout at 13:00.
-  assert.equal(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' }).format(new Date(both.at)), '13:00');
-  assert.equal(new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(both.at)), addDays(ctx.today, 5));
+  // The check-in page link belongs to the late checkout; extending is arranged with the team.
+  assert.match(both.text, /late checkout is available, currently £30\. You can add it on your online check-in page, where the exact price is shown: https:\/\/x\.test\/l\n\nThe apartment is also free after your checkout, so if you wish to extend your stay, just let us know\.$/);
+  // A combined message goes two days before checkout at 10:00.
+  assert.equal(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' }).format(new Date(both.at)), '10:00');
+  assert.equal(new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(both.at)), addDays(ctx.today, 4));
 
   // Added from the calendar: arriving a night earlier joins early check-in in one message.
   const made = await team('POST', '/api/admin/reservations/501/tasks', { type: 'upsell_before' });
   assert.equal(made.json.task.type, 'upsell_arrival');
-  assert.match(made.json.task.text, /two options: the apartment is free the night before, so you could arrive a day earlier at £120, or you could check in early on the day at £30 \(from 13:00\)/);
+  assert.match(made.json.task.text, /early check-in is available at £30 \(from 13:00\)\. You can add it on your online check-in page[^\n]*\n\nThe apartment is also free the night before, so if you wish to arrive a day earlier, just let us know\.$/);
+  assert.equal(new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(made.json.task.at)), addDays(ctx.today, 1)); // two days before arrival
+  assert.equal(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' }).format(new Date(made.json.task.at)), '10:00');
   d = await todo();
   assert.deepEqual(d.tasks.map((t) => t.type).sort(), ['upsell_arrival', 'upsell_departure']);
 
@@ -128,4 +131,32 @@ test('two offers for the same end of a stay are one message; if one of them goes
   const arrival = (await todo()).tasks.find((t) => t.type === 'upsell_arrival');
   await team('DELETE', `/api/admin/tasks/${arrival.id}`, {});
   assert.ok(!(await todo()).tasks.some((t) => ['upsell_early', 'upsell_before', 'upsell_arrival'].includes(t.type)));
+});
+
+test('an extra night on its own links to the check-in page only when exactly one night is free; a team member can set the mood by hand', async () => {
+  q.run('DELETE FROM tasks');
+  q.run('DELETE FROM offers WHERE type != \'extra_night\'');
+  q.run("UPDATE reservations SET extras = '[]', arrival = ?, departure = ? WHERE id = 501", addDays(ctx.today, 3), addDays(ctx.today, 6));
+  q.run("UPDATE conversations SET mood = 'neutral'");
+  // Nothing booked afterwards: several nights are free, which the check-in page cannot sell, so the guest is asked to let us know.
+  let night = (await todo()).tasks.find((t) => t.type === 'upsell_night');
+  assert.match(night.text, /if you wish to extend your stay, just let us know/);
+  assert.ok(!night.text.includes('x.test'));
+  // Exactly one free night before the next guest: the check-in page can sell it.
+  q.run("INSERT INTO reservations(id, property_id, first_name, last_name, guest_name, arrival, departure) VALUES(510, ?, 'N', 'X', 'N X', ?, ?)", ctx.propertyId, addDays(ctx.today, 7), addDays(ctx.today, 9));
+  q.run('DELETE FROM tasks');
+  night = (await todo()).tasks.find((t) => t.type === 'upsell_night' && t.reservationId === 501);
+  assert.match(night.text, /stay one more night it is available at £120\. You can add it on your online check-in page[^\n]*x\.test/);
+
+  // Mood by hand: unhappy removes the offers; back to neutral brings them back. The next guest message lets the assistant decide again.
+  const cid = q.get('SELECT id FROM conversations WHERE reservation_id = 501').id;
+  assert.equal((await team('POST', `/api/admin/conversations/${cid}/mood`, { mood: 'furious' })).status, 400);
+  assert.equal((await team('POST', `/api/admin/conversations/${cid}/mood`, { mood: 'unhappy' })).json.conversation.mood, 'unhappy');
+  assert.ok(!(await todo()).tasks.some((t) => t.reservationId === 501));
+  await team('POST', `/api/admin/conversations/${cid}/mood`, { mood: 'positive' });
+  assert.ok((await todo()).tasks.some((t) => t.reservationId === 501 && t.type === 'upsell_night'));
+  q.run("INSERT INTO messages(conversation_id, role, body, sent_at) VALUES(?, 'guest', 'This is unacceptable, I am very disappointed', datetime('now'))", cid);
+  const { handleGuestMessage } = await import('../src/bot.js');
+  await handleGuestMessage(cid);
+  assert.equal(q.get('SELECT mood FROM conversations WHERE id = ?', cid).mood, 'unhappy');
 });

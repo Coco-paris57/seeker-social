@@ -384,6 +384,24 @@ admin.post('/conversations/:id/read', (req, res) => {
   res.json({ conversation: conversationOut(conversationOr404(c.id)) });
 });
 
+/**
+ * A team member sets the mood by hand. It holds until the guest's next message, when the
+ * assistant reads the conversation again and may change it.
+ */
+admin.post('/conversations/:id/mood', (req, res) => {
+  const c = conversationOr404(req.params.id);
+  const mood = String(req.body?.mood || '');
+  if (!['positive', 'neutral', 'unhappy'].includes(mood)) throw new HttpError(400, 'Choose happy, neutral or unhappy.');
+  q.run('UPDATE conversations SET mood = ? WHERE id = ?', mood, c.id);
+  // No longer unhappy: a check-in that was only suggested is not needed.
+  if (mood !== 'unhappy') q.run("DELETE FROM followups WHERE conversation_id = ? AND status = 'suggested'", c.id);
+  audit(req.user.id, 'conversation.mood', `conversation ${c.id} ${mood}`);
+  refreshTasks(); // offers and thank-yous follow the mood
+  emitConversation(c.id, 'conversation');
+  emitAdmin('todo');
+  res.json({ conversation: conversationOut(conversationOr404(c.id)) });
+});
+
 /** Schedule the check-in message for an unhappy guest (the assistant's proposal, edited or not). */
 admin.post('/conversations/:id/followup', (req, res) => {
   const c = conversationOr404(req.params.id);

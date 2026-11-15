@@ -65,7 +65,8 @@ test('from a free gap, an extra night can be proposed to the guest before it and
   assert.equal(after501.status, 201);
   // 501 can also have late checkout, so the two go out as one message.
   assert.equal(after501.json.task.type, 'upsell_departure');
-  assert.match(after501.json.task.text, /two options: a late checkout at £30 \(until 13:00\), or one more night, as the apartment is free the night after your checkout/);
+  // The check-in page link is for late checkout; an extension is arranged by the team.
+  assert.match(after501.json.task.text, /late checkout is available at £30 \(until 13:00\)\. You can add it on your online check-in page, where the exact price is shown: https:\/\/x\.test\/l\n\nThe apartment is also free after your checkout, so if you wish to extend your stay, just let us know\.$/);
   const before601 = await team('POST', '/api/admin/reservations/601/tasks', { type: 'upsell_before' });
   assert.match(before601.json.task.text, /free the night before your arrival/);
   assert.equal(before601.json.task.label, 'Offer arriving a night earlier');

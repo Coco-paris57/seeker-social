@@ -1,5 +1,5 @@
 // Conversations: searchable list and the thread view (take over, reply, erase).
-import { api, attachmentsView, autoGrow, busy, button, chip, confirmDialog, fill, guestLabel, h, icon, isEnglish, loadError, loading, reconcile, showError, stayDate, fullTime, timeEl, toast, translateControl, uid, moodChip } from './lib.js';
+import { api, attachmentsView, autoGrow, busy, button, chip, confirmDialog, fill, guestLabel, h, icon, isEnglish, loadError, loading, reconcile, showError, stayDate, fullTime, timeEl, toast, translateControl, uid, moodChip, MOODS } from './lib.js';
 import { approvalCard, ticketCard } from './inbox.js';
 import { inbox } from './state.js';
 import { attachControl, CHANNEL_TEXT_ONLY } from './attach.js';
@@ -218,6 +218,23 @@ function threadPane(id, { onGone }) {
 
   function renderDetails(c, tickets) {
     const row = (label, value) => value && h('div', null, h('dt', null, label), h('dd', null, value));
+    // The assistant's reading of the guest, which a team member can correct. It holds until the guest writes again.
+    const moodControl = (conv) => {
+      const select = h('select', { class: 'mood-select', 'aria-label': 'Set the mood' },
+        !conv.mood && h('option', { value: '', selected: true }, 'Reading…'),
+        Object.entries(MOODS).map(([value, m]) => h('option', { value, selected: conv.mood === value }, m.label)));
+      select.addEventListener('change', async () => {
+        if (!select.value) return;
+        try {
+          await api(`/conversations/${id}/mood`, { method: 'POST', body: { mood: select.value } });
+          toast(`Mood set to ${MOODS[select.value].label.toLowerCase()}. The assistant may update it when the guest next writes.`, { kind: 'ok' });
+        } catch (err) {
+          showError(err);
+        }
+        load();
+      });
+      return h('span', { class: 'mood-row' }, moodChip(conv.mood), select);
+    };
     const erase = button('Erase conversation', { variant: 'danger', icon: 'trash', small: true });
     erase.addEventListener('click', async () => {
       const ok = await confirmDialog({
@@ -243,7 +260,7 @@ function threadPane(id, { onGone }) {
     fill(details,
       h('h2', null, 'Guest and stay'),
       h('dl', { class: 'facts' },
-        row('Mood', moodChip(c.mood) || h('span', { class: 'muted' }, 'Reading the conversation…')),
+        row('Mood', moodControl(c)),
         row('Online check-in', !c.stay ? h('span', { class: 'muted' }, c.verified ? 'No booking linked' : 'Not known (guest not verified)')
           : c.stay.checkinCompleted ? chip('Form completed', { tone: 'ok', icon: 'check' })
             : c.stay.checkinLink ? chip('Form not completed', { tone: 'warn', icon: 'clock' })

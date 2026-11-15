@@ -28,22 +28,24 @@ function bestTime(type, r, now, manual = false) {
   const today = londonDate(new Date(now));
   const soon = () => followUpTime(1, now);
   const at = (date, time) => { const t = londonToUtc(date, time); return t > now ? new Date(t).toISOString() : null; };
+  const inReach = manual || r.arrival <= addDays(today, LOOK_AHEAD);
+  // One offer on its own for the day itself (early check-in, late checkout): the day before, at 13:00.
   if (type === 'upsell_early') {
-    if (r.arrival < today || r.arrival > addDays(today, LOOK_AHEAD)) return null;
-    if (r.arrival === today) return Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', hourCycle: 'h23' }).format(new Date(now))) < 11 ? { at: soon(), why: 'The guest arrives today, so this is only useful if it goes this morning.' } : null;
-    return { at: at(addDays(r.arrival, -2), '10:00') || soon(), why: 'Two days before arrival, mid-morning: guests are settling their travel plans and tend to read and act on messages then.' };
+    if (r.arrival <= today || !inReach) return null;
+    return { at: at(addDays(r.arrival, -1), '13:00') || soon(), why: 'The day before arrival at 13:00: the guest knows their travel times by then, and there is still time to arrange it.' };
   }
   if (type === 'upsell_late') {
-    if (r.departure <= today || r.arrival > addDays(today, LOOK_AHEAD)) return null;
+    if (r.departure <= today || !inReach) return null;
     return { at: at(addDays(r.departure, -1), '13:00') || soon(), why: 'The day before checkout at 13:00: early enough for the guest to plan their last morning, and for the team to arrange cleaning.' };
   }
-  if (type === 'upsell_night') {
-    if (r.departure <= today || (!manual && r.arrival > addDays(today, LOOK_AHEAD))) return null;
-    return { at: at(addDays(r.departure, -2), '11:00') || soon(), why: 'Two days before checkout: early enough to change travel plans, late enough that they know how the trip is going.' };
+  // Anything that involves another night, and every combined message: two days before, at 10:00.
+  if (type === 'upsell_night' || type === 'upsell_departure') {
+    if (r.departure <= today || !inReach) return null;
+    return { at: at(addDays(r.departure, -2), '10:00') || soon(), why: 'Two days before checkout at 10:00: early enough to change travel plans, late enough that they know how the trip is going.' };
   }
-  if (type === 'upsell_before') {
-    if (r.arrival <= today) return null;
-    return { at: at(addDays(r.arrival, -3), '10:00') || soon(), why: 'Three days before arrival: there is still time to change travel plans.' };
+  if (type === 'upsell_before' || type === 'upsell_arrival') {
+    if (r.arrival <= today || !inReach) return null;
+    return { at: at(addDays(r.arrival, -2), '10:00') || soon(), why: 'Two days before arrival at 10:00: guests are settling their travel plans and there is still time to change them.' };
   }
   if (type === 'happy') {
     if (r.departure > addDays(today, 1) || r.departure < addDays(today, -3)) return null;
@@ -52,15 +54,30 @@ function bestTime(type, r, now, manual = false) {
   return null;
 }
 
+/** How many nights the apartment stays free after this booking's checkout (99 = nothing booked after it). */
+function freeNightsAfter(r) {
+  const next = q.get(
+    `SELECT MIN(arrival) AS d FROM (SELECT arrival FROM reservations WHERE property_id = ? AND id != ? AND cancelled = 0 AND arrival >= ?
+     UNION ALL SELECT arrival FROM blocks WHERE property_id = ? AND arrival >= ?)`,
+    r.property_id, r.id, r.departure, r.property_id, r.departure,
+  )?.d;
+  return next ? Math.round((Date.parse(`${next}T12:00:00Z`) - Date.parse(`${r.departure}T12:00:00Z`)) / 86400_000) : 99;
+}
+
 const priceText = (offer) => (offer ? (offer.price ? ` at ${offer.price}` : offer.last_price_on_checkin_page ? `, currently ${offer.last_price_on_checkin_page}` : '') : '');
 const termsText = (offer) => (offer?.conditions ? ` (${offer.conditions})` : '');
 
-/** One message for two offers to the same guest: late checkout with an extra night, or an earlier arrival with early check-in. */
+/**
+ * One message for two offers to the same guest. The check-in page link is for early check-in or
+ * late checkout only: an extension is arranged by the team (the check-in page cannot sell a gap
+ * of several nights), so the guest is asked to let us know.
+ */
 function combinedBody(type, r, property, offers) {
-  const [a, b] = TASK_TYPES[type].parts.map((part) => offers[part]);
+  const day = offers[type === 'upsell_departure' ? 'upsell_late' : 'upsell_early'];
+  const how = r.checkin_link ? 'You can add it on your online check-in page, where the exact price is shown: {checkin_link}' : 'Just reply to this message and we will arrange it.';
   const text = type === 'upsell_departure'
-    ? `Hello {first_name},\n\nWe hope you are enjoying your stay. If you would like more time with us, there are two options: a late checkout${priceText(a)}${termsText(a)}, or one more night, as the apartment is free the night after your checkout${priceText(b)}${termsText(b)}. ${r.checkin_link ? 'You can add either on your online check-in page, where the exact price is shown: {checkin_link}' : 'Just reply to this message and we will arrange it.'}`
-    : `Hello {first_name},\n\nWe are looking forward to welcoming you to {property} on {arrival}. If you would like to arrive sooner, there are two options: the apartment is free the night before, so you could arrive a day earlier${priceText(a)}${termsText(a)}, or you could check in early on the day${priceText(b)}${termsText(b)}. Just reply to this message and we will arrange it.`;
+    ? `Hello {first_name},\n\nWe hope you are enjoying your stay. If you would like a more relaxed last morning, late checkout is available${priceText(day)}${termsText(day)}. ${how}\n\nThe apartment is also free after your checkout, so if you wish to extend your stay, just let us know.`
+    : `Hello {first_name},\n\nWe are looking forward to welcoming you to {property} on {arrival}. If it would help to arrive earlier on the day, early check-in is available${priceText(day)}${termsText(day)}. ${how}\n\nThe apartment is also free the night before, so if you wish to arrive a day earlier, just let us know.`;
   return fillTemplate(text, r, property);
 }
 
@@ -71,7 +88,9 @@ function bodyFor(type, r, property, offer) {
   const text = {
     upsell_early: `Hello {first_name},\n\nWe are looking forward to welcoming you to {property} on {arrival}. If it would help to arrive earlier, early check-in is available for your stay${price}${terms}. ${how}`,
     upsell_late: `Hello {first_name},\n\nWe hope you are enjoying your stay. If you would like a more relaxed last morning, late checkout is available${price}${terms}. ${how}`,
-    upsell_night: `Hello {first_name},\n\nWe hope you are enjoying your stay. The apartment is free the night after your checkout, so if you would like to stay one more night it is available${price}${terms}. ${how}`,
+    upsell_night: r.checkin_link && freeNightsAfter(r) === 1
+      ? `Hello {first_name},\n\nWe hope you are enjoying your stay. The apartment is free the night after your checkout, so if you would like to stay one more night it is available${price}${terms}. ${how}`
+      : 'Hello {first_name},\n\nWe hope you are enjoying your stay. The apartment is free after your checkout, so if you wish to extend your stay, just let us know and we will arrange it.',
     upsell_before: `Hello {first_name},\n\nWe are looking forward to welcoming you to {property}. The apartment is free the night before your arrival, so if you would like to arrive a day earlier it is available${price}${terms}. Just reply to this message and we will arrange it.`,
     happy: 'Hello {first_name},\n\nThank you for staying at {property}. We are so glad you enjoyed it. If you have a moment, a short review would mean a great deal to us and helps future guests. We would be delighted to welcome you back.',
   }[type];
@@ -159,9 +178,9 @@ function candidates(r, now, rows = {}) {
     if (settled(rows[combo])) { for (const part of t.parts) delete out[part]; continue; } // sent, scheduled or dismissed as one: not proposed again in pieces
     if (!t.parts.every((part) => out[part]) || t.parts.some((part) => settled(rows[part]))) continue;
     const [a, b] = t.parts.map((part) => out[part]);
-    // Late checkout sets the moment for the departure pair; the earlier of the two for the arrival pair.
-    const lead = combo === 'upsell_departure' ? a : (a.at <= b.at ? a : b);
-    out[combo] = { at: lead.at, why: lead.why, manual: a.manual || b.manual, body: combinedBody(combo, r, property, offers) };
+    const when = bestTime(combo, r, now, a.manual || b.manual);
+    if (!when) continue;
+    out[combo] = { ...when, manual: a.manual || b.manual, body: combinedBody(combo, r, property, offers) };
     for (const part of t.parts) delete out[part];
   }
   return out;

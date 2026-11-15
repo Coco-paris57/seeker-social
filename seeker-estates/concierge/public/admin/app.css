@@ -602,3 +602,5 @@ table.data thead th { font-size: 13px; color: var(--text-2); font-weight: 600; }
   .sheet-day { min-height: 76px; padding: 2px; }
   .sheet-stay { font-size: 11px; padding: 2px 3px; }
 }
+.mood-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.mood-select { width: auto; min-height: 34px; padding: 2px 28px 2px 8px; font-size: 14px; }
