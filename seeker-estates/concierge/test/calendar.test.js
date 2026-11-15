@@ -45,7 +45,9 @@ test('bars carry mood, check-in form, unread and extras; the guest card has the 
 
   q.run("UPDATE conversations SET mood = 'neutral' WHERE reservation_id = 501");
   const card = (await team('GET', '/api/admin/reservations/501')).json;
-  assert.equal(card.reservation.propertyName, 'Test Flat');
+  q.run("UPDATE properties SET name = 'P01 Camden 2-bed (Smoobu name)', display_name = 'Camden apartment' WHERE id = ?", ctx.propertyId);
+  assert.equal((await team('GET', '/api/admin/reservations/501')).json.reservation.propertyName, 'P01 Camden 2-bed (Smoobu name)');
+  assert.equal((await team('GET', '/api/admin/calendar')).json.properties[0].name, 'P01 Camden 2-bed (Smoobu name)');
   assert.equal(card.conversation.id, bar.conversationId);
   assert.ok(card.messages.some((m) => m.role === 'guest' && /unacceptable/.test(m.text)));
   assert.ok(card.messages.every((m) => m.status === 'sent' || m.role === 'guest'));

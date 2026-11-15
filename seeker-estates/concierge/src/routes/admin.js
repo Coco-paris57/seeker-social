@@ -230,7 +230,8 @@ admin.get('/calendar', (req, res) => {
   const from = DAY.test(String(req.query.from)) ? String(req.query.from) : today;
   const days = Math.min(62, Math.max(7, parseInt(req.query.days, 10) || 14));
   const to = addDays(from, days); // exclusive
-  const properties = q.all('SELECT id, name, display_name, ref FROM properties WHERE active = 1 ORDER BY COALESCE(ref, name)').map((p) => ({ id: p.id, name: p.display_name || p.name }));
+  // Named as in Smoobu (the listing name), so the calendar reads the same as the one the team already knows.
+  const properties = q.all('SELECT id, name, display_name, ref FROM properties WHERE active = 1 ORDER BY name COLLATE NOCASE').map((p) => ({ id: p.id, name: p.name || p.display_name }));
   // A week either side, so a gap or turnover at the edge of the range is still seen.
   const rows = q.all('SELECT * FROM reservations WHERE cancelled = 0 AND departure >= ? AND arrival <= ? ORDER BY arrival', addDays(from, -7), addDays(to, 7));
   const blocks = q.all('SELECT property_id AS propertyId, arrival, departure FROM blocks WHERE departure >= ? AND arrival <= ?', addDays(from, -7), addDays(to, 7));
@@ -272,7 +273,7 @@ admin.get('/reservations/:id', (req, res) => {
   const main = chats[0] || null;
   const property = q.get('SELECT name, display_name FROM properties WHERE id = ?', r.property_id);
   res.json({
-    reservation: { ...bookingOut(r), propertyName: property ? property.display_name || property.name : null, cancelled: !!r.cancelled },
+    reservation: { ...bookingOut(r), propertyName: property ? property.name || property.display_name : null, cancelled: !!r.cancelled },
     offers: (offersFor(r) || []).map((o) => ({ extra: o.extra, price: o.price || o.last_price_on_checkin_page || null, conditions: o.conditions || null, possible: o.calendar ? o.calendar === 'possible' : true })),
     tasks: q.all("SELECT * FROM tasks WHERE reservation_id = ? AND status IN ('suggested', 'scheduled') ORDER BY send_at", r.id).map(taskOut),
     conversation: main ? conversationOut(main) : null,
