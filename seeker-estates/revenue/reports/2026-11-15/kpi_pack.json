@@ -1,0 +1,2730 @@
+{
+ "date": "2026-11-15",
+ "portfolio_last30": {
+  "nights": 237,
+  "revenue": 41210.28,
+  "occupancy": 0.608,
+  "adr": 173.88,
+  "revpar": 105.67
+ },
+ "portfolio_last365": {
+  "nights": 2210,
+  "revenue": 406621.71,
+  "occupancy": 0.466,
+  "adr": 183.99,
+  "revpar": 85.69
+ },
+ "channel_economics": {
+  "per_100_base": {
+   "airbnb": {
+    "guest_price": 100.0,
+    "net": 84.5
+   },
+   "booking": {
+    "guest_price": 110.0,
+    "net": 93.5
+   },
+   "vrbo": {
+    "guest_price": 108.0,
+    "net": 99.36
+   },
+   "direct": {
+    "guest_price": 90.0,
+    "net": 90.0
+   }
+  },
+  "warnings": []
+ },
+ "properties": [
+  {
+   "ref": "P01",
+   "area": "Canary Wharf",
+   "type": "2-bed",
+   "last30": {
+    "nights": 30,
+    "revenue": 4716.65,
+    "capacity": 30,
+    "occupancy": 1.0,
+    "adr": 157.22,
+    "revpar": 157.22
+   },
+   "last365": {
+    "nights": 155,
+    "revenue": 27207.58,
+    "capacity": 365,
+    "occupancy": 0.425,
+    "adr": 175.53,
+    "revpar": 74.54
+   },
+   "indices_30": {
+    "mpi": 1.34,
+    "ari": null,
+    "rgi": null
+   },
+   "blocked_next_30": 0.517,
+   "forward_occ_30_ex_blocks": 1.0,
+   "pricelabs_occ_next_30_incl_blocks": 1.0,
+   "forward_occ_30": 0.483,
+   "forward_occ_60": 0.4,
+   "market_occ_30": 0.36,
+   "market_occ_60": 0.29,
+   "market_percentiles": {
+    "p25": null,
+    "p50": null,
+    "p75": null,
+    "p90": null
+   },
+   "avg_open_price_next30": null,
+   "price_percentile": null,
+   "comps": null,
+   "pace_30": {
+    "otb_nights": 15,
+    "otb_revenue": 2281.95,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 15,
+    "revenue_delta_pct": null
+   },
+   "pace_90": {
+    "otb_nights": 15,
+    "otb_revenue": 2281.95,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 15,
+    "revenue_delta_pct": null
+   },
+   "pickup_7d": {
+    "bookings": 0,
+    "nights": 0,
+    "revenue": 0
+   },
+   "booking_profile": {
+    "bookings": 20,
+    "median_lead_days": 15,
+    "median_los": 5,
+    "channel_revenue_share": {
+     "Airbnb": 0.799,
+     "Website": 0.133,
+     "Booking.com": 0.068
+    }
+   },
+   "gaps": [],
+   "sync_issues": [],
+   "bounds": null,
+   "parity_flags": [],
+   "pricelabs": {
+    "adr_past_30": 157.0,
+    "stly_adr_past_30": null,
+    "booking_pickup_past_30": 0.0,
+    "adr_ytd": 165.0,
+    "stly_adr_ytd": null,
+    "fully_blocked_next_360": false
+   },
+   "settings": {
+    "pl_min": 120.0,
+    "pl_base": 253.0,
+    "pl_max": 650.0,
+    "recommended_base": 253.0,
+    "sync_on": true,
+    "last_push": "2026-11-15T04:36:06.000Z"
+   },
+   "rate_leak_next_30": {
+    "booked_nights": 14,
+    "avg_booked_adr": 152.13,
+    "avg_pricelabs_price": 241.5,
+    "gap_pct": -0.37
+   },
+   "rate_leak_after_los": {
+    "nights": 14,
+    "avg_booked_adr": 152.13,
+    "avg_expected_after_los": 193.2,
+    "gap_pct": -0.213
+   },
+   "in_smoobu": true,
+   "price_nights_next_30": 29,
+   "intentional_block": false,
+   "special_setup": null,
+   "handback_last_night": "2026-12-20",
+   "recommendation": {
+    "action": "raise-signal",
+    "price_move": null,
+    "reason": "booked +12% vs market; price position unknown until comps are priced"
+   },
+   "checks": [
+    {
+     "name": "Prices pushed in the last day",
+     "status": "ok",
+     "detail": "Push on, last push 2026-11-15T04:36:06.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "ok",
+     "detail": "No open night differs by more than \u00a32"
+    },
+    {
+     "name": "Calendar open",
+     "status": "warn",
+     "detail": "52% of next 30 nights blocked (reason unknown)"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "ok",
+     "detail": "48% booked vs 36% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "bad",
+     "detail": "\u00a3152 paid vs \u00a3193 expected on 14 nights (-21%; expected uses today's PriceLabs price, which may have risen since the booking)"
+    },
+    {
+     "name": "Price signal",
+     "status": "ok",
+     "detail": "booked +12% vs market; price position unknown until comps are priced"
+    }
+   ]
+  },
+  {
+   "ref": "P02",
+   "area": "Ladbroke Grove",
+   "type": "1-bed",
+   "last30": {
+    "nights": 12,
+    "revenue": 1177.07,
+    "capacity": 30,
+    "occupancy": 0.4,
+    "adr": 98.09,
+    "revpar": 39.24
+   },
+   "last365": {
+    "nights": 291,
+    "revenue": 37418.99,
+    "capacity": 365,
+    "occupancy": 0.797,
+    "adr": 128.59,
+    "revpar": 102.52
+   },
+   "indices_30": {
+    "mpi": 0.0,
+    "ari": null,
+    "rgi": null
+   },
+   "blocked_next_30": 1.0,
+   "forward_occ_30_ex_blocks": null,
+   "pricelabs_occ_next_30_incl_blocks": 1.0,
+   "forward_occ_30": 0.0,
+   "forward_occ_60": 0.0,
+   "market_occ_30": 0.52,
+   "market_occ_60": 0.41,
+   "market_percentiles": {
+    "p25": null,
+    "p50": null,
+    "p75": null,
+    "p90": null
+   },
+   "avg_open_price_next30": null,
+   "price_percentile": null,
+   "comps": null,
+   "pace_30": {
+    "otb_nights": 0,
+    "otb_revenue": 0.0,
+    "stly_nights": 7,
+    "stly_revenue": 701.88,
+    "nights_delta": -7,
+    "revenue_delta_pct": -1.0
+   },
+   "pace_90": {
+    "otb_nights": 0,
+    "otb_revenue": 0.0,
+    "stly_nights": 18,
+    "stly_revenue": 1831.18,
+    "nights_delta": -18,
+    "revenue_delta_pct": -1.0
+   },
+   "pickup_7d": {
+    "bookings": 0,
+    "nights": 0,
+    "revenue": 0
+   },
+   "booking_profile": {
+    "bookings": 71,
+    "median_lead_days": 34,
+    "median_los": 4,
+    "channel_revenue_share": {
+     "Airbnb": 0.538,
+     "Booking.com": 0.43,
+     "Direct booking": 0.032
+    }
+   },
+   "gaps": [],
+   "sync_issues": [],
+   "bounds": null,
+   "parity_flags": [],
+   "pricelabs": {
+    "adr_past_30": 89.0,
+    "stly_adr_past_30": 0.0,
+    "booking_pickup_past_30": 0.0,
+    "adr_ytd": 113.0,
+    "stly_adr_ytd": 0.0,
+    "fully_blocked_next_360": true
+   },
+   "settings": {
+    "pl_min": 60.0,
+    "pl_base": 175.0,
+    "pl_max": 800.0,
+    "recommended_base": 177.0,
+    "sync_on": true,
+    "last_push": "2026-11-15T00:23:37.000Z"
+   },
+   "rate_leak_next_30": null,
+   "rate_leak_after_los": null,
+   "in_smoobu": true,
+   "price_nights_next_30": 29,
+   "intentional_block": true,
+   "special_setup": null,
+   "handback_last_night": null,
+   "recommendation": {
+    "action": "weak-signal",
+    "price_move": null,
+    "reason": "booked -52% vs market; price position unknown until comps are priced"
+   },
+   "checks": [
+    {
+     "name": "Prices pushed in the last day",
+     "status": "ok",
+     "detail": "Push on, last push 2026-11-15T00:23:37.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "ok",
+     "detail": "No open night differs by more than \u00a32"
+    },
+    {
+     "name": "Calendar open",
+     "status": "info",
+     "detail": "100% of next 30 nights closed on purpose"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "info",
+     "detail": "0% booked vs 52% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "info",
+     "detail": "No booked nights with known stay length in the next 30"
+    },
+    {
+     "name": "Price signal",
+     "status": "info",
+     "detail": "booked -52% vs market; price position unknown until comps are priced"
+    }
+   ]
+  },
+  {
+   "ref": "P03",
+   "area": "Bayswater",
+   "type": "3-bed",
+   "last30": {
+    "nights": null,
+    "revenue": null,
+    "capacity": null,
+    "occupancy": null,
+    "adr": null,
+    "revpar": null
+   },
+   "last365": {
+    "nights": null,
+    "revenue": null,
+    "capacity": null,
+    "occupancy": null,
+    "adr": null,
+    "revpar": null
+   },
+   "indices_30": {
+    "mpi": null,
+    "ari": null,
+    "rgi": null
+   },
+   "blocked_next_30": 0.0,
+   "forward_occ_30_ex_blocks": null,
+   "pricelabs_occ_next_30_incl_blocks": 1.0,
+   "forward_occ_30": null,
+   "forward_occ_60": null,
+   "market_occ_30": 0.56,
+   "market_occ_60": 0.44,
+   "market_percentiles": {
+    "p25": null,
+    "p50": null,
+    "p75": null,
+    "p90": null
+   },
+   "avg_open_price_next30": null,
+   "price_percentile": null,
+   "comps": null,
+   "pace_30": {
+    "revenue_delta_pct": null
+   },
+   "pace_90": {
+    "revenue_delta_pct": null
+   },
+   "pickup_7d": null,
+   "booking_profile": {},
+   "gaps": [],
+   "sync_issues": [],
+   "bounds": null,
+   "parity_flags": [],
+   "pricelabs": {
+    "adr_past_30": 0.0,
+    "stly_adr_past_30": null,
+    "booking_pickup_past_30": 0.0,
+    "adr_ytd": 239.0,
+    "stly_adr_ytd": null,
+    "fully_blocked_next_360": true
+   },
+   "settings": {
+    "pl_min": 100.0,
+    "pl_base": 323.0,
+    "pl_max": 1500.0,
+    "recommended_base": 323.0,
+    "sync_on": true,
+    "last_push": "2026-11-15T03:13:49.000Z"
+   },
+   "rate_leak_next_30": null,
+   "rate_leak_after_los": null,
+   "in_smoobu": false,
+   "price_nights_next_30": 29,
+   "intentional_block": true,
+   "special_setup": null,
+   "handback_last_night": null,
+   "recommendation": {
+    "action": "collect-data",
+    "price_move": null,
+    "reason": "missing occupancy or market data"
+   },
+   "checks": [
+    {
+     "name": "Prices pushed in the last day",
+     "status": "ok",
+     "detail": "Push on, last push 2026-11-15T03:13:49.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "info",
+     "detail": "Not checked (not priced through Smoobu)"
+    },
+    {
+     "name": "Calendar open",
+     "status": "info",
+     "detail": "100% of next 30 nights closed on purpose"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "info",
+     "detail": "Unknown"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "info",
+     "detail": "No booked nights with known stay length in the next 30"
+    },
+    {
+     "name": "Price signal",
+     "status": "info",
+     "detail": "missing occupancy or market data"
+    }
+   ]
+  },
+  {
+   "ref": "P04",
+   "area": "Barking",
+   "type": "2-bed",
+   "last30": {
+    "nights": null,
+    "revenue": null,
+    "capacity": null,
+    "occupancy": null,
+    "adr": null,
+    "revpar": null
+   },
+   "last365": {
+    "nights": null,
+    "revenue": null,
+    "capacity": null,
+    "occupancy": null,
+    "adr": null,
+    "revpar": null
+   },
+   "indices_30": {
+    "mpi": 2.3,
+    "ari": null,
+    "rgi": null
+   },
+   "blocked_next_30": 0.0,
+   "forward_occ_30_ex_blocks": null,
+   "pricelabs_occ_next_30_incl_blocks": 0.47,
+   "forward_occ_30": 0.552,
+   "forward_occ_60": 0.492,
+   "market_occ_30": 0.24,
+   "market_occ_60": 0.2,
+   "market_percentiles": {
+    "p25": null,
+    "p50": null,
+    "p75": null,
+    "p90": null
+   },
+   "avg_open_price_next30": 182.85,
+   "price_percentile": null,
+   "comps": null,
+   "pace_30": {
+    "revenue_delta_pct": null
+   },
+   "pace_90": {
+    "revenue_delta_pct": null
+   },
+   "pickup_7d": {
+    "bookings": 1,
+    "nights": 4,
+    "revenue": 489.59
+   },
+   "booking_profile": {
+    "bookings": 5,
+    "median_lead_days": 6,
+    "median_los": 4,
+    "channel_revenue_share": {
+     "Airbnb": 0.607,
+     "Booking.com": 0.393
+    }
+   },
+   "gaps": [
+    {
+     "from": "2026-11-18",
+     "nights": 2,
+     "min_stay": 3
+    },
+    {
+     "from": "2026-11-24",
+     "nights": 1,
+     "min_stay": 3
+    }
+   ],
+   "sync_issues": [
+    {
+     "date": "2026-11-18",
+     "pricelabs": 155.0,
+     "smoobu": 175.0,
+     "gap_gbp": 20.0
+    },
+    {
+     "date": "2026-11-19",
+     "pricelabs": 158.0,
+     "smoobu": 165.0,
+     "gap_gbp": 7.0
+    }
+   ],
+   "bounds": {
+    "open_nights": 31,
+    "at_min_share": 0.0,
+    "at_max_share": 0.0,
+    "min": 90.0,
+    "max": 2000.0
+   },
+   "parity_flags": [],
+   "pricelabs": {
+    "adr_past_30": 118.0,
+    "stly_adr_past_30": null,
+    "booking_pickup_past_30": 42.0,
+    "adr_ytd": 115.0,
+    "stly_adr_ytd": null,
+    "fully_blocked_next_360": false
+   },
+   "settings": {
+    "pl_min": 90.0,
+    "pl_base": 200.0,
+    "pl_max": 2000.0,
+    "recommended_base": null,
+    "sync_on": true,
+    "last_push": "2026-11-14T08:42:41.000Z"
+   },
+   "rate_leak_next_30": {
+    "booked_nights": 10,
+    "avg_booked_adr": 131.82,
+    "avg_pricelabs_price": 159.8,
+    "gap_pct": -0.175
+   },
+   "rate_leak_after_los": {
+    "nights": 10,
+    "avg_booked_adr": 131.82,
+    "avg_expected_after_los": 145.64,
+    "gap_pct": -0.095
+   },
+   "in_smoobu": true,
+   "price_nights_next_30": 29,
+   "intentional_block": false,
+   "special_setup": null,
+   "handback_last_night": null,
+   "recommendation": {
+    "action": "raise-signal",
+    "price_move": null,
+    "reason": "booked +31% vs market; price position unknown until comps are priced"
+   },
+   "checks": [
+    {
+     "name": "Prices pushed in the last day",
+     "status": "ok",
+     "detail": "Push on, last push 2026-11-14T08:42:41.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "bad",
+     "detail": "2 nights differ by more than \u00a32"
+    },
+    {
+     "name": "Not stuck at minimum price",
+     "status": "ok",
+     "detail": "0% of open nights at the \u00a390 minimum"
+    },
+    {
+     "name": "Calendar open",
+     "status": "ok",
+     "detail": "No blocked nights in the next 30"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "ok",
+     "detail": "55% booked vs 24% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "warn",
+     "detail": "\u00a3132 paid vs \u00a3146 expected on 10 nights (-10%; expected uses today's PriceLabs price, which may have risen since the booking)"
+    },
+    {
+     "name": "Price signal",
+     "status": "ok",
+     "detail": "booked +31% vs market; price position unknown until comps are priced"
+    }
+   ]
+  },
+  {
+   "ref": "P05",
+   "area": "St John's Wood",
+   "type": "4-bed",
+   "last30": {
+    "nights": 25,
+    "revenue": 9387.42,
+    "capacity": 30,
+    "occupancy": 0.833,
+    "adr": 375.5,
+    "revpar": 312.91
+   },
+   "last365": {
+    "nights": 219,
+    "revenue": 81654.86,
+    "capacity": 365,
+    "occupancy": 0.6,
+    "adr": 372.85,
+    "revpar": 223.71
+   },
+   "indices_30": {
+    "mpi": 1.42,
+    "ari": null,
+    "rgi": null
+   },
+   "blocked_next_30": 0.0,
+   "forward_occ_30_ex_blocks": null,
+   "pricelabs_occ_next_30_incl_blocks": 0.7,
+   "forward_occ_30": 0.655,
+   "forward_occ_60": 0.627,
+   "market_occ_30": 0.46,
+   "market_occ_60": 0.4,
+   "market_percentiles": {
+    "p25": null,
+    "p50": null,
+    "p75": null,
+    "p90": null
+   },
+   "avg_open_price_next30": 465.2,
+   "price_percentile": null,
+   "comps": null,
+   "pace_30": {
+    "otb_nights": 20,
+    "otb_revenue": 10257.71,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 20,
+    "revenue_delta_pct": null
+   },
+   "pace_90": {
+    "otb_nights": 41,
+    "otb_revenue": 21996.05,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 41,
+    "revenue_delta_pct": null
+   },
+   "pickup_7d": {
+    "bookings": 0,
+    "nights": 0,
+    "revenue": 0
+   },
+   "booking_profile": {
+    "bookings": 62,
+    "median_lead_days": 44,
+    "median_los": 4,
+    "channel_revenue_share": {
+     "Airbnb": 1.0
+    }
+   },
+   "gaps": [],
+   "sync_issues": [],
+   "bounds": {
+    "open_nights": 23,
+    "at_min_share": 0.0,
+    "at_max_share": 0.0,
+    "min": 150.0,
+    "max": 3500.0
+   },
+   "parity_flags": [],
+   "pricelabs": {
+    "adr_past_30": 374.0,
+    "stly_adr_past_30": null,
+    "booking_pickup_past_30": 19.0,
+    "adr_ytd": 373.0,
+    "stly_adr_ytd": null,
+    "fully_blocked_next_360": false
+   },
+   "settings": {
+    "pl_min": 150.0,
+    "pl_base": 550.0,
+    "pl_max": 3500.0,
+    "recommended_base": 537.0,
+    "sync_on": true,
+    "last_push": "2026-11-14T08:08:43.000Z"
+   },
+   "rate_leak_next_30": {
+    "booked_nights": 15,
+    "avg_booked_adr": 523.22,
+    "avg_pricelabs_price": 564.53,
+    "gap_pct": -0.073
+   },
+   "rate_leak_after_los": {
+    "nights": 15,
+    "avg_booked_adr": 523.22,
+    "avg_expected_after_los": 531.51,
+    "gap_pct": -0.016
+   },
+   "in_smoobu": true,
+   "price_nights_next_30": 29,
+   "intentional_block": false,
+   "special_setup": null,
+   "handback_last_night": null,
+   "recommendation": {
+    "action": "raise-signal",
+    "price_move": null,
+    "reason": "booked +20% vs market; price position unknown until comps are priced"
+   },
+   "checks": [
+    {
+     "name": "Prices pushed in the last day",
+     "status": "ok",
+     "detail": "Push on, last push 2026-11-14T08:08:43.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "ok",
+     "detail": "No open night differs by more than \u00a32"
+    },
+    {
+     "name": "Not stuck at minimum price",
+     "status": "ok",
+     "detail": "0% of open nights at the \u00a3150 minimum"
+    },
+    {
+     "name": "Calendar open",
+     "status": "ok",
+     "detail": "No blocked nights in the next 30"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "ok",
+     "detail": "66% booked vs 46% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "ok",
+     "detail": "\u00a3523 paid vs \u00a3532 expected on 15 nights (-2%; expected uses today's PriceLabs price, which may have risen since the booking)"
+    },
+    {
+     "name": "Price signal",
+     "status": "ok",
+     "detail": "booked +20% vs market; price position unknown until comps are priced"
+    }
+   ]
+  },
+  {
+   "ref": "P06",
+   "area": "Marylebone",
+   "type": "2-bed",
+   "last30": {
+    "nights": 22,
+    "revenue": 4391.82,
+    "capacity": 30,
+    "occupancy": 0.733,
+    "adr": 199.63,
+    "revpar": 146.39
+   },
+   "last365": {
+    "nights": 137,
+    "revenue": 32230.0,
+    "capacity": 365,
+    "occupancy": 0.375,
+    "adr": 235.26,
+    "revpar": 88.3
+   },
+   "indices_30": {
+    "mpi": 0.61,
+    "ari": null,
+    "rgi": null
+   },
+   "blocked_next_30": 0.517,
+   "forward_occ_30_ex_blocks": 0.642,
+   "pricelabs_occ_next_30_incl_blocks": 0.8,
+   "forward_occ_30": 0.31,
+   "forward_occ_60": 0.153,
+   "market_occ_30": 0.51,
+   "market_occ_60": 0.41,
+   "market_percentiles": {
+    "p25": null,
+    "p50": null,
+    "p75": null,
+    "p90": null
+   },
+   "avg_open_price_next30": 241.25,
+   "price_percentile": null,
+   "comps": null,
+   "pace_30": {
+    "otb_nights": 9,
+    "otb_revenue": 1866.61,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 9,
+    "revenue_delta_pct": null
+   },
+   "pace_90": {
+    "otb_nights": 9,
+    "otb_revenue": 1866.61,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 9,
+    "revenue_delta_pct": null
+   },
+   "pickup_7d": {
+    "bookings": 1,
+    "nights": 5,
+    "revenue": 1009.82
+   },
+   "booking_profile": {
+    "bookings": 34,
+    "median_lead_days": 14,
+    "median_los": 4,
+    "channel_revenue_share": {
+     "Airbnb": 0.744,
+     "Booking.com": 0.256
+    }
+   },
+   "gaps": [],
+   "sync_issues": [
+    {
+     "date": "2026-11-16",
+     "pricelabs": 249.0,
+     "smoobu": 222.0,
+     "gap_gbp": -27.0
+    },
+    {
+     "date": "2026-11-17",
+     "pricelabs": 254.0,
+     "smoobu": 233.0,
+     "gap_gbp": -21.0
+    }
+   ],
+   "bounds": {
+    "open_nights": 4,
+    "at_min_share": 0.0,
+    "at_max_share": 0.0,
+    "min": 200.0,
+    "max": 800.0
+   },
+   "parity_flags": [],
+   "pricelabs": {
+    "adr_past_30": 200.0,
+    "stly_adr_past_30": null,
+    "booking_pickup_past_30": 26.0,
+    "adr_ytd": 224.0,
+    "stly_adr_ytd": null,
+    "fully_blocked_next_360": false
+   },
+   "settings": {
+    "pl_min": 200.0,
+    "pl_base": 357.0,
+    "pl_max": 800.0,
+    "recommended_base": 353.0,
+    "sync_on": true,
+    "last_push": "2026-11-14T08:42:42.000Z"
+   },
+   "rate_leak_next_30": {
+    "booked_nights": 7,
+    "avg_booked_adr": 207.21,
+    "avg_pricelabs_price": 312.71,
+    "gap_pct": -0.337
+   },
+   "rate_leak_after_los": {
+    "nights": 7,
+    "avg_booked_adr": 207.21,
+    "avg_expected_after_los": 312.71,
+    "gap_pct": -0.337
+   },
+   "in_smoobu": true,
+   "price_nights_next_30": 29,
+   "intentional_block": true,
+   "special_setup": null,
+   "handback_last_night": null,
+   "recommendation": {
+    "action": "weak-signal",
+    "price_move": null,
+    "reason": "booked -20% vs market; price position unknown until comps are priced"
+   },
+   "checks": [
+    {
+     "name": "Prices pushed in the last day",
+     "status": "ok",
+     "detail": "Push on, last push 2026-11-14T08:42:42.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "bad",
+     "detail": "2 nights differ by more than \u00a32"
+    },
+    {
+     "name": "Not stuck at minimum price",
+     "status": "ok",
+     "detail": "0% of open nights at the \u00a3200 minimum"
+    },
+    {
+     "name": "Calendar open",
+     "status": "info",
+     "detail": "52% of next 30 nights closed on purpose"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "ok",
+     "detail": "64% of the nights left open are booked vs 51% market (blocked nights excluded)"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "bad",
+     "detail": "\u00a3207 paid vs \u00a3313 expected on 7 nights (-34%; expected uses today's PriceLabs price, which may have risen since the booking)"
+    },
+    {
+     "name": "Price signal",
+     "status": "info",
+     "detail": "booked -20% vs market; price position unknown until comps are priced"
+    }
+   ]
+  },
+  {
+   "ref": "P07",
+   "area": "Woolwich",
+   "type": "1-bed",
+   "last30": {
+    "nights": 0,
+    "revenue": 0.0,
+    "capacity": 30,
+    "occupancy": 0.0,
+    "adr": null,
+    "revpar": 0.0
+   },
+   "last365": {
+    "nights": 42,
+    "revenue": 5623.7,
+    "capacity": 365,
+    "occupancy": 0.115,
+    "adr": 133.9,
+    "revpar": 15.41
+   },
+   "indices_30": {
+    "mpi": 0.0,
+    "ari": null,
+    "rgi": null
+   },
+   "blocked_next_30": 1.0,
+   "forward_occ_30_ex_blocks": null,
+   "pricelabs_occ_next_30_incl_blocks": 1.0,
+   "forward_occ_30": 0.0,
+   "forward_occ_60": 0.0,
+   "market_occ_30": 0.28,
+   "market_occ_60": 0.22,
+   "market_percentiles": {
+    "p25": null,
+    "p50": null,
+    "p75": null,
+    "p90": null
+   },
+   "avg_open_price_next30": null,
+   "price_percentile": null,
+   "comps": null,
+   "pace_30": {
+    "otb_nights": 0,
+    "otb_revenue": 0.0,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 0,
+    "revenue_delta_pct": null
+   },
+   "pace_90": {
+    "otb_nights": 0,
+    "otb_revenue": 0.0,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 0,
+    "revenue_delta_pct": null
+   },
+   "pickup_7d": {
+    "bookings": 0,
+    "nights": 0,
+    "revenue": 0
+   },
+   "booking_profile": {
+    "bookings": 5,
+    "median_lead_days": 3,
+    "median_los": 4,
+    "channel_revenue_share": {
+     "Airbnb": 1.0
+    }
+   },
+   "gaps": [],
+   "sync_issues": [],
+   "bounds": null,
+   "parity_flags": [],
+   "pricelabs": {
+    "adr_past_30": null,
+    "stly_adr_past_30": null,
+    "booking_pickup_past_30": 0.0,
+    "adr_ytd": 134.0,
+    "stly_adr_ytd": null,
+    "fully_blocked_next_360": true
+   },
+   "settings": {
+    "pl_min": 165.0,
+    "pl_base": 226.0,
+    "pl_max": 500.0,
+    "recommended_base": 226.0,
+    "sync_on": true,
+    "last_push": "2026-11-15T04:18:48.000Z"
+   },
+   "rate_leak_next_30": null,
+   "rate_leak_after_los": null,
+   "in_smoobu": true,
+   "price_nights_next_30": 29,
+   "intentional_block": true,
+   "special_setup": null,
+   "handback_last_night": null,
+   "recommendation": {
+    "action": "weak-signal",
+    "price_move": null,
+    "reason": "booked -28% vs market; price position unknown until comps are priced"
+   },
+   "checks": [
+    {
+     "name": "Prices pushed in the last day",
+     "status": "ok",
+     "detail": "Push on, last push 2026-11-15T04:18:48.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "ok",
+     "detail": "No open night differs by more than \u00a32"
+    },
+    {
+     "name": "Calendar open",
+     "status": "info",
+     "detail": "100% of next 30 nights closed on purpose"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "info",
+     "detail": "0% booked vs 28% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "info",
+     "detail": "No booked nights with known stay length in the next 30"
+    },
+    {
+     "name": "Price signal",
+     "status": "info",
+     "detail": "booked -28% vs market; price position unknown until comps are priced"
+    }
+   ]
+  },
+  {
+   "ref": "P08",
+   "area": "Islington",
+   "type": "2-bed",
+   "last30": {
+    "nights": 25,
+    "revenue": 3558.99,
+    "capacity": 30,
+    "occupancy": 0.833,
+    "adr": 142.36,
+    "revpar": 118.63
+   },
+   "last365": {
+    "nights": 153,
+    "revenue": 26382.63,
+    "capacity": 365,
+    "occupancy": 0.419,
+    "adr": 172.44,
+    "revpar": 72.28
+   },
+   "indices_30": {
+    "mpi": null,
+    "ari": null,
+    "rgi": null
+   },
+   "blocked_next_30": null,
+   "forward_occ_30_ex_blocks": null,
+   "pricelabs_occ_next_30_incl_blocks": 1.0,
+   "forward_occ_30": null,
+   "forward_occ_60": null,
+   "market_occ_30": 0.53,
+   "market_occ_60": 0.43,
+   "market_percentiles": {
+    "p25": null,
+    "p50": null,
+    "p75": null,
+    "p90": null
+   },
+   "avg_open_price_next30": null,
+   "price_percentile": null,
+   "comps": null,
+   "pace_30": {
+    "otb_nights": 0,
+    "otb_revenue": 0.0,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 0,
+    "revenue_delta_pct": null
+   },
+   "pace_90": {
+    "otb_nights": 0,
+    "otb_revenue": 0.0,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 0,
+    "revenue_delta_pct": null
+   },
+   "pickup_7d": {
+    "bookings": 0,
+    "nights": 0,
+    "revenue": 0
+   },
+   "booking_profile": {
+    "bookings": 22,
+    "median_lead_days": 15,
+    "median_los": 6,
+    "channel_revenue_share": {
+     "Airbnb": 0.773,
+     "Booking.com": 0.227
+    }
+   },
+   "gaps": [],
+   "sync_issues": [],
+   "bounds": null,
+   "parity_flags": [],
+   "pricelabs": {
+    "adr_past_30": 143.0,
+    "stly_adr_past_30": null,
+    "booking_pickup_past_30": 15.0,
+    "adr_ytd": 166.0,
+    "stly_adr_ytd": null,
+    "fully_blocked_next_360": true
+   },
+   "settings": {
+    "pl_min": 150.0,
+    "pl_base": 250.0,
+    "pl_max": 1000.0,
+    "recommended_base": 252.0,
+    "sync_on": true,
+    "last_push": "2026-11-14T07:32:41.000Z"
+   },
+   "rate_leak_next_30": null,
+   "rate_leak_after_los": null,
+   "in_smoobu": true,
+   "price_nights_next_30": 0,
+   "intentional_block": false,
+   "special_setup": null,
+   "handback_last_night": "2026-11-13",
+   "recommendation": {
+    "action": "collect-data",
+    "price_move": null,
+    "reason": "missing occupancy or market data"
+   },
+   "checks": [
+    {
+     "name": "Prices pushed in the last day",
+     "status": "ok",
+     "detail": "Push on, last push 2026-11-14T07:32:41.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "info",
+     "detail": "Not checked (no PriceLabs prices pulled for this unit yet)"
+    },
+    {
+     "name": "Calendar open",
+     "status": "info",
+     "detail": "100% of next 30 nights unavailable (booked or blocked; no night-level detail yet)"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "info",
+     "detail": "Unknown"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "info",
+     "detail": "No booked nights with known stay length in the next 30"
+    },
+    {
+     "name": "Price signal",
+     "status": "info",
+     "detail": "missing occupancy or market data"
+    }
+   ]
+  },
+  {
+   "ref": "P09",
+   "area": "Greenwich",
+   "type": "1-bed",
+   "last30": {
+    "nights": 15,
+    "revenue": 1776.41,
+    "capacity": 30,
+    "occupancy": 0.5,
+    "adr": 118.43,
+    "revpar": 59.21
+   },
+   "last365": {
+    "nights": 149,
+    "revenue": 17148.74,
+    "capacity": 365,
+    "occupancy": 0.408,
+    "adr": 115.09,
+    "revpar": 46.98
+   },
+   "indices_30": {
+    "mpi": 2.5,
+    "ari": null,
+    "rgi": null
+   },
+   "blocked_next_30": 0.0,
+   "forward_occ_30_ex_blocks": null,
+   "pricelabs_occ_next_30_incl_blocks": 1.0,
+   "forward_occ_30": 1.0,
+   "forward_occ_60": 1.0,
+   "market_occ_30": 0.4,
+   "market_occ_60": 0.32,
+   "market_percentiles": {
+    "p25": null,
+    "p50": null,
+    "p75": null,
+    "p90": null
+   },
+   "avg_open_price_next30": null,
+   "price_percentile": null,
+   "comps": null,
+   "pace_30": {
+    "otb_nights": 12,
+    "otb_revenue": 1232.5,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 12,
+    "revenue_delta_pct": null
+   },
+   "pace_90": {
+    "otb_nights": 12,
+    "otb_revenue": 1232.5,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 12,
+    "revenue_delta_pct": null
+   },
+   "pickup_7d": {
+    "bookings": 0,
+    "nights": 0,
+    "revenue": 0
+   },
+   "booking_profile": {
+    "bookings": 25,
+    "median_lead_days": 18,
+    "median_los": 5,
+    "channel_revenue_share": {
+     "Airbnb": 0.573,
+     "Booking.com": 0.412,
+     "Direct booking": 0.015
+    }
+   },
+   "gaps": [],
+   "sync_issues": [],
+   "bounds": null,
+   "parity_flags": [],
+   "pricelabs": {
+    "adr_past_30": 109.0,
+    "stly_adr_past_30": null,
+    "booking_pickup_past_30": 6.0,
+    "adr_ytd": 107.0,
+    "stly_adr_ytd": null,
+    "fully_blocked_next_360": false
+   },
+   "settings": {
+    "pl_min": 100.0,
+    "pl_base": 176.0,
+    "pl_max": 550.0,
+    "recommended_base": 176.0,
+    "sync_on": true,
+    "last_push": "2026-11-15T06:48:42.000Z"
+   },
+   "rate_leak_next_30": {
+    "booked_nights": 11,
+    "avg_booked_adr": 102.71,
+    "avg_pricelabs_price": 136.45,
+    "gap_pct": -0.247
+   },
+   "rate_leak_after_los": {
+    "nights": 11,
+    "avg_booked_adr": 102.71,
+    "avg_expected_after_los": 115.99,
+    "gap_pct": -0.114
+   },
+   "in_smoobu": true,
+   "price_nights_next_30": 11,
+   "intentional_block": false,
+   "special_setup": null,
+   "handback_last_night": "2026-11-26",
+   "recommendation": {
+    "action": "raise-signal",
+    "price_move": null,
+    "reason": "booked +60% vs market; price position unknown until comps are priced"
+   },
+   "checks": [
+    {
+     "name": "Prices pushed in the last day",
+     "status": "ok",
+     "detail": "Push on, last push 2026-11-15T06:48:42.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "ok",
+     "detail": "No open night differs by more than \u00a32"
+    },
+    {
+     "name": "Calendar open",
+     "status": "ok",
+     "detail": "No blocked nights in the next 30"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "ok",
+     "detail": "100% booked vs 40% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "warn",
+     "detail": "\u00a3103 paid vs \u00a3116 expected on 11 nights (-11%; expected uses today's PriceLabs price, which may have risen since the booking)"
+    },
+    {
+     "name": "Price signal",
+     "status": "ok",
+     "detail": "booked +60% vs market; price position unknown until comps are priced"
+    }
+   ]
+  },
+  {
+   "ref": "P10",
+   "area": "Ealing / Hanger Lane",
+   "type": "1-bed",
+   "last30": {
+    "nights": 28,
+    "revenue": 2966.99,
+    "capacity": 30,
+    "occupancy": 0.933,
+    "adr": 105.96,
+    "revpar": 98.9
+   },
+   "last365": {
+    "nights": 152,
+    "revenue": 17272.69,
+    "capacity": 365,
+    "occupancy": 0.416,
+    "adr": 113.64,
+    "revpar": 47.32
+   },
+   "indices_30": {
+    "mpi": 3.12,
+    "ari": null,
+    "rgi": null
+   },
+   "blocked_next_30": 0.0,
+   "forward_occ_30_ex_blocks": null,
+   "pricelabs_occ_next_30_incl_blocks": 1.0,
+   "forward_occ_30": 1.0,
+   "forward_occ_60": 1.0,
+   "market_occ_30": 0.32,
+   "market_occ_60": 0.25,
+   "market_percentiles": {
+    "p25": null,
+    "p50": null,
+    "p75": null,
+    "p90": null
+   },
+   "avg_open_price_next30": null,
+   "price_percentile": null,
+   "comps": null,
+   "pace_30": {
+    "otb_nights": 4,
+    "otb_revenue": 423.86,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 4,
+    "revenue_delta_pct": null
+   },
+   "pace_90": {
+    "otb_nights": 4,
+    "otb_revenue": 423.86,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 4,
+    "revenue_delta_pct": null
+   },
+   "pickup_7d": {
+    "bookings": 0,
+    "nights": 0,
+    "revenue": 0
+   },
+   "booking_profile": {
+    "bookings": 22,
+    "median_lead_days": 12,
+    "median_los": 5,
+    "channel_revenue_share": {
+     "Airbnb": 0.693,
+     "Booking.com": 0.276,
+     "Website": 0.031
+    }
+   },
+   "gaps": [],
+   "sync_issues": [],
+   "bounds": null,
+   "parity_flags": [],
+   "pricelabs": {
+    "adr_past_30": 106.0,
+    "stly_adr_past_30": null,
+    "booking_pickup_past_30": 0.0,
+    "adr_ytd": 107.0,
+    "stly_adr_ytd": null,
+    "fully_blocked_next_360": false
+   },
+   "settings": {
+    "pl_min": 85.0,
+    "pl_base": 160.0,
+    "pl_max": 500.0,
+    "recommended_base": 165.0,
+    "sync_on": true,
+    "last_push": "2026-11-15T05:15:37.000Z"
+   },
+   "rate_leak_next_30": {
+    "booked_nights": 3,
+    "avg_booked_adr": 105.96,
+    "avg_pricelabs_price": 135.67,
+    "gap_pct": -0.219
+   },
+   "rate_leak_after_los": {
+    "nights": 3,
+    "avg_booked_adr": 105.96,
+    "avg_expected_after_los": 108.53,
+    "gap_pct": -0.024
+   },
+   "in_smoobu": true,
+   "price_nights_next_30": 3,
+   "intentional_block": false,
+   "special_setup": null,
+   "handback_last_night": "2026-11-18",
+   "recommendation": {
+    "action": "raise-signal",
+    "price_move": null,
+    "reason": "booked +68% vs market; price position unknown until comps are priced"
+   },
+   "checks": [
+    {
+     "name": "Prices pushed in the last day",
+     "status": "ok",
+     "detail": "Push on, last push 2026-11-15T05:15:37.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "ok",
+     "detail": "No open night differs by more than \u00a32"
+    },
+    {
+     "name": "Calendar open",
+     "status": "ok",
+     "detail": "No blocked nights in the next 30"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "ok",
+     "detail": "100% booked vs 32% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "ok",
+     "detail": "\u00a3106 paid vs \u00a3109 expected on 3 nights (-2%; expected uses today's PriceLabs price, which may have risen since the booking)"
+    },
+    {
+     "name": "Price signal",
+     "status": "ok",
+     "detail": "booked +68% vs market; price position unknown until comps are priced"
+    }
+   ]
+  },
+  {
+   "ref": "P11",
+   "area": "Camden",
+   "type": "2-bed",
+   "last30": {
+    "nights": 21,
+    "revenue": 3585.22,
+    "capacity": 30,
+    "occupancy": 0.7,
+    "adr": 170.72,
+    "revpar": 119.51
+   },
+   "last365": {
+    "nights": 290,
+    "revenue": 50443.6,
+    "capacity": 365,
+    "occupancy": 0.795,
+    "adr": 173.94,
+    "revpar": 138.2
+   },
+   "indices_30": {
+    "mpi": 1.08,
+    "ari": null,
+    "rgi": null
+   },
+   "blocked_next_30": 0.0,
+   "forward_occ_30_ex_blocks": null,
+   "pricelabs_occ_next_30_incl_blocks": 0.6,
+   "forward_occ_30": 0.552,
+   "forward_occ_60": 0.475,
+   "market_occ_30": 0.51,
+   "market_occ_60": 0.39,
+   "market_percentiles": {
+    "p25": null,
+    "p50": null,
+    "p75": null,
+    "p90": null
+   },
+   "avg_open_price_next30": 223.67,
+   "price_percentile": null,
+   "comps": null,
+   "pace_30": {
+    "otb_nights": 17,
+    "otb_revenue": 3242.94,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 17,
+    "revenue_delta_pct": null
+   },
+   "pace_90": {
+    "otb_nights": 29,
+    "otb_revenue": 6583.99,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 29,
+    "revenue_delta_pct": null
+   },
+   "pickup_7d": {
+    "bookings": 2,
+    "nights": 9,
+    "revenue": 1468.9
+   },
+   "booking_profile": {
+    "bookings": 73,
+    "median_lead_days": 28,
+    "median_los": 4,
+    "channel_revenue_share": {
+     "Booking.com": 0.546,
+     "Airbnb": 0.435,
+     "Agoda": 0.019
+    }
+   },
+   "gaps": [],
+   "sync_issues": [
+    {
+     "date": "2026-11-22",
+     "pricelabs": 199.0,
+     "smoobu": 205.0,
+     "gap_gbp": 6.0
+    },
+    {
+     "date": "2026-11-24",
+     "pricelabs": 215.0,
+     "smoobu": 203.0,
+     "gap_gbp": -12.0
+    },
+    {
+     "date": "2026-11-25",
+     "pricelabs": 215.0,
+     "smoobu": 208.0,
+     "gap_gbp": -7.0
+    },
+    {
+     "date": "2026-12-02",
+     "pricelabs": 244.0,
+     "smoobu": 247.0,
+     "gap_gbp": 3.0
+    },
+    {
+     "date": "2026-12-14",
+     "pricelabs": 210.0,
+     "smoobu": 214.0,
+     "gap_gbp": 4.0
+    },
+    {
+     "date": "2026-12-15",
+     "pricelabs": 207.0,
+     "smoobu": 220.0,
+     "gap_gbp": 13.0
+    },
+    {
+     "date": "2026-12-18",
+     "pricelabs": 283.0,
+     "smoobu": 286.0,
+     "gap_gbp": 3.0
+    },
+    {
+     "date": "2027-01-08",
+     "pricelabs": 209.0,
+     "smoobu": 206.0,
+     "gap_gbp": -3.0
+    },
+    {
+     "date": "2027-01-14",
+     "pricelabs": 197.0,
+     "smoobu": 187.0,
+     "gap_gbp": -10.0
+    }
+   ],
+   "bounds": {
+    "open_nights": 31,
+    "at_min_share": 0.0,
+    "at_max_share": 0.0,
+    "min": 120.0,
+    "max": 1200.0
+   },
+   "parity_flags": [],
+   "pricelabs": {
+    "adr_past_30": 140.0,
+    "stly_adr_past_30": null,
+    "booking_pickup_past_30": 12.0,
+    "adr_ytd": 152.0,
+    "stly_adr_ytd": null,
+    "fully_blocked_next_360": false
+   },
+   "settings": {
+    "pl_min": 120.0,
+    "pl_base": 286.0,
+    "pl_max": 1200.0,
+    "recommended_base": 281.0,
+    "sync_on": true,
+    "last_push": "2026-11-14T09:03:17.000Z"
+   },
+   "rate_leak_next_30": {
+    "booked_nights": 12,
+    "avg_booked_adr": 156.65,
+    "avg_pricelabs_price": 203.58,
+    "gap_pct": -0.231
+   },
+   "rate_leak_after_los": {
+    "nights": 12,
+    "avg_booked_adr": 156.65,
+    "avg_expected_after_los": 203.58,
+    "gap_pct": -0.231
+   },
+   "in_smoobu": true,
+   "price_nights_next_30": 29,
+   "intentional_block": false,
+   "special_setup": null,
+   "handback_last_night": null,
+   "recommendation": {
+    "action": "hold-signal",
+    "price_move": null,
+    "reason": "booked +4% vs market; price position unknown until comps are priced"
+   },
+   "checks": [
+    {
+     "name": "Prices pushed in the last day",
+     "status": "ok",
+     "detail": "Push on, last push 2026-11-14T09:03:17.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "bad",
+     "detail": "9 nights differ by more than \u00a32"
+    },
+    {
+     "name": "Not stuck at minimum price",
+     "status": "ok",
+     "detail": "0% of open nights at the \u00a3120 minimum"
+    },
+    {
+     "name": "Calendar open",
+     "status": "ok",
+     "detail": "No blocked nights in the next 30"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "ok",
+     "detail": "55% booked vs 51% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "bad",
+     "detail": "\u00a3157 paid vs \u00a3204 expected on 12 nights (-23%; expected uses today's PriceLabs price, which may have risen since the booking)"
+    },
+    {
+     "name": "Price signal",
+     "status": "ok",
+     "detail": "booked +4% vs market; price position unknown until comps are priced"
+    }
+   ]
+  },
+  {
+   "ref": "P12",
+   "area": "Mile End",
+   "type": "2-bed",
+   "last30": {
+    "nights": 22,
+    "revenue": 3611.12,
+    "capacity": 30,
+    "occupancy": 0.733,
+    "adr": 164.14,
+    "revpar": 120.37
+   },
+   "last365": {
+    "nights": 297,
+    "revenue": 57103.74,
+    "capacity": 365,
+    "occupancy": 0.814,
+    "adr": 192.27,
+    "revpar": 156.45
+   },
+   "indices_30": {
+    "mpi": 1.54,
+    "ari": null,
+    "rgi": null
+   },
+   "blocked_next_30": 0.0,
+   "forward_occ_30_ex_blocks": null,
+   "pricelabs_occ_next_30_incl_blocks": 0.7,
+   "forward_occ_30": 0.679,
+   "forward_occ_60": 0.679,
+   "market_occ_30": 0.44,
+   "market_occ_60": 0.34,
+   "market_percentiles": {
+    "p25": null,
+    "p50": null,
+    "p75": null,
+    "p90": null
+   },
+   "avg_open_price_next30": 288.11,
+   "price_percentile": null,
+   "comps": null,
+   "pace_30": {
+    "otb_nights": 20,
+    "otb_revenue": 4130.09,
+    "stly_nights": 26,
+    "stly_revenue": 4632.49,
+    "nights_delta": -6,
+    "revenue_delta_pct": -0.108
+   },
+   "pace_90": {
+    "otb_nights": 20,
+    "otb_revenue": 4130.09,
+    "stly_nights": 40,
+    "stly_revenue": 7868.74,
+    "nights_delta": -20,
+    "revenue_delta_pct": -0.475
+   },
+   "pickup_7d": {
+    "bookings": 1,
+    "nights": 7,
+    "revenue": 1432.42
+   },
+   "booking_profile": {
+    "bookings": 81,
+    "median_lead_days": 31,
+    "median_los": 4,
+    "channel_revenue_share": {
+     "Booking.com": 0.898,
+     "Airbnb": 0.102
+    }
+   },
+   "gaps": [],
+   "sync_issues": [],
+   "bounds": {
+    "open_nights": 9,
+    "at_min_share": 0.0,
+    "at_max_share": 0.0,
+    "min": 100.0,
+    "max": 2000.0
+   },
+   "parity_flags": [],
+   "pricelabs": {
+    "adr_past_30": 141.0,
+    "stly_adr_past_30": 84.0,
+    "booking_pickup_past_30": 29.0,
+    "adr_ytd": 147.0,
+    "stly_adr_ytd": 125.0,
+    "fully_blocked_next_360": false
+   },
+   "settings": {
+    "pl_min": 100.0,
+    "pl_base": 284.0,
+    "pl_max": 2000.0,
+    "recommended_base": 284.0,
+    "sync_on": true,
+    "last_push": "2026-11-15T05:48:43.000Z"
+   },
+   "rate_leak_next_30": {
+    "booked_nights": 15,
+    "avg_booked_adr": 174.31,
+    "avg_pricelabs_price": 260.93,
+    "gap_pct": -0.332
+   },
+   "rate_leak_after_los": {
+    "nights": 15,
+    "avg_booked_adr": 174.31,
+    "avg_expected_after_los": 243.63,
+    "gap_pct": -0.285
+   },
+   "in_smoobu": true,
+   "price_nights_next_30": 28,
+   "intentional_block": false,
+   "special_setup": null,
+   "handback_last_night": "2026-12-13",
+   "recommendation": {
+    "action": "raise-signal",
+    "price_move": null,
+    "reason": "booked +24% vs market; price position unknown until comps are priced"
+   },
+   "checks": [
+    {
+     "name": "Prices pushed in the last day",
+     "status": "ok",
+     "detail": "Push on, last push 2026-11-15T05:48:43.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "ok",
+     "detail": "No open night differs by more than \u00a32"
+    },
+    {
+     "name": "Not stuck at minimum price",
+     "status": "ok",
+     "detail": "0% of open nights at the \u00a3100 minimum"
+    },
+    {
+     "name": "Calendar open",
+     "status": "ok",
+     "detail": "No blocked nights in the next 30"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "ok",
+     "detail": "68% booked vs 44% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "bad",
+     "detail": "\u00a3174 paid vs \u00a3244 expected on 15 nights (-28%; expected uses today's PriceLabs price, which may have risen since the booking)"
+    },
+    {
+     "name": "Price signal",
+     "status": "ok",
+     "detail": "booked +24% vs market; price position unknown until comps are priced"
+    }
+   ]
+  },
+  {
+   "ref": "P13",
+   "area": "Shepherd's Bush",
+   "type": "2-bed",
+   "last30": {
+    "nights": 18,
+    "revenue": 2800.01,
+    "capacity": 30,
+    "occupancy": 0.6,
+    "adr": 155.56,
+    "revpar": 93.33
+   },
+   "last365": {
+    "nights": 290,
+    "revenue": 45871.0,
+    "capacity": 365,
+    "occupancy": 0.795,
+    "adr": 158.18,
+    "revpar": 125.67
+   },
+   "indices_30": {
+    "mpi": 1.57,
+    "ari": null,
+    "rgi": null
+   },
+   "blocked_next_30": 0.0,
+   "forward_occ_30_ex_blocks": null,
+   "pricelabs_occ_next_30_incl_blocks": 0.77,
+   "forward_occ_30": 0.724,
+   "forward_occ_60": 0.559,
+   "market_occ_30": 0.46,
+   "market_occ_60": 0.38,
+   "market_percentiles": {
+    "p25": null,
+    "p50": null,
+    "p75": null,
+    "p90": null
+   },
+   "avg_open_price_next30": 256.75,
+   "price_percentile": null,
+   "comps": null,
+   "pace_30": {
+    "otb_nights": 22,
+    "otb_revenue": 3353.95,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 22,
+    "revenue_delta_pct": null
+   },
+   "pace_90": {
+    "otb_nights": 34,
+    "otb_revenue": 5967.05,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 34,
+    "revenue_delta_pct": null
+   },
+   "pickup_7d": {
+    "bookings": 1,
+    "nights": 5,
+    "revenue": 847.1
+   },
+   "booking_profile": {
+    "bookings": 86,
+    "median_lead_days": 22,
+    "median_los": 3,
+    "channel_revenue_share": {
+     "Booking.com": 0.528,
+     "Airbnb": 0.464,
+     "Agoda": 0.009
+    }
+   },
+   "gaps": [],
+   "sync_issues": [],
+   "bounds": {
+    "open_nights": 27,
+    "at_min_share": 0.0,
+    "at_max_share": 0.0,
+    "min": 110.0,
+    "max": 2000.0
+   },
+   "parity_flags": [],
+   "pricelabs": {
+    "adr_past_30": 151.0,
+    "stly_adr_past_30": null,
+    "booking_pickup_past_30": 20.0,
+    "adr_ytd": 125.0,
+    "stly_adr_ytd": null,
+    "fully_blocked_next_360": false
+   },
+   "settings": {
+    "pl_min": 110.0,
+    "pl_base": 250.0,
+    "pl_max": 2000.0,
+    "recommended_base": 239.0,
+    "sync_on": true,
+    "last_push": "2026-11-14T07:20:24.000Z"
+   },
+   "rate_leak_next_30": {
+    "booked_nights": 16,
+    "avg_booked_adr": 136.16,
+    "avg_pricelabs_price": 234.81,
+    "gap_pct": -0.42
+   },
+   "rate_leak_after_los": {
+    "nights": 16,
+    "avg_booked_adr": 136.16,
+    "avg_expected_after_los": 217.23,
+    "gap_pct": -0.373
+   },
+   "in_smoobu": true,
+   "price_nights_next_30": 29,
+   "intentional_block": false,
+   "special_setup": null,
+   "handback_last_night": null,
+   "recommendation": {
+    "action": "raise-signal",
+    "price_move": null,
+    "reason": "booked +26% vs market; price position unknown until comps are priced"
+   },
+   "checks": [
+    {
+     "name": "Prices pushed in the last day",
+     "status": "ok",
+     "detail": "Push on, last push 2026-11-14T07:20:24.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "ok",
+     "detail": "No open night differs by more than \u00a32"
+    },
+    {
+     "name": "Not stuck at minimum price",
+     "status": "ok",
+     "detail": "0% of open nights at the \u00a3110 minimum"
+    },
+    {
+     "name": "Calendar open",
+     "status": "ok",
+     "detail": "No blocked nights in the next 30"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "ok",
+     "detail": "72% booked vs 46% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "bad",
+     "detail": "\u00a3136 paid vs \u00a3217 expected on 16 nights (-37%; expected uses today's PriceLabs price, which may have risen since the booking)"
+    },
+    {
+     "name": "Price signal",
+     "status": "ok",
+     "detail": "booked +26% vs market; price position unknown until comps are priced"
+    }
+   ]
+  },
+  {
+   "ref": "P14",
+   "area": "Primrose Hill",
+   "type": "1-bed",
+   "last30": {
+    "nights": 0,
+    "revenue": 0.0,
+    "capacity": 30,
+    "occupancy": 0.0,
+    "adr": null,
+    "revpar": 0.0
+   },
+   "last365": {
+    "nights": 10,
+    "revenue": 4098.4,
+    "capacity": 365,
+    "occupancy": 0.027,
+    "adr": 409.84,
+    "revpar": 11.23
+   },
+   "indices_30": {
+    "mpi": 0.0,
+    "ari": null,
+    "rgi": null
+   },
+   "blocked_next_30": 0.0,
+   "forward_occ_30_ex_blocks": null,
+   "pricelabs_occ_next_30_incl_blocks": 0.0,
+   "forward_occ_30": 0.0,
+   "forward_occ_60": 0.0,
+   "market_occ_30": 0.49,
+   "market_occ_60": 0.38,
+   "market_percentiles": {
+    "p25": null,
+    "p50": null,
+    "p75": null,
+    "p90": null
+   },
+   "avg_open_price_next30": 452.21,
+   "price_percentile": null,
+   "comps": null,
+   "pace_30": {
+    "otb_nights": 0,
+    "otb_revenue": 0.0,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 0,
+    "revenue_delta_pct": null
+   },
+   "pace_90": {
+    "otb_nights": 0,
+    "otb_revenue": 0.0,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 0,
+    "revenue_delta_pct": null
+   },
+   "pickup_7d": {
+    "bookings": 0,
+    "nights": 0,
+    "revenue": 0
+   },
+   "booking_profile": {
+    "bookings": 1,
+    "median_lead_days": 57,
+    "median_los": 10,
+    "channel_revenue_share": {
+     "Airbnb": 1.0
+    }
+   },
+   "gaps": [],
+   "sync_issues": [],
+   "bounds": {
+    "open_nights": 60,
+    "at_min_share": 0.717,
+    "at_max_share": 0.0,
+    "min": 450.0,
+    "max": 2000.0
+   },
+   "parity_flags": [],
+   "pricelabs": {
+    "adr_past_30": 0.0,
+    "stly_adr_past_30": null,
+    "booking_pickup_past_30": 0.0,
+    "adr_ytd": 410.0,
+    "stly_adr_ytd": null,
+    "fully_blocked_next_360": false
+   },
+   "settings": {
+    "pl_min": 450.0,
+    "pl_base": 525.0,
+    "pl_max": 2000.0,
+    "recommended_base": 503.0,
+    "sync_on": true,
+    "last_push": "2026-11-14T08:08:43.000Z"
+   },
+   "rate_leak_next_30": null,
+   "rate_leak_after_los": null,
+   "in_smoobu": true,
+   "price_nights_next_30": 29,
+   "intentional_block": false,
+   "special_setup": "Primrose Hill pricing (incl. the \u00a3500 minimum) is a deliberate special setup. Do not propose changing its min, base or min-stay; report its numbers only.",
+   "handback_last_night": null,
+   "recommendation": {
+    "action": "weak-signal",
+    "price_move": null,
+    "reason": "booked -49% vs market; price position unknown until comps are priced"
+   },
+   "checks": [
+    {
+     "name": "Prices pushed in the last day",
+     "status": "ok",
+     "detail": "Push on, last push 2026-11-14T08:08:43.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "ok",
+     "detail": "No open night differs by more than \u00a32"
+    },
+    {
+     "name": "Not stuck at minimum price",
+     "status": "info",
+     "detail": "72% of open nights at the \u00a3450 minimum (special setup)"
+    },
+    {
+     "name": "Calendar open",
+     "status": "ok",
+     "detail": "No blocked nights in the next 30"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "info",
+     "detail": "0% booked vs 49% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "info",
+     "detail": "No booked nights with known stay length in the next 30"
+    },
+    {
+     "name": "Price signal",
+     "status": "info",
+     "detail": "booked -49% vs market; price position unknown until comps are priced"
+    }
+   ]
+  },
+  {
+   "ref": "P15",
+   "area": "Bow / Devons Road",
+   "type": "1-bed",
+   "last30": {
+    "nights": null,
+    "revenue": null,
+    "capacity": null,
+    "occupancy": null,
+    "adr": null,
+    "revpar": null
+   },
+   "last365": {
+    "nights": null,
+    "revenue": null,
+    "capacity": null,
+    "occupancy": null,
+    "adr": null,
+    "revpar": null
+   },
+   "indices_30": {
+    "mpi": null,
+    "ari": null,
+    "rgi": null
+   },
+   "blocked_next_30": null,
+   "forward_occ_30_ex_blocks": null,
+   "pricelabs_occ_next_30_incl_blocks": null,
+   "forward_occ_30": null,
+   "forward_occ_60": null,
+   "market_occ_30": null,
+   "market_occ_60": null,
+   "market_percentiles": {
+    "p25": null,
+    "p50": null,
+    "p75": null,
+    "p90": null
+   },
+   "avg_open_price_next30": null,
+   "price_percentile": null,
+   "comps": null,
+   "pace_30": {
+    "revenue_delta_pct": null
+   },
+   "pace_90": {
+    "revenue_delta_pct": null
+   },
+   "pickup_7d": null,
+   "booking_profile": {},
+   "gaps": [],
+   "sync_issues": [],
+   "bounds": null,
+   "parity_flags": [],
+   "pricelabs": null,
+   "settings": null,
+   "rate_leak_next_30": null,
+   "rate_leak_after_los": null,
+   "in_smoobu": false,
+   "price_nights_next_30": 0,
+   "intentional_block": false,
+   "special_setup": null,
+   "handback_last_night": null,
+   "recommendation": {
+    "action": "collect-data",
+    "price_move": null,
+    "reason": "missing occupancy or market data"
+   },
+   "checks": [
+    {
+     "name": "In PriceLabs",
+     "status": "bad",
+     "detail": "No priced PriceLabs listing mapped"
+    }
+   ]
+  },
+  {
+   "ref": "P16",
+   "area": "Little Venice",
+   "type": "1-bed",
+   "last30": {
+    "nights": null,
+    "revenue": null,
+    "capacity": null,
+    "occupancy": null,
+    "adr": null,
+    "revpar": null
+   },
+   "last365": {
+    "nights": null,
+    "revenue": null,
+    "capacity": null,
+    "occupancy": null,
+    "adr": null,
+    "revpar": null
+   },
+   "indices_30": {
+    "mpi": null,
+    "ari": null,
+    "rgi": null
+   },
+   "blocked_next_30": null,
+   "forward_occ_30_ex_blocks": null,
+   "pricelabs_occ_next_30_incl_blocks": null,
+   "forward_occ_30": null,
+   "forward_occ_60": null,
+   "market_occ_30": null,
+   "market_occ_60": null,
+   "market_percentiles": {
+    "p25": null,
+    "p50": null,
+    "p75": null,
+    "p90": null
+   },
+   "avg_open_price_next30": null,
+   "price_percentile": null,
+   "comps": null,
+   "pace_30": {
+    "revenue_delta_pct": null
+   },
+   "pace_90": {
+    "revenue_delta_pct": null
+   },
+   "pickup_7d": null,
+   "booking_profile": {},
+   "gaps": [],
+   "sync_issues": [],
+   "bounds": null,
+   "parity_flags": [],
+   "pricelabs": null,
+   "settings": null,
+   "rate_leak_next_30": null,
+   "rate_leak_after_los": null,
+   "in_smoobu": false,
+   "price_nights_next_30": 0,
+   "intentional_block": false,
+   "special_setup": null,
+   "handback_last_night": null,
+   "recommendation": {
+    "action": "collect-data",
+    "price_move": null,
+    "reason": "missing occupancy or market data"
+   },
+   "checks": [
+    {
+     "name": "In PriceLabs",
+     "status": "bad",
+     "detail": "No priced PriceLabs listing mapped"
+    }
+   ]
+  },
+  {
+   "ref": "P17",
+   "area": "St John's Wood",
+   "type": "1-bed",
+   "last30": {
+    "nights": null,
+    "revenue": null,
+    "capacity": null,
+    "occupancy": null,
+    "adr": null,
+    "revpar": null
+   },
+   "last365": {
+    "nights": null,
+    "revenue": null,
+    "capacity": null,
+    "occupancy": null,
+    "adr": null,
+    "revpar": null
+   },
+   "indices_30": {
+    "mpi": null,
+    "ari": null,
+    "rgi": null
+   },
+   "blocked_next_30": null,
+   "forward_occ_30_ex_blocks": null,
+   "pricelabs_occ_next_30_incl_blocks": null,
+   "forward_occ_30": null,
+   "forward_occ_60": null,
+   "market_occ_30": null,
+   "market_occ_60": null,
+   "market_percentiles": {
+    "p25": null,
+    "p50": null,
+    "p75": null,
+    "p90": null
+   },
+   "avg_open_price_next30": null,
+   "price_percentile": null,
+   "comps": null,
+   "pace_30": {
+    "revenue_delta_pct": null
+   },
+   "pace_90": {
+    "revenue_delta_pct": null
+   },
+   "pickup_7d": null,
+   "booking_profile": {},
+   "gaps": [],
+   "sync_issues": [],
+   "bounds": null,
+   "parity_flags": [],
+   "pricelabs": null,
+   "settings": null,
+   "rate_leak_next_30": null,
+   "rate_leak_after_los": null,
+   "in_smoobu": false,
+   "price_nights_next_30": 0,
+   "intentional_block": false,
+   "special_setup": null,
+   "handback_last_night": null,
+   "recommendation": {
+    "action": "collect-data",
+    "price_move": null,
+    "reason": "missing occupancy or market data"
+   },
+   "checks": [
+    {
+     "name": "In PriceLabs",
+     "status": "bad",
+     "detail": "No priced PriceLabs listing mapped"
+    }
+   ]
+  },
+  {
+   "ref": "P18",
+   "area": "Fulham",
+   "type": "1-bed",
+   "last30": {
+    "nights": null,
+    "revenue": null,
+    "capacity": null,
+    "occupancy": null,
+    "adr": null,
+    "revpar": null
+   },
+   "last365": {
+    "nights": null,
+    "revenue": null,
+    "capacity": null,
+    "occupancy": null,
+    "adr": null,
+    "revpar": null
+   },
+   "indices_30": {
+    "mpi": null,
+    "ari": null,
+    "rgi": null
+   },
+   "blocked_next_30": null,
+   "forward_occ_30_ex_blocks": null,
+   "pricelabs_occ_next_30_incl_blocks": null,
+   "forward_occ_30": null,
+   "forward_occ_60": null,
+   "market_occ_30": null,
+   "market_occ_60": null,
+   "market_percentiles": {
+    "p25": null,
+    "p50": null,
+    "p75": null,
+    "p90": null
+   },
+   "avg_open_price_next30": null,
+   "price_percentile": null,
+   "comps": null,
+   "pace_30": {
+    "revenue_delta_pct": null
+   },
+   "pace_90": {
+    "revenue_delta_pct": null
+   },
+   "pickup_7d": null,
+   "booking_profile": {},
+   "gaps": [],
+   "sync_issues": [],
+   "bounds": null,
+   "parity_flags": [],
+   "pricelabs": null,
+   "settings": null,
+   "rate_leak_next_30": null,
+   "rate_leak_after_los": null,
+   "in_smoobu": false,
+   "price_nights_next_30": 0,
+   "intentional_block": false,
+   "special_setup": null,
+   "handback_last_night": null,
+   "recommendation": {
+    "action": "collect-data",
+    "price_move": null,
+    "reason": "missing occupancy or market data"
+   },
+   "checks": [
+    {
+     "name": "In PriceLabs",
+     "status": "bad",
+     "detail": "No priced PriceLabs listing mapped"
+    }
+   ]
+  },
+  {
+   "ref": "P19",
+   "area": "Kings Langley (Herts)",
+   "type": "2-bed",
+   "last30": {
+    "nights": null,
+    "revenue": null,
+    "capacity": null,
+    "occupancy": null,
+    "adr": null,
+    "revpar": null
+   },
+   "last365": {
+    "nights": null,
+    "revenue": null,
+    "capacity": null,
+    "occupancy": null,
+    "adr": null,
+    "revpar": null
+   },
+   "indices_30": {
+    "mpi": null,
+    "ari": null,
+    "rgi": null
+   },
+   "blocked_next_30": null,
+   "forward_occ_30_ex_blocks": null,
+   "pricelabs_occ_next_30_incl_blocks": null,
+   "forward_occ_30": null,
+   "forward_occ_60": null,
+   "market_occ_30": null,
+   "market_occ_60": null,
+   "market_percentiles": {
+    "p25": null,
+    "p50": null,
+    "p75": null,
+    "p90": null
+   },
+   "avg_open_price_next30": null,
+   "price_percentile": null,
+   "comps": null,
+   "pace_30": {
+    "revenue_delta_pct": null
+   },
+   "pace_90": {
+    "revenue_delta_pct": null
+   },
+   "pickup_7d": null,
+   "booking_profile": {},
+   "gaps": [],
+   "sync_issues": [],
+   "bounds": null,
+   "parity_flags": [],
+   "pricelabs": null,
+   "settings": null,
+   "rate_leak_next_30": null,
+   "rate_leak_after_los": null,
+   "in_smoobu": false,
+   "price_nights_next_30": 0,
+   "intentional_block": false,
+   "special_setup": null,
+   "handback_last_night": null,
+   "recommendation": {
+    "action": "collect-data",
+    "price_move": null,
+    "reason": "missing occupancy or market data"
+   },
+   "checks": [
+    {
+     "name": "In PriceLabs",
+     "status": "bad",
+     "detail": "No priced PriceLabs listing mapped"
+    }
+   ]
+  },
+  {
+   "ref": "P20",
+   "area": "Canary Wharf",
+   "type": "2-bed",
+   "last30": {
+    "nights": 19,
+    "revenue": 3238.58,
+    "capacity": 30,
+    "occupancy": 0.633,
+    "adr": 170.45,
+    "revpar": 107.95
+   },
+   "last365": {
+    "nights": 25,
+    "revenue": 4165.78,
+    "capacity": 365,
+    "occupancy": 0.068,
+    "adr": 166.63,
+    "revpar": 11.41
+   },
+   "indices_30": {
+    "mpi": 1.55,
+    "ari": null,
+    "rgi": null
+   },
+   "blocked_next_30": 0.069,
+   "forward_occ_30_ex_blocks": 0.667,
+   "pricelabs_occ_next_30_incl_blocks": 0.67,
+   "forward_occ_30": 0.621,
+   "forward_occ_60": 0.424,
+   "market_occ_30": 0.4,
+   "market_occ_60": 0.31,
+   "market_percentiles": {
+    "p25": null,
+    "p50": null,
+    "p75": null,
+    "p90": null
+   },
+   "avg_open_price_next30": 237.25,
+   "price_percentile": null,
+   "comps": null,
+   "pace_30": {
+    "otb_nights": 18,
+    "otb_revenue": 3236.9,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 18,
+    "revenue_delta_pct": null
+   },
+   "pace_90": {
+    "otb_nights": 25,
+    "otb_revenue": 4664.9,
+    "stly_nights": 0,
+    "stly_revenue": 0,
+    "nights_delta": 25,
+    "revenue_delta_pct": null
+   },
+   "pickup_7d": {
+    "bookings": 0,
+    "nights": 0,
+    "revenue": 0
+   },
+   "booking_profile": {
+    "bookings": 8,
+    "median_lead_days": 8,
+    "median_los": 7,
+    "channel_revenue_share": {
+     "Airbnb": 1.0
+    }
+   },
+   "gaps": [],
+   "sync_issues": [
+    {
+     "date": "2026-11-16",
+     "pricelabs": 223.0,
+     "smoobu": 200.0,
+     "gap_gbp": -23.0
+    },
+    {
+     "date": "2026-11-17",
+     "pricelabs": 239.0,
+     "smoobu": 210.0,
+     "gap_gbp": -29.0
+    }
+   ],
+   "bounds": {
+    "open_nights": 32,
+    "at_min_share": 0.0,
+    "at_max_share": 0.0,
+    "min": 200.0,
+    "max": 1800.0
+   },
+   "parity_flags": [],
+   "pricelabs": {
+    "adr_past_30": 170.0,
+    "stly_adr_past_30": null,
+    "booking_pickup_past_30": 38.0,
+    "adr_ytd": 167.0,
+    "stly_adr_ytd": null,
+    "fully_blocked_next_360": false
+   },
+   "settings": {
+    "pl_min": 200.0,
+    "pl_base": 330.0,
+    "pl_max": 1800.0,
+    "recommended_base": 354.0,
+    "sync_on": true,
+    "last_push": "2026-11-14T08:42:51.000Z"
+   },
+   "rate_leak_next_30": {
+    "booked_nights": 16,
+    "avg_booked_adr": 179.74,
+    "avg_pricelabs_price": 326.5,
+    "gap_pct": -0.45
+   },
+   "rate_leak_after_los": {
+    "nights": 16,
+    "avg_booked_adr": 179.74,
+    "avg_expected_after_los": 277.52,
+    "gap_pct": -0.352
+   },
+   "in_smoobu": true,
+   "price_nights_next_30": 29,
+   "intentional_block": false,
+   "special_setup": null,
+   "handback_last_night": null,
+   "recommendation": {
+    "action": "raise-signal",
+    "price_move": null,
+    "reason": "booked +22% vs market; price position unknown until comps are priced"
+   },
+   "checks": [
+    {
+     "name": "Prices pushed in the last day",
+     "status": "ok",
+     "detail": "Push on, last push 2026-11-14T08:42:51.000Z"
+    },
+    {
+     "name": "PriceLabs = Smoobu price",
+     "status": "bad",
+     "detail": "2 nights differ by more than \u00a32"
+    },
+    {
+     "name": "Not stuck at minimum price",
+     "status": "ok",
+     "detail": "0% of open nights at the \u00a3200 minimum"
+    },
+    {
+     "name": "Calendar open",
+     "status": "warn",
+     "detail": "7% of next 30 nights blocked (reason unknown)"
+    },
+    {
+     "name": "Booked vs market (next 30)",
+     "status": "ok",
+     "detail": "62% booked vs 40% market"
+    },
+    {
+     "name": "Paid rate vs price (after 15%/20% stay discounts)",
+     "status": "bad",
+     "detail": "\u00a3180 paid vs \u00a3278 expected on 16 nights (-35%; expected uses today's PriceLabs price, which may have risen since the booking)"
+    },
+    {
+     "name": "Price signal",
+     "status": "ok",
+     "detail": "booked +22% vs market; price position unknown until comps are priced"
+    }
+   ]
+  }
+ ],
+ "missing": {
+  "market": "empty",
+  "comps": "empty",
+  "channel_checks": "empty"
+ },
+ "data_sources": {
+  "prices": "PriceLabs listing_prices + Smoobu rates",
+  "reservations": "Smoobu reservations (all channels)",
+  "market": "see market.csv source column",
+  "comps": "see comps.csv source column (dated OTA checks)",
+  "occupancy_note": "Our forward occupancy counts Booked nights only (PriceLabs booking_status); blocked nights are reported separately. PriceLabs market occupancy comes from scraped calendars and may count other hosts' blocked nights, so MPI is conservative. Last-30 occupancy/ADR/RevPAR come from Smoobu bookings (basePrice, before cleaning and commission) and exist only for properties mapped to a Smoobu apartment."
+ }
+}
