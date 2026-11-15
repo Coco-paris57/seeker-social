@@ -143,7 +143,7 @@ export async function importGuestMessage(bookingId, messageId) {
     // Nothing for the assistant to read, so no draft: a person needs to look at the picture.
     const property = q.get('SELECT display_name, name FROM properties WHERE id = ?', conversation.property_id);
     await notifyTeam({
-      title: `Photo or file from a guest · ${property ? property.display_name || property.name : 'Booking channel'}`,
+      title: `Photo or file from a guest · ${property ? property.name || property.display_name : 'Booking channel'}`,
       body: `${conversation.guest_name || 'A guest'} sent a photo or file on ${reservation.channel || 'the booking channel'}. Open it in Smoobu or the channel's app.`,
       url: `/admin/#/conversations/${conversation.id}`, tag: `conversation-${conversation.id}`,
     });

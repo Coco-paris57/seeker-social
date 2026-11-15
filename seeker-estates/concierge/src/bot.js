@@ -318,7 +318,7 @@ async function applyAssessment(conversation, a, { guestWrote = false } = {}) {
   emitConversation(conversation.id, 'conversation');
   if (a.mood === 'unhappy' && conversation.mood !== 'unhappy') {
     const property = conversation.property_id ? q.get('SELECT name, display_name FROM properties WHERE id = ?', conversation.property_id) : null;
-    await notifyTeam({ title: `Guest sounds unhappy · ${property ? property.display_name || property.name : guestLabel(conversation)}`, body: clip(a.chatSummary || '', 160), url: `/admin/#/conversations/${conversation.id}`, tag: `mood-${conversation.id}` });
+    await notifyTeam({ title: `Guest sounds unhappy · ${property ? property.name || property.display_name : guestLabel(conversation)}`, body: clip(a.chatSummary || '', 160), url: `/admin/#/conversations/${conversation.id}`, tag: `mood-${conversation.id}` });
   }
 }
 
@@ -437,7 +437,7 @@ async function processPending(conversationId, reuse) {
   if (!conversation) return;
   const settings = getSettings();
   const property = conversation.property_id ? q.get('SELECT * FROM properties WHERE id = ?', conversation.property_id) : null;
-  const where = property ? property.display_name || property.name : 'General enquiry';
+  const where = property ? property.name || property.display_name : 'General enquiry'; // for the team: the Smoobu name
   const url = `/admin/#/conversations/${conversation.id}`;
 
   const pending = unanswered(conversationId);

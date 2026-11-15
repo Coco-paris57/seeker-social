@@ -13,7 +13,7 @@ import { iso } from './shared.js';
 export const journey = express.Router();
 const propertyName = (id) => {
   const p = id && q.get('SELECT name, display_name FROM properties WHERE id = ?', id);
-  return p ? p.display_name || p.name : null;
+  return p ? p.name || p.display_name : null; // the Smoobu name: this is for the team
 };
 const propertyIdOf = (v) => {
   if (v == null || v === '') return null;
@@ -181,7 +181,7 @@ const offerOut = (o) => ({ id: o.id, propertyId: o.property_id, propertyName: pr
 journey.get('/offers', (req, res) => {
   // What ChargeAutomation has told us is on sale, and the last amount paid, per property.
   const seen = q.all('SELECT u.*, p.name, p.display_name FROM ca_upsells u JOIN properties p ON p.id = u.property_id ORDER BY u.seen_at DESC LIMIT 200')
-    .map((u) => ({ propertyId: u.property_id, propertyName: u.display_name || u.name, title: u.title, type: upsellType(u.title), amount: u.amount, currency: u.currency, qty: u.qty, at: iso(u.seen_at) }));
+    .map((u) => ({ propertyId: u.property_id, propertyName: u.name || u.display_name, title: u.title, type: upsellType(u.title), amount: u.amount, currency: u.currency, qty: u.qty, at: iso(u.seen_at) }));
   res.json({ offers: q.all('SELECT * FROM offers ORDER BY property_id IS NOT NULL, property_id, id').map(offerOut), types: OFFER_TYPES, seen, lastWebhook: parseJson(getRaw('ca_webhook_last'), null) });
 });
 

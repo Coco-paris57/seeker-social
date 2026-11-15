@@ -9,7 +9,7 @@ async function propertyOptions(selected) {
   properties ||= (await api('/properties')).properties;
   return h('select', null,
     h('option', { value: '' }, 'Every property'),
-    properties.map((p) => h('option', { value: String(p.id), selected: p.id === selected }, p.displayName || p.name)));
+    properties.map((p) => h('option', { value: String(p.id), selected: p.id === selected }, p.name || p.displayName)));
 }
 
 // ---------------------------------------------------------------------------------------

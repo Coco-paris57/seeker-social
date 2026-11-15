@@ -64,7 +64,7 @@ function conversationOut(c) {
   // Latest by when it was sent: an approved reply is newer than the holding note written after its draft.
   const last = q.get("SELECT role, body FROM messages WHERE conversation_id = ? AND (role = 'guest' OR status = 'sent') ORDER BY COALESCE(sent_at, created_at) DESC, id DESC LIMIT 1", c.id);
   return {
-    id: c.id, propertyId: c.property_id, propertyName: property ? property.display_name || property.name : null,
+    id: c.id, propertyId: c.property_id, propertyName: property ? property.name || property.display_name : null,
     guestName: c.guest_name || null, verified: !!c.verified, channel: c.channel, language: c.language,
     botPaused: !!c.bot_paused, unread: !!c.needs_reply, archived: !!c.archived, summary: c.summary || null, mood: c.mood || null, followUp: followUpOut(c.id), stage: stageOf(c.verified ? reservation : null),
     stay: reservation && c.verified ? { arrival: reservation.arrival, departure: reservation.departure, checkIn: reservation.check_in, checkOut: reservation.check_out, channel: reservation.channel, smoobuId: reservation.id, checkinLink: reservation.checkin_link || null, checkinCompleted: !!reservation.checkin_done, extras: parseJson(reservation.extras, []).map((x) => ({ title: x.title, status: x.status, note: x.note || '' })) } : null,
@@ -83,7 +83,7 @@ function ticketOut(t, names = userNames()) {
     id: t.id, type: t.type, category: t.category, summary: t.summary, question: t.question, status: t.status, suggestion: t.status === 'open' ? t.suggestion || null : null,
     answer: t.answer, createdAt: iso(t.created_at), answeredAt: iso(t.answered_at), answeredByName: names[t.answered_by] || null,
     savedToKnowledge: !!t.knowledge_id, conversationId: t.conversation_id, propertyId: t.property_id,
-    propertyName: property ? property.display_name || property.name : null,
+    propertyName: property ? property.name || property.display_name : null,
     guestName: c?.guest_name || null, guestVerified: !!c?.verified, channel: c?.channel || 'web', language: c?.language || null, guestMessage: guest?.body || null,
     // Photos and videos the guest sent in this chat up to the message that raised the request.
     attachments: t.guest_message_id ? q.all('SELECT token, kind FROM files WHERE conversation_id = ? AND message_id IS NOT NULL AND message_id <= ? ORDER BY message_id DESC LIMIT 8', t.conversation_id, t.guest_message_id).map(adminFile) : [],
@@ -231,7 +231,7 @@ admin.get('/calendar', (req, res) => {
   const days = Math.min(62, Math.max(7, parseInt(req.query.days, 10) || 14));
   const to = addDays(from, days); // exclusive
   // Named as in Smoobu (the listing name), so the calendar reads the same as the one the team already knows.
-  const properties = q.all('SELECT id, name, display_name, ref FROM properties WHERE active = 1 ORDER BY name COLLATE NOCASE').map((p) => ({ id: p.id, name: p.name || p.display_name }));
+  const properties = q.all('SELECT id, name, display_name, ref FROM properties WHERE active = 1 ORDER BY COALESCE(position, 100000), name COLLATE NOCASE').map((p) => ({ id: p.id, name: p.name || p.display_name }));
   // A week either side, so a gap or turnover at the edge of the range is still seen.
   const rows = q.all('SELECT * FROM reservations WHERE cancelled = 0 AND departure >= ? AND arrival <= ? ORDER BY arrival', addDays(from, -7), addDays(to, 7));
   const blocks = q.all('SELECT property_id AS propertyId, arrival, departure FROM blocks WHERE departure >= ? AND arrival <= ?', addDays(from, -7), addDays(to, 7));
@@ -477,7 +477,7 @@ function propertyOr404(id) {
 }
 
 admin.get('/properties', (req, res) => {
-  res.json({ properties: q.all('SELECT * FROM properties ORDER BY active DESC, COALESCE(ref, name)').map((p) => propertyOut(p)), defaultMode: getSettings().defaultMode });
+  res.json({ properties: q.all('SELECT * FROM properties ORDER BY active DESC, COALESCE(position, 100000), name COLLATE NOCASE').map((p) => propertyOut(p)), defaultMode: getSettings().defaultMode });
 });
 
 admin.post('/properties/sync', async (req, res) => {
@@ -719,17 +719,17 @@ admin.get('/insights', (req, res) => {
   );
   // Questions the assistant had to pass to the team: each is a gap in that property's knowledge.
   const gaps = q.all(
-    `SELECT t.property_id AS propertyId, COALESCE(p.display_name, p.name, 'No property') AS propertyName, t.summary, COUNT(*) AS n,
+    `SELECT t.property_id AS propertyId, COALESCE(p.name, p.display_name, 'No property') AS propertyName, t.summary, COUNT(*) AS n,
             MAX(t.knowledge_id IS NOT NULL) AS saved
      FROM tickets t LEFT JOIN properties p ON p.id = t.property_id
      WHERE t.type = 'question' AND t.created_at > datetime('now', ?)
      GROUP BY t.property_id, lower(t.summary) ORDER BY saved ASC, n DESC, MAX(t.id) DESC LIMIT 20`,
     since,
   ).map((g) => ({ ...g, saved: !!g.saved }));
-  const properties = q.all('SELECT * FROM properties WHERE active = 1 ORDER BY COALESCE(ref, name)').map((p) => {
+  const properties = q.all('SELECT * FROM properties WHERE active = 1 ORDER BY COALESCE(position, 100000), name COLLATE NOCASE').map((p) => {
     const stats = approvalStats(p.id, days);
     return {
-      id: p.id, name: p.display_name || p.name, mode: propertyMode(p),
+      id: p.id, name: p.name || p.display_name, mode: propertyMode(p),
       chats: q.get("SELECT COUNT(*) AS n FROM conversations WHERE property_id = ? AND last_message_at > datetime('now', ?) AND id IN (SELECT conversation_id FROM messages)", p.id, since).n,
       questions: q.get("SELECT COUNT(*) AS n FROM tickets WHERE property_id = ? AND type = 'question' AND created_at > datetime('now', ?)", p.id, since).n,
       issues: q.get("SELECT COUNT(*) AS n FROM tickets WHERE property_id = ? AND type != 'question' AND created_at > datetime('now', ?)", p.id, since).n,

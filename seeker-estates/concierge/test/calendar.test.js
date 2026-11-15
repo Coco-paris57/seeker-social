@@ -96,3 +96,22 @@ test('a new booking, a cancellation and a removed owner block change the calenda
   await handleSmoobuEvent({ action: 'deleteReservation', data: { id: 800 } });
   assert.deepEqual((await ids()).reservations, []);
 });
+
+test('the team sees Smoobu names in Smoobu order everywhere; guests still see the guest-facing name', async () => {
+  const { syncProperties } = await import('../src/sync.js');
+  const { useSmoobuClient } = await import('../src/smoobu.js');
+  useSmoobuClient({ apartments: async () => ({ apartments: [{ id: 902, name: 'Zebra House' }, { id: 77, name: 'P01 Camden 2-bed (Smoobu name)' }, { id: 901, name: 'Apple Court' }] }), apartment: async () => ({}) });
+  try {
+    await syncProperties();
+  } finally {
+    useSmoobuClient(null);
+  }
+  const order = ['Zebra House', 'P01 Camden 2-bed (Smoobu name)', 'Apple Court']; // as Smoobu lists them, not alphabetical
+  assert.deepEqual((await team('GET', '/api/admin/properties')).json.properties.map((p) => p.name), order);
+  assert.deepEqual((await team('GET', '/api/admin/calendar')).json.properties.map((p) => p.name), order);
+  assert.deepEqual((await team('GET', '/api/admin/insights')).json.properties.map((p) => p.name), ['P01 Camden 2-bed (Smoobu name)']); // only properties with activity
+  const chat = (await team('GET', '/api/admin/conversations')).json.conversations[0];
+  assert.equal(chat.propertyName, 'P01 Camden 2-bed (Smoobu name)');
+  const guest = await openChat(srv.base);
+  assert.equal((await guest('GET', '/api/guest/me')).json.conversation.property.name, 'Camden apartment');
+});

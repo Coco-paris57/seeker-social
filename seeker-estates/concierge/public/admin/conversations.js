@@ -403,7 +403,7 @@ export function conversationsView(params) {
   readSelect.addEventListener('change', loadList);
 
   api('/properties').then(({ properties }) => {
-    propertySelect.append(...properties.map((p) => h('option', { value: p.id }, p.ref ? `${p.ref} · ${p.displayName}` : p.displayName)));
+    propertySelect.append(...properties.map((p) => h('option', { value: p.id }, p.name)));
   }).catch(() => {}); // the filter is a convenience; the list still works without it
 
   show(params.id);

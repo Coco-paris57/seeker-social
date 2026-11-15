@@ -39,7 +39,7 @@ function confirmAuto(property) {
     if (stats.approvalRate < MIN_RATE) warnings.push(`The team edited or rejected ${stats.edited + stats.rejected} of ${stats.reviewed} drafts. The assistant may not be ready to answer on its own here.`);
   }
   return confirmDialog({
-    title: `Switch ${property.displayName} to auto?`,
+    title: `Switch ${property.name} to auto?`,
     message: 'In auto mode, answers the assistant is confident about go to guests straight away, without anyone on the team checking them first. Maintenance and urgent issues still come to the team.',
     details: h('div', null,
       statsBlock(stats),
@@ -58,7 +58,7 @@ function modeControl(property, defaultMode, onChange) {
     { value: 'default', label: `Default (${MODES[defaultMode].label.toLowerCase()})` },
   ];
   const group = h('fieldset', { class: 'segmented' },
-    h('legend', { class: 'visually-hidden' }, `Mode for ${property.displayName}`),
+    h('legend', { class: 'visually-hidden' }, `Mode for ${property.name}`),
     options.map((o) => h('label', null,
       h('input', { type: 'radio', name, value: o.value, checked: o.value === current }),
       h('span', null, o.icon && icon(o.icon, 16), o.label))));
@@ -69,7 +69,7 @@ function modeControl(property, defaultMode, onChange) {
     if (becomesAuto && !(await confirmAuto(property))) return revert();
     try {
       const out = await api(`/properties/${property.id}`, { method: 'PATCH', body: { mode: value === 'default' ? null : value } });
-      toast(`${property.displayName} is now in ${MODES[out.property.effectiveMode].label.toLowerCase()} mode.`, { kind: 'ok' });
+      toast(`${property.name} is now in ${MODES[out.property.effectiveMode].label.toLowerCase()} mode.`, { kind: 'ok' });
       onChange(out.property);
     } catch (err) {
       revert();
@@ -84,7 +84,7 @@ const modeChip = (mode) => chip(mode === 'auto' ? 'Auto: confident answers go ou
 
 function activeSwitch(property, onChange) {
   const box = check('Active', { switchStyle: true, checked: property.active });
-  box.input.setAttribute('aria-label', `${property.displayName} active`);
+  box.input.setAttribute('aria-label', `${property.name} active`);
   box.input.addEventListener('change', async () => {
     try {
       const out = await api(`/properties/${property.id}`, { method: 'PATCH', body: { active: box.input.checked } });
@@ -122,7 +122,7 @@ export function propertiesView() {
     return h('li', { class: p.active ? 'card property' : 'card property property-inactive', dataset: { id: p.id } },
       h('div', { class: 'property-head' },
         h('div', null,
-          h('h2', null, h('a', { href: `#/properties/${p.id}` }, p.displayName)),
+          h('h2', null, h('a', { href: `#/properties/${p.id}` }, p.name)),
           h('p', { class: 'muted' }, [p.ref, p.area, p.postcode].filter(Boolean).join(' · '))),
         activeSwitch(p, load)),
       modeControl(p, defaultMode, load),
@@ -201,7 +201,7 @@ export function propertyView({ id }) {
         try {
           await api(`/properties/${id}`, { method: 'PATCH', body: Object.fromEntries(Object.entries(inputs).map(([k, input]) => [k, input.value.trim()])) });
           toast('Property facts saved.', { kind: 'ok' });
-          el.querySelector('h1').textContent = inputs.displayName.value.trim() || p.name;
+
         } catch (err) {
           showError(err);
         }
@@ -272,7 +272,7 @@ export function propertyView({ id }) {
     const examples = data.examples || [];
     const checklist = h('div', { class: 'checklist' });
     const editor = knowledgeEditor({
-      propertyId: p.id, propertyName: p.displayName,
+      propertyId: p.id, propertyName: p.name,
       onLoaded(entries) {
         const missing = CHECKLIST.filter((topic) => !entries.some(topic.test));
         fill(checklist,
@@ -291,9 +291,9 @@ export function propertyView({ id }) {
     const section = (title, ...content) => h('section', { class: 'card section' }, h('h2', null, title), content);
 
     fill(body,
-      pageHeader(p.displayName, {
+      pageHeader(p.name, {
         back: { href: '#/properties', label: 'All properties' },
-        sub: [p.ref, p.name !== p.displayName && p.name, p.active ? null : 'Inactive'].filter(Boolean).join(' · '),
+        sub: [p.name !== p.displayName && `Shown to guests as "${p.displayName}"`, p.active ? null : 'Inactive'].filter(Boolean).join(' · '),
       }),
       section('Mode',
         modeControl(p, defaultMode, () => load().then(() => body.querySelector('.segmented input:checked')?.focus())),

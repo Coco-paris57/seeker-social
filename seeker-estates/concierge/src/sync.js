@@ -101,14 +101,15 @@ export async function syncProperties() {
   const api = smoobu();
   if (!api) return { properties: 0 };
   const { apartments = [] } = await api.apartments();
-  for (const a of apartments) {
+  for (const [index, a] of apartments.entries()) {
     let detail = {};
     try {
       detail = await api.apartment(a.id);
     } catch (e) {
       console.warn(`Smoobu apartment ${a.id}: ${e.message}`);
     }
-    upsertProperty(a, detail);
+    // Kept in the order Smoobu lists them, so every list in the team app reads like Smoobu's.
+    q.run('UPDATE properties SET position = ? WHERE id = ?', index, upsertProperty(a, detail));
   }
   await fillStations();
   return { properties: apartments.length };
