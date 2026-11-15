@@ -188,7 +188,7 @@ export function propertyView({ id }) {
     };
     const save = button('Save facts', { variant: 'primary', type: 'submit' });
     const form = h('form', { class: 'form form-grid' },
-      field('Name shown to guests', inputs.displayName),
+      field('Name shown to guests', inputs.displayName, { hint: 'The flat\'s address by default. Guests see this in their chat, on the QR poster and in messages.' }),
       field('Area', inputs.area),
       field('Postcode', inputs.postcode),
       field('Nearest station', inputs.station),

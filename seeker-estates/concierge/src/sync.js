@@ -37,7 +37,7 @@ export function upsertProperty(apartment, detail = {}) {
   return q.insert(
     `INSERT INTO properties(smoobu_id, ref, name, display_name, area, postcode, address, station, notes, details, qr_token)
      VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    apartment.id, s.ref || null, apartment.name, s.area ? `${s.area} apartment` : apartment.name,
+    apartment.id, s.ref || null, apartment.name, address || apartment.name, // guests see the flat's address
     s.area || loc.city || null, s.postcode || loc.zip || null, address, s.station || null, notes || null,
     details, newToken(9),
   );
@@ -97,6 +97,18 @@ export async function fillStations({ fetchImpl } = {}) {
   return filled;
 }
 
+/**
+ * The name guests see (in the chat, on the QR poster, in messages) is the flat's address.
+ * Done once for properties that already existed; after that the name can be edited per property.
+ */
+export function addressNames() {
+  if (getRaw('guest_names_are_addresses')) return 0;
+  const n = q.run("UPDATE properties SET display_name = address, updated_at = datetime('now') WHERE address IS NOT NULL AND trim(address) != ''").changes;
+  // Only settle it once the addresses have arrived from Smoobu.
+  if (n || !q.get('SELECT 1 FROM properties WHERE smoobu_id IS NOT NULL')) setRaw('guest_names_are_addresses', '1');
+  return n;
+}
+
 export async function syncProperties() {
   const api = smoobu();
   if (!api) return { properties: 0 };
@@ -111,6 +123,7 @@ export async function syncProperties() {
     // Kept in the order Smoobu lists them, so every list in the team app reads like Smoobu's.
     q.run('UPDATE properties SET position = ? WHERE id = ?', index, upsertProperty(a, detail));
   }
+  addressNames();
   await fillStations();
   return { properties: apartments.length };
 }

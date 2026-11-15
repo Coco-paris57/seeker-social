@@ -11,7 +11,7 @@ import { guest } from './routes/guest.js';
 import { admin, setupToken } from './routes/admin.js';
 import { webhooks } from './routes/webhooks.js';
 import { runRetention } from './retention.js';
-import { dailyTeamRecords, refreshTeamRecords, syncAll } from './sync.js';
+import { dailyTeamRecords, refreshTeamRecords, syncAll, addressNames } from './sync.js';
 import { HttpError } from './util.js';
 
 const PUBLIC = path.join(ROOT, 'public');
@@ -120,6 +120,7 @@ async function main() {
   setInterval(() => { try { refreshTasks(); } catch (e) { console.error(`To-do list: ${e.message}`); } runTasks().catch((e) => console.error(`To-do messages: ${e.message}`)); }, 60_000).unref();
   setInterval(() => weeklyTidy().catch((e) => console.error(`Weekly tidy-up: ${e.message}`)), 60_000).unref();
   if (config.llmMode === 'claude') backfillMoods().then((n) => { if (n) console.log(`Moods: read ${n} earlier conversation(s)`); }).catch((e) => console.error(`Moods: ${e.message}`));
+  try { addressNames(); } catch (e) { console.error(`Guest names: ${e.message}`); }
   runRetention();
   setInterval(runRetention, 6 * 3600_000).unref();
 }

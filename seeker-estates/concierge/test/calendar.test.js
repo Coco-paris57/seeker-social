@@ -115,3 +115,18 @@ test('the team sees Smoobu names in Smoobu order everywhere; guests still see th
   const guest = await openChat(srv.base);
   assert.equal((await guest('GET', '/api/guest/me')).json.conversation.property.name, 'Camden apartment');
 });
+
+test('guests see the flat address as the property name; the team can still change it afterwards', async () => {
+  const { addressNames } = await import('../src/sync.js');
+  q.run("UPDATE properties SET address = '12 Jamestown Road, NW1 7BY, London' WHERE id = ?", ctx.propertyId);
+  assert.equal(addressNames(), 1);
+  const guest = await openChat(srv.base);
+  assert.equal((await guest('GET', '/api/guest/me')).json.conversation.property.name, '12 Jamestown Road, NW1 7BY, London');
+  assert.match((await team('GET', `/api/admin/properties/${ctx.propertyId}/poster`)).text, /12 Jamestown Road, NW1 7BY, London/);
+  // The team's own screens keep the Smoobu name.
+  assert.equal((await team('GET', '/api/admin/calendar')).json.properties.find((p) => p.id === ctx.propertyId).name, 'P01 Camden 2-bed (Smoobu name)');
+  // Changed by hand afterwards: it is not overwritten again.
+  await team('PATCH', `/api/admin/properties/${ctx.propertyId}`, { displayName: 'Camden flat' });
+  assert.equal(addressNames(), 0);
+  assert.equal(q.get('SELECT display_name FROM properties WHERE id = ?', ctx.propertyId).display_name, 'Camden flat');
+});
