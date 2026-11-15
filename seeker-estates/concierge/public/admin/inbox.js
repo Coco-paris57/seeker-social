@@ -1,6 +1,6 @@
 // Inbox: drafts waiting for approval and requests from the assistant (urgent, maintenance,
 // questions). The approval and request cards are also used inside a conversation thread.
-import { add, api, ApiError, attachmentsView, autoGrow, busy, button, check, chip, confirmDialog, fill, guestLabel, h, icon, loadError, loading, openDialog, pageHeader, reconcile, showError, TICKET_TYPES, timeEl, toast, uid , isEnglish, translateControl } from './lib.js';
+import { add, api, ApiError, attachmentsView, autoGrow, busy, button, check, chip, confirmDialog, fill, guestLabel, h, icon, loadError, loading, openDialog, pageHeader, reconcile, showError, TICKET_TYPES, timeEl, toast, uid , isEnglish, translateControl, moodChip } from './lib.js';
 import { inbox } from './state.js';
 import { attachControl, CHANNEL_TEXT_ONLY } from './attach.js';
 
@@ -175,7 +175,8 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
       h('div', { class: 'card-title' },
         h('strong', null, property || 'No property'),
         h('span', { class: 'muted' }, guestLabel(conversation.guestName)),
-        conversation.verified && chip('Verified', { tone: 'ok', icon: 'shield' })),
+        conversation.verified && chip('Verified', { tone: 'ok', icon: 'shield' }),
+        conversation.mood === 'unhappy' && moodChip('unhappy')),
       h('div', { class: 'card-meta' }, timeEl(draft.at), h('a', { href: `#/conversations/${conversation.id}` }, 'Open chat'))),
     !inThread && !scheduled && (asked.length > 0 || guestFiles) && h('div', { class: 'quote' },
       h('p', { class: 'label' }, asked.length ? 'Guest asked' : 'Guest sent'),
@@ -440,6 +441,19 @@ export function inboxView(params) {
   const body = h('div', { class: 'inbox-body' }, loading('Loading the inbox'));
   const el = h('div', { class: 'page page-inbox' }, pageHeader('Inbox', { sub: 'Replies waiting for approval and requests from the assistant.' }), notice, body);
 
+  // On a phone the two lists are tabs rather than one long page.
+  const columns = h('div', { class: 'inbox-columns' }, approvalSection, requestSection);
+  const tabApprove = h('button', { type: 'button', role: 'tab', 'aria-selected': 'true' }, 'To approve', h('span', null, ''));
+  const tabRequests = h('button', { type: 'button', role: 'tab', 'aria-selected': 'false' }, 'Requests', h('span', null, ''));
+  const tabs = h('div', { class: 'seg inbox-tabs', role: 'tablist', 'aria-label': 'Inbox' }, tabApprove, tabRequests);
+  const showTab = (which) => {
+    columns.classList.toggle('show-requests', which === 'requests');
+    tabApprove.setAttribute('aria-selected', String(which !== 'requests'));
+    tabRequests.setAttribute('aria-selected', String(which === 'requests'));
+  };
+  tabApprove.addEventListener('click', () => showTab('approvals'));
+  tabRequests.addEventListener('click', () => showTab('requests'));
+
   const openTickets = new Set(); // requests the person has expanded
   let target = params.ticketId || null;
   let built = false;
@@ -481,8 +495,10 @@ export function inboxView(params) {
       return;
     }
     if (!built) {
-      fill(body, urgentSection, h('div', { class: 'inbox-columns' }, approvalSection, requestSection));
+      fill(body, urgentSection, tabs, columns);
       built = true;
+      // Open on whichever side has something waiting; a link to a request opens the requests.
+      if (target || (!data.approvals.length && data.tickets.some((t) => t.type !== 'urgent'))) showTab('requests');
     }
     const urgent = data.tickets.filter((t) => t.type === 'urgent');
     const others = data.tickets.filter((t) => t.type !== 'urgent');
@@ -495,6 +511,8 @@ export function inboxView(params) {
       signature: (a) => `${a.draft.text}\u0000${(a.recentGuestMessages || []).join('\u0000')}`,
       create: (a) => approvalCard(a),
     });
+    tabApprove.lastChild.textContent = ` · ${data.approvals.length}`;
+    tabRequests.lastChild.textContent = ` · ${others.length}`;
     approvalCount.textContent = data.approvals.length || '';
     requestCount.textContent = others.length || '';
     const empty = (list, title, text) => {

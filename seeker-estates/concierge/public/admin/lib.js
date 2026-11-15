@@ -343,12 +343,12 @@ export function toast(message, { kind = 'info', title, action } = {}) {
  * returns to the control that opened it. `build(close)` returns the body nodes.
  * Resolves with whatever `close(value)` was given (undefined when dismissed).
  */
-export function openDialog({ title, build, wide = false }) {
+export function openDialog({ title, build, wide = false, sheet = false }) {
   return new Promise((resolve) => {
     const opener = document.activeElement;
     const titleId = uid('dlg');
     let result;
-    const dialog = h('dialog', { class: wide ? 'dialog dialog-wide' : 'dialog', 'aria-labelledby': titleId });
+    const dialog = h('dialog', { class: `dialog${wide ? ' dialog-wide' : ''}${sheet ? ' dialog-sheet' : ''}`, 'aria-labelledby': titleId });
     const close = (value) => {
       result = value;
       dialog.close();

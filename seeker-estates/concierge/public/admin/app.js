@@ -1,5 +1,5 @@
 // Seeker Concierge team app: start-up, sign-in state, navigation, routing and live updates.
-import { api, fill, h, icon, loading, onUnauthorized, refreshTimes, showError, toast } from './lib.js';
+import { api, fill, h, icon, loading, onUnauthorized, refreshTimes, showError, toast, openDialog } from './lib.js';
 import { inbox, session } from './state.js';
 import { authView } from './auth.js';
 import { inboxView } from './inbox.js';
@@ -18,7 +18,7 @@ const root = document.getElementById('app');
 const TITLE = 'Seeker Concierge';
 
 const NAV = [
-  { key: 'dashboard', href: '#/dashboard', label: 'Dashboard', icon: 'home' },
+  { key: 'dashboard', href: '#/dashboard', label: innerWidth < 900 ? 'Home' : 'Dashboard', icon: 'home' },
   { key: 'inbox', href: '#/inbox', label: 'Inbox', icon: 'inbox' },
   { key: 'conversations', href: '#/conversations', label: 'Chats', icon: 'chat' },
   { key: 'todo', href: '#/todo', label: 'To do', icon: 'check' },
@@ -38,8 +38,8 @@ function parseRoute() {
     case 'properties': return num
       ? { nav: 'properties', view: `property-${num}`, title: 'Property', params: { id: num } }
       : { nav: 'properties', view: 'properties', title: 'Properties', params: {} };
-    case 'insights': return { nav: innerWidth >= 900 ? 'insights' : 'properties', view: 'insights', title: 'Insights', params: {} };
-    case 'calendar': return { nav: innerWidth >= 900 ? 'calendar' : 'properties', view: 'calendar', title: 'Calendar', params: {} };
+    case 'insights': return { nav: 'insights', view: 'insights', title: 'Insights', params: {} };
+    case 'calendar': return { nav: 'calendar', view: 'calendar', title: 'Calendar', params: {} };
     case 'todo': return { nav: 'todo', view: 'todo', title: 'To do', params: {} };
     case 'tidy': return { nav: 'knowledge', view: 'tidy', title: 'Weekly tidy-up', params: {} };
     case 'scheduled': return { nav: 'settings', view: 'scheduled', title: 'Scheduled messages', params: {} };
@@ -87,6 +87,18 @@ function buildShell() {
     if (item.key === 'conversations') unreadBadge = badge;
     return h('a', { href: item.href, dataset: { nav: item.key } }, h('span', { class: 'nav-icon' }, icon(item.icon, 22), badge), h('span', { class: 'nav-label' }, item.label));
   });
+  // Phone only: everything that does not fit the bar, one tap away.
+  const moreLink = h('a', { href: '#/more', dataset: { nav: 'more' }, 'aria-haspopup': 'dialog' }, h('span', { class: 'nav-icon' }, icon('sliders', 22)), h('span', { class: 'nav-label' }, 'More'));
+  moreLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    openDialog({
+      title: 'More', sheet: true,
+      build: (close) => h('div', { class: 'more-sheet' },
+        h('div', { class: 'more-grid' }, [['#/calendar', 'bookmark', 'Calendar'], ['#/properties', 'shield', 'Properties'], ['#/knowledge', 'book', 'Knowledge'], ['#/insights', 'eye', 'Insights'], ['#/scheduled', 'clock', 'Scheduled messages'], ['#/extras', 'plus', 'Paid extras']]
+          .map(([href, i, label]) => h('a', { class: 'more-tile', href, onclick: () => close() }, h('span', { class: 'more-icon' }, icon(i, 20)), label))),
+        h('a', { class: 'more-user', href: '#/settings', onclick: () => close() }, h('span', { class: 'more-icon' }, icon('user', 20)), h('span', null, h('strong', null, session.user.name), h('small', null, 'Settings · notifications · sign out')), icon('chevron', 16))),
+    });
+  });
   const main = h('main', { id: 'main', tabIndex: -1 });
   const offline = h('p', { class: 'offline', role: 'status', hidden: true }, icon('refresh', 16), 'Reconnecting. What you see may be out of date.');
   const demo = session.llmMode === 'mock' && h('p', { class: 'demo-banner' }, icon('alert', 16), 'Demo mode: no AI model connected');
@@ -95,7 +107,7 @@ function buildShell() {
     h('div', { class: 'shell' },
       h('nav', { class: 'nav', 'aria-label': 'Main' },
         h('div', { class: 'brand' }, h('img', { src: '/shared/mark-reversed.svg', alt: '', width: 40, height: 40 }), h('span', null, TITLE)),
-        h('ul', null, links.map((a) => h('li', null, a))),
+        h('ul', null, links.map((a) => h('li', null, a)), h('li', { class: 'nav-more' }, moreLink)),
         // The signed-in person, at the foot of the menu: their name opens Settings.
         h('a', { class: 'nav-user', href: '#/settings', dataset: { nav: 'settings' }, 'aria-label': `${session.user.name}: settings` }, icon('user', 20), h('span', { class: 'nav-user-name' }, session.user.name), icon('sliders', 16))),
       h('div', { class: 'content' }, demo, offline, main)));
@@ -136,8 +148,10 @@ function renderBadge() {
 function route(user = false) {
   if (!shell) return;
   const next = parseRoute();
+  // On a phone the screens reached through More light up the More tab.
+  const inBar = innerWidth >= 900 || ['dashboard', 'inbox', 'conversations', 'todo'].includes(next.nav);
   for (const a of root.querySelectorAll('.nav a[data-nav]')) {
-    if (a.dataset.nav === next.nav) a.setAttribute('aria-current', 'page');
+    if (a.dataset.nav === (inBar ? next.nav : 'more')) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   }
   if (current?.name === next.view && current.view.update) {

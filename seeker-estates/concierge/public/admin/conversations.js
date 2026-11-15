@@ -114,20 +114,44 @@ function threadPane(id, { onGone }) {
     h('label', { htmlFor: replyId, class: 'visually-hidden' }, 'Your message to the guest'),
     h('div', { class: 'composer-row' }, replyBox, sendBtn), attachSlot, composerNote);
 
-  const el = h('section', { class: 'thread', 'aria-label': 'Conversation' },
-    h('header', { class: 'thread-head' },
-      h('a', { class: 'back-link', href: '#/conversations' }, icon('back', 18), 'All conversations'),
-      h('div', { class: 'thread-head-row' }, h('div', null, title, headChips), detailsBtn),
-      sub, summaryBox, followBox),
-    readBar,
-    takeover,
-    h('div', { class: 'thread-main' }, scroller, details),
-    composer);
+  // On a phone the messages get the whole screen: one status line under the name, and everything
+  // else (chips, summary, check-in, read and take-over actions, stay details) in a sheet behind "i".
+  const narrow = innerWidth < 900;
+  const statusLine = h('p', { class: 'thread-status' });
+  const closeSheet = h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Close details' }, icon('x'));
+  const backdrop = h('div', { class: 'sheet-backdrop' });
+  const el = narrow
+    ? h('section', { class: 'thread thread-phone', 'aria-label': 'Conversation' },
+      h('header', { class: 'thread-head' },
+        h('a', { class: 'back-link', href: '#/conversations', 'aria-label': 'All conversations' }, icon('back', 22)),
+        h('div', { class: 'thread-title' }, title, statusLine),
+        detailsBtn),
+      h('div', { class: 'thread-main' }, scroller),
+      composer,
+      backdrop,
+      h('div', { class: 'chat-sheet', id: detailsId, role: 'dialog', 'aria-label': 'Guest and stay' },
+        h('div', { class: 'chat-sheet-head' }, h('strong', null, 'Guest and stay'), closeSheet),
+        headChips, sub, summaryBox, followBox, readBar, takeover, details))
+    : h('section', { class: 'thread', 'aria-label': 'Conversation' },
+      h('header', { class: 'thread-head' },
+        h('a', { class: 'back-link', href: '#/conversations' }, icon('back', 18), 'All conversations'),
+        h('div', { class: 'thread-head-row' }, h('div', null, title, headChips), detailsBtn),
+        sub, summaryBox, followBox),
+      readBar,
+      takeover,
+      h('div', { class: 'thread-main' }, scroller, details),
+      composer);
+  if (narrow) { details.removeAttribute('id'); detailsBtn.setAttribute('aria-label', 'Guest and stay'); }
 
-  detailsBtn.addEventListener('click', () => {
-    const open = el.classList.toggle('show-details');
+  const toggleDetails = (open = !el.classList.contains('show-details')) => {
+    el.classList.toggle('show-details', open);
     detailsBtn.setAttribute('aria-expanded', String(open));
-  });
+    if (narrow && open) closeSheet.focus();
+  };
+  detailsBtn.addEventListener('click', () => toggleDetails());
+  closeSheet.addEventListener('click', () => { toggleDetails(false); detailsBtn.focus(); });
+  backdrop.addEventListener('click', () => toggleDetails(false));
+  el.addEventListener('keydown', (e) => { if (e.key === 'Escape' && narrow && el.classList.contains('show-details')) toggleDetails(false); });
 
   const openTickets = new Set();
   let first = true;
@@ -140,6 +164,10 @@ function threadPane(id, { onGone }) {
       chip(CHANNELS[c.channel] || c.channel, { icon: 'chat' }),
       c.stay && (c.stay.checkinCompleted ? chip('Check-in form completed', { tone: 'ok', icon: 'check' }) : c.stay.checkinLink ? chip('Check-in form not completed', { tone: 'warn', icon: 'clock' }) : null),
       moodChip(c.mood));
+    // The one line a phone shows under the name.
+    fill(statusLine,
+      [STAGES[c.stage], c.stay && (c.stay.checkinCompleted ? 'Form done' : c.stay.checkinLink ? 'Form not done' : null), c.unread ? 'Needs a response' : null].filter(Boolean).join(' · '),
+      MOODS[c.mood] && h('span', { class: `status-mood sign-${c.mood}` }, ` · ${MOODS[c.mood].label}`));
     fill(summaryBox, c.summary && h('p', null, h('strong', null, 'Where this stands: '), c.summary));
     summaryBox.hidden = !c.summary;
     renderFollowUp(c);

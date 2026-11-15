@@ -120,13 +120,67 @@ export function calendarView() {
   const now = button('Today', { small: true });
   const label = h('strong', { class: 'cal-label' });
   const body = h('div', null, loading('Loading the calendar'));
+  // On a phone: a day-by-day agenda instead of a grid that scrolls sideways, or one property's month.
+  const narrow = innerWidth < 900;
+  let mode = 'agenda';
+  const tabAgenda = h('button', { type: 'button', role: 'tab', 'aria-selected': 'true' }, 'Agenda');
+  const tabProperty = h('button', { type: 'button', role: 'tab', 'aria-selected': 'false' }, 'By property');
+  const modeTabs = h('div', { class: 'seg', role: 'tablist', 'aria-label': 'Calendar view' }, tabAgenda, tabProperty);
+  const bar = h('div', { class: 'cal-bar' }, h('div', { class: 'actions' }, prev, now, next, label), h('div', { class: 'actions' }, picker, range));
   const el = h('div', { class: 'page page-wide' },
-    pageHeader('Calendar', { sub: 'Bookings come from Smoobu and are changed there. Tap a booking for the guest, their messages and what to offer.' }),
-    h('div', { class: 'cal-bar' }, h('div', { class: 'actions' }, prev, now, next, label), h('div', { class: 'actions' }, picker, range)),
-    body);
+    pageHeader('Calendar', { sub: narrow ? 'Bookings come from Smoobu. Tap a guest for their stay and messages.' : 'Bookings come from Smoobu and are changed there. Tap a booking for the guest, their messages and what to offer.' }),
+    narrow && modeTabs, bar, body);
   let filled = false;
+  const setMode = (next) => {
+    mode = next;
+    tabAgenda.setAttribute('aria-selected', String(mode === 'agenda'));
+    tabProperty.setAttribute('aria-selected', String(mode === 'property'));
+    load();
+  };
+  tabAgenda.addEventListener('click', () => setMode('agenda'));
+  tabProperty.addEventListener('click', () => setMode('property'));
+
+  /** The next two weeks as a list: who arrives, who leaves, and what to watch, day by day. */
+  function agenda(d, byId, open) {
+    const nameOf = (id) => d.properties.find((p) => p.id === id)?.name || 'Property';
+    const days = Array.from({ length: d.days }, (_, i) => addDays(d.from, i)).map((day) => {
+      const ins = d.reservations.filter((r) => r.arrival === day);
+      const outs = d.reservations.filter((r) => r.departure === day);
+      const gaps = d.gaps.filter((g) => g.from === day);
+      if (!ins.length && !outs.length && !gaps.length) return null;
+      const item = (r, isIn) => {
+        const turnover = isIn ? d.reservations.some((o) => o.propertyId === r.propertyId && o.departure === day) : d.reservations.some((o) => o.propertyId === r.propertyId && o.arrival === day);
+        return h('li', null, h('button', { type: 'button', class: `agenda-item ${isIn ? 'is-in' : 'is-out'} ${channelClass(r.channel)}-edge`, onclick: () => open(r.id) },
+          h('span', { class: 'agenda-text' }, h('strong', null, `${isIn ? 'In' : 'Out'} · ${r.guestName}`),
+            h('small', null, [nameOf(r.propertyId), isIn ? ` · ${r.nights} ${r.nights === 1 ? 'night' : 'nights'}` : '', r.channel ? ` · ${r.channel}` : ''])),
+          h('span', { class: 'agenda-flags' },
+            isIn && r.hasCheckinLink && !r.checkinCompleted && chip('Form', { tone: 'warn', icon: 'clock' }),
+            turnover && chip('Turnover', { tone: 'warn', icon: 'refresh' }),
+            h('span', { class: 'signs' }, signs({ ...r, hasCheckinLink: false }, 16)))));
+      };
+      return h('section', { class: 'agenda-day' },
+        h('h2', null, day === d.today ? `Today · ${stayDate(day)}` : stayDate(day)),
+        h('ul', null, outs.map((r) => item(r, false)), ins.map((r) => item(r, true)),
+          gaps.map((g) => h('li', null, h('button', { type: 'button', class: 'agenda-gap', onclick: () => openGap(g, byId, nameOf(g.propertyId), load) }, `${nameOf(g.propertyId)} · ${g.nights} free ${g.nights === 1 ? 'night' : 'nights'} · offer ${g.nights === 1 ? 'it' : 'them'}`)))));
+    }).filter(Boolean);
+    return days.length ? h('div', { class: 'agenda' }, days) : h('div', { class: 'card section empty' }, h('p', { class: 'muted' }, 'No arrivals or departures in the next two weeks.'));
+  }
 
   async function load() {
+    if (narrow && mode === 'agenda') {
+      bar.hidden = true;
+      let d;
+      try {
+        d = await api(`/calendar?from=${today}&days=14`);
+      } catch (err) {
+        if (err.status !== 401) fill(body, loadError(err, load));
+        return;
+      }
+      if (!filled) { filled = true; picker.append(...d.properties.map((p) => h('option', { value: String(p.id) }, p.name))); }
+      return fill(body, agenda(d, new Map(d.reservations.map((r) => [r.id, r])), (id) => openCard(id, load)));
+    }
+    bar.hidden = false;
+    if (narrow && !propertyId && picker.options.length > 1) { picker.selectedIndex = 1; propertyId = picker.value; } // a phone shows one property at a time
     const single = !!propertyId;
     const days = single ? 42 : Number(range.value);
     // One property: whole weeks from the Monday on or before the start, so it reads as a month sheet.
@@ -152,7 +206,7 @@ export function calendarView() {
       h('span', { class: `dot ${channelClass(r.channel)}` }), h('span', { class: 'today-name' }, h('strong', null, r.guestName), h('span', { class: 'muted' }, nameOf(r.propertyId))), h('span', { class: 'signs' }, signs(r, 16))));
     const group = (title, list, none) => h('div', { class: 'today-col' }, h('h3', null, `${title} (${list.length})`), list.length ? h('ul', null, list.map(person)) : h('p', { class: 'muted' }, none));
     fill(body,
-      h('section', { class: 'card today-panel' },
+      !narrow && h('section', { class: 'card today-panel' },
         group('Arriving today', d.todayPanel.arrivals, 'Nobody arrives today.'),
         group('Leaving today', d.todayPanel.departures, 'Nobody leaves today.'),
         group('In the apartments', d.todayPanel.inHouse, 'No guests staying over.')),

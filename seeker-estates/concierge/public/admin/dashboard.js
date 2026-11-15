@@ -49,14 +49,39 @@ function barChart({ title, sub, rows, unit, emptyText }) {
       h('table', { class: 'data' }, h('tbody', null, rows.map((r) => h('tr', null, h('th', { scope: 'row' }, r.label), h('td', null, String(r.value))))))));
 }
 
+/** Home on a phone: what needs someone, most urgent first, then today in one line. Charts live in Insights. */
+function phoneHome(d) {
+  const row = (href, n, title, detail, tone) => h('a', { class: 'need-row', href }, h('span', { class: `need-n${tone ? ` is-${tone}` : ''}` }, String(n)), h('span', { class: 'need-text' }, h('strong', null, title), detail && h('small', null, detail)), icon('chevron', 16));
+  const i = d.inbox;
+  const needs = [
+    i.urgent > 0 && row('#/inbox', i.urgent, i.urgent === 1 ? 'Urgent request' : 'Urgent requests', 'Open the Inbox now', 'urgent'),
+    i.approvals > 0 && row('#/inbox', i.approvals, i.approvals === 1 ? 'Reply to approve' : 'Replies to approve', 'Inbox'),
+    i.requests - i.urgent > 0 && row('#/inbox', i.requests - i.urgent, i.requests - i.urgent === 1 ? 'Request from the assistant' : 'Requests from the assistant', [i.maintenance && `${i.maintenance} maintenance`, i.questions && plural(i.questions, 'question', 'questions')].filter(Boolean).join(' · ')),
+    d.todo > 0 && row('#/todo', d.todo, 'To do', d.scheduled ? `Messages suggested · ${d.scheduled} scheduled` : 'Messages suggested for guests'),
+    d.unread > 0 && row('#/conversations', d.unread, d.unread === 1 ? 'Chat needs a response' : 'Chats need a response', d.unhappy ? `${plural(d.unhappy, 'guest sounds', 'guests sound')} unhappy` : null, d.unhappy ? 'urgent' : null),
+    d.unread === 0 && d.unhappy > 0 && row('#/conversations', d.unhappy, d.unhappy === 1 ? 'Guest sounds unhappy' : 'Guests sound unhappy', 'Chats', 'urgent'),
+    d.stays.formsMissing > 0 && row('#/calendar', d.stays.formsMissing, d.stays.formsMissing === 1 ? 'Check-in form not completed' : 'Check-in forms not completed', 'Arrivals in the next 3 days'),
+  ].filter(Boolean);
+  return [
+    h('p', { class: 'home-label' }, 'Needs you'),
+    needs.length ? h('div', { class: 'need-list' }, needs) : h('div', { class: 'card section empty' }, icon('check', 28), h('p', null, h('strong', null, 'All clear.')), h('p', { class: 'muted' }, 'Nothing is waiting for the team.')),
+    h('p', { class: 'home-label' }, 'Today'),
+    h('a', { class: 'home-strip', href: '#/calendar', 'aria-label': 'Today: open the calendar' },
+      h('span', null, h('strong', null, String(d.stays.arrivals)), 'arriving'),
+      h('span', null, h('strong', null, String(d.stays.departures)), 'leaving'),
+      h('span', null, h('strong', null, `${d.stays.occupied}/${d.properties.active}`), 'occupied')),
+    h('div', { class: 'need-list' },
+      row('#/insights', minutes(d.reply.medianMinutes), 'Typical time to reply', 'Last 7 days · charts in Insights', 'calm'),
+      row('#/properties', d.properties.active, d.properties.active === 1 ? 'Property' : 'Properties', `${d.properties.auto} on auto · ${d.properties.active - d.properties.auto} learning`, 'calm')),
+  ];
+}
+
 export function dashboardView() {
   const body = h('div', null, loading('Loading the dashboard'));
   const first = (session.user?.name || '').split(' ')[0];
   const el = h('div', { class: 'page' },
     pageHeader(first ? `Hello, ${first}` : 'Dashboard', {
       sub: dayFmt.format(new Date()),
-      // On a phone there is no side menu, so the way to Settings sits here.
-      actions: [h('a', { class: 'btn btn-secondary dash-settings', href: '#/settings' }, icon('sliders', 18), h('span', null, 'Settings'))],
     }),
     body);
 
@@ -69,6 +94,7 @@ export function dashboardView() {
       return;
     }
     const s = d.stays;
+    if (innerWidth < 900) return fill(body, phoneHome(d));
     const moodTotal = d.moods.positive + d.moods.neutral + d.moods.unhappy;
     const free = d.properties.active - s.occupied;
     const occupancy = d.properties.active ? Math.round((s.occupied / d.properties.active) * 100) : 0;
