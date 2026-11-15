@@ -102,6 +102,9 @@ export const uid = (prefix = 'id') => `${prefix}-${++idCounter}`;
 
 // Icon outlines (24px grid, 2px stroke), adapted from the Feather set (MIT licence).
 const ICONS = {
+  smile: ['M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z', 'M9 9h.01', 'M15 9h.01', 'M8 14s1.5 2 4 2 4-2 4-2'],
+  meh: ['M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z', 'M9 9h.01', 'M15 9h.01', 'M8 15h8'],
+  frown: ['M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z', 'M9 9h.01', 'M15 9h.01', 'M16 16s-1.5-2-4-2-4 2-4 2'],
   inbox: ['M22 12h-6l-2 3h-4l-2-3H2', 'M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z'],
   chat: ['M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'],
   home: ['M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z', 'M9 22V12h6v10'],
@@ -443,6 +446,14 @@ export const TICKET_TYPES = {
   maintenance: { label: 'Maintenance', icon: 'wrench', tone: 'warn' },
   question: { label: 'Question', icon: 'help', tone: 'brand' },
 };
+
+/** How the guest comes across, as a face: happy, neutral or unhappy. Null until the assistant has read a message. */
+export const MOODS = {
+  positive: { label: 'Happy', tone: 'ok', icon: 'smile' },
+  neutral: { label: 'Neutral', tone: 'neutral', icon: 'meh' },
+  unhappy: { label: 'Unhappy', tone: 'danger', icon: 'frown' },
+};
+export const moodChip = (mood) => (MOODS[mood] ? chip(MOODS[mood].label, MOODS[mood]) : null);
 
 export const guestLabel = (name) => name || 'Unverified guest';
 

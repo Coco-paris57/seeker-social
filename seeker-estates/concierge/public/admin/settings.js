@@ -341,6 +341,7 @@ export function settingsView({ onSignOut }) {
     section('Through the stay',
       h('p', { class: 'muted' }, 'Messages sent at set points of a stay, and the paid extras the assistant may offer. Both are off until you switch them on.'),
       h('div', { class: 'actions' },
+        h('a', { class: 'btn btn-secondary', href: '#/insights' }, icon('eye', 18), h('span', null, 'Insights')),
         h('a', { class: 'btn btn-secondary', href: '#/scheduled' }, icon('clock', 18), h('span', null, 'Scheduled messages')),
         h('a', { class: 'btn btn-secondary', href: '#/extras' }, icon('plus', 18), h('span', null, 'Paid extras')))),
     teamSection(),

@@ -1,5 +1,5 @@
 // Conversations: searchable list and the thread view (take over, reply, erase).
-import { api, attachmentsView, autoGrow, busy, button, chip, confirmDialog, fill, guestLabel, h, icon, isEnglish, loadError, loading, reconcile, showError, stayDate, fullTime, timeEl, toast, translateControl, uid } from './lib.js';
+import { api, attachmentsView, autoGrow, busy, button, chip, confirmDialog, fill, guestLabel, h, icon, isEnglish, loadError, loading, reconcile, showError, stayDate, fullTime, timeEl, toast, translateControl, uid, moodChip } from './lib.js';
 import { approvalCard, ticketCard } from './inbox.js';
 import { inbox } from './state.js';
 import { attachControl, CHANNEL_TEXT_ONLY } from './attach.js';
@@ -90,7 +90,7 @@ function threadPane(id, { onGone }) {
       c.verified ? chip('Verified guest', { tone: 'ok', icon: 'shield' }) : chip('Not verified', { icon: 'help' }),
       STAGES[c.stage] && chip(STAGES[c.stage], { icon: 'clock' }),
       chip(CHANNELS[c.channel] || c.channel, { icon: 'chat' }),
-      c.mood === 'unhappy' && chip('Sounds unhappy', { tone: 'danger', icon: 'alert' }));
+      moodChip(c.mood));
     fill(summaryBox, c.summary && h('p', null, h('strong', null, 'Where this stands: '), c.summary));
     summaryBox.hidden = !c.summary;
     fill(sub,
@@ -195,6 +195,11 @@ function threadPane(id, { onGone }) {
     fill(details,
       h('h2', null, 'Guest and stay'),
       h('dl', { class: 'facts' },
+        row('Mood', moodChip(c.mood) || h('span', { class: 'muted' }, 'Not read yet. Shows after the guest\'s next message.')),
+        row('Online check-in', !c.stay ? h('span', { class: 'muted' }, c.verified ? 'No booking linked' : 'Not known (guest not verified)')
+          : c.stay.checkinCompleted ? chip('Form completed', { tone: 'ok', icon: 'check' })
+            : c.stay.checkinLink ? chip('Form not completed', { tone: 'warn', icon: 'clock' })
+              : h('span', { class: 'muted' }, 'No check-in link on this booking yet')),
         row('Guest', `${guestLabel(c.guestName)}${c.verified ? ' (verified against the booking)' : ''}`),
         row('Property', c.propertyName),
         row('Stay', c.stay && `${stayDate(c.stay.arrival)} to ${stayDate(c.stay.departure)}`),
@@ -268,7 +273,7 @@ function threadPane(id, { onGone }) {
 
 function listItem(c, activeId) {
   const flags = [
-    c.mood === 'unhappy' && chip('Sounds unhappy', { tone: 'danger', icon: 'alert' }),
+    moodChip(c.mood),
     c.botPaused && chip('Team handling', { tone: 'brand', icon: 'user' }),
     c.pendingDrafts > 0 && chip(`${c.pendingDrafts} to approve`, { tone: 'warn', icon: 'clock' }),
     c.openTickets > 0 && chip(`${c.openTickets} open ${c.openTickets === 1 ? 'request' : 'requests'}`, { tone: 'warn', icon: 'help' }),

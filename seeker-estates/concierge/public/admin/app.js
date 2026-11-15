@@ -19,6 +19,7 @@ const NAV = [
   { key: 'conversations', href: '#/conversations', label: 'Chats', icon: 'chat' },
   { key: 'properties', href: '#/properties', label: 'Properties', icon: 'home' },
   { key: 'knowledge', href: '#/knowledge', label: 'Knowledge', icon: 'book' },
+  { key: 'insights', href: '#/insights', label: 'Insights', icon: 'eye' }, // side menu on wide screens; on phones it is under Properties and Settings
   { key: 'settings', href: '#/settings', label: 'Settings', icon: 'sliders' },
 ];
 
@@ -32,7 +33,7 @@ function parseRoute() {
     case 'properties': return num
       ? { nav: 'properties', view: `property-${num}`, title: 'Property', params: { id: num } }
       : { nav: 'properties', view: 'properties', title: 'Properties', params: {} };
-    case 'insights': return { nav: 'properties', view: 'insights', title: 'Insights', params: {} };
+    case 'insights': return { nav: innerWidth >= 900 ? 'insights' : 'properties', view: 'insights', title: 'Insights', params: {} };
     case 'tidy': return { nav: 'knowledge', view: 'tidy', title: 'Weekly tidy-up', params: {} };
     case 'scheduled': return { nav: 'settings', view: 'scheduled', title: 'Scheduled messages', params: {} };
     case 'extras': return { nav: 'settings', view: 'extras', title: 'Paid extras', params: {} };
