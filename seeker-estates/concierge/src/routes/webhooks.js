@@ -9,6 +9,8 @@ import { smoobu } from '../smoobu.js';
 import { syncReservation } from '../sync.js';
 import { htmlToText } from '../util.js';
 import { channelInboxOn, webhookToken, webhookTokenPlain } from '../channel.js';
+import { upsellType } from '../bot.js';
+import { offerCovers } from '../tasks.js';
 
 export const webhooks = express.Router();
 
@@ -83,6 +85,17 @@ export function recordExtra(event) {
   const list = JSON.parse(reservation.extras || '[]').filter((x) => x.ref !== clean(d.charge_ref_no, 60) && x.title !== title);
   list.push({ title, status, note: /^n\/?a$/i.test(note) ? '' : note, ref: clean(d.charge_ref_no, 60), at: new Date().toISOString() });
   q.run('UPDATE reservations SET extras = ? WHERE id = ?', JSON.stringify(list.slice(-20)), reservation.id);
+  // For Insights: every sale, and whether it followed an offer message we sent to this guest.
+  const paid = Number.isFinite(amount) && amount > 0 ? amount : null;
+  const currency = clean(d.currency_symbol, 4) || '£';
+  const offer = status === 'declined' ? null : q.all('SELECT * FROM offers_sent WHERE reservation_id = ? ORDER BY id DESC', reservation.id)
+    .find((o) => offerCovers(o.type).has(upsellType(title)) && (!o.accepted_at || o.title === title));
+  if (offer) q.run("UPDATE offers_sent SET accepted_at = COALESCE(accepted_at, datetime('now')), accepted_how = 'chargeautomation', title = ?, amount = COALESCE(?, amount), currency = ? WHERE id = ?", title, paid, currency, offer.id);
+  q.run(
+    `INSERT INTO extra_sales(reservation_id, property_id, title, status, amount, currency, ref, offer_id) VALUES(?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(reservation_id, title) DO UPDATE SET status = excluded.status, amount = COALESCE(excluded.amount, amount), currency = excluded.currency, ref = excluded.ref, offer_id = COALESCE(offer_id, excluded.offer_id)`,
+    reservation.id, reservation.property_id, title, status, paid, currency, clean(d.charge_ref_no, 60), offer?.id ?? null,
+  );
   const c = q.get('SELECT id FROM conversations WHERE reservation_id = ? ORDER BY id DESC LIMIT 1', reservation.id);
   if (c) emitConversation(c.id, 'conversation');
   return true;

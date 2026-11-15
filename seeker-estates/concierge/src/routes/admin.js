@@ -13,7 +13,7 @@ import { channelInboxOn, ensureWebhook, webhookToken, webhookTokenPlain } from '
 import crypto from 'node:crypto';
 import { addDays, clip, failureLimiter, HttpError, londonDate, newToken, rateLimiter } from '../util.js';
 import { taskOut } from './journey.js';
-import { createTask, refreshTasks } from '../tasks.js';
+import { createTask, refreshTasks, TASK_TYPES } from '../tasks.js';
 import { offersFor } from '../bot.js';
 import { iso, sse } from './shared.js';
 import { posterHtml } from '../poster.js';
@@ -762,8 +762,41 @@ admin.get('/insights', (req, res) => {
     repliesMeasured: waits.length,
     answers, withoutTeamPercent: total ? Math.round((answers.automatic / total) * 100) : null,
     unhappy: q.get("SELECT COUNT(*) AS n FROM conversations WHERE mood = 'unhappy' AND last_message_at > datetime('now', ?)", since).n,
-    topics, gaps, properties,
+    topics, gaps, properties, offers: offerInsights(since),
   });
+});
+
+/** Offers sent from the to-do list: how many guests took one up, and what it brought in. */
+function offerInsights(since) {
+  const rows = q.all("SELECT * FROM offers_sent WHERE sent_at > datetime('now', ?) ORDER BY id DESC", since);
+  const taken = rows.filter((o) => o.accepted_at);
+  const sum = (list) => Math.round(list.reduce((n, o) => n + (o.amount || 0), 0) * 100) / 100;
+  const names = Object.fromEntries(q.all('SELECT id, name FROM properties').map((p) => [p.id, p.name]));
+  const byType = Object.entries(TASK_TYPES).filter(([type]) => type !== 'happy').map(([type, t]) => {
+    const mine = rows.filter((o) => o.type === type);
+    return { label: t.label, sent: mine.length, accepted: mine.filter((o) => o.accepted_at).length, revenue: sum(mine.filter((o) => o.accepted_at)) };
+  }).filter((x) => x.sent);
+  // Extras guests bought without an offer message from us, for comparison.
+  const other = q.all("SELECT amount FROM extra_sales WHERE offer_id IS NULL AND status = 'purchased' AND at > datetime('now', ?)", since);
+  return {
+    sent: rows.length, accepted: taken.length, acceptedPercent: rows.length ? Math.round((taken.length / rows.length) * 100) : null, revenue: sum(taken),
+    currency: taken.find((o) => o.currency)?.currency || '£', byType,
+    other: { count: other.length, revenue: sum(other) },
+    // Still unanswered: an extension agreed by message never reaches ChargeAutomation, so the team can mark it here.
+    open: rows.filter((o) => !o.accepted_at).slice(0, 30).map((o) => ({ id: o.id, guestName: o.guest_name || 'Guest', propertyName: names[o.property_id] || null, label: TASK_TYPES[o.type]?.label || o.type, sentAt: iso(o.sent_at) })),
+    accepted_list: taken.slice(0, 30).map((o) => ({ id: o.id, guestName: o.guest_name || 'Guest', propertyName: names[o.property_id] || null, label: TASK_TYPES[o.type]?.label || o.type, title: o.title, amount: o.amount, currency: o.currency, how: o.accepted_how })),
+  };
+}
+
+/** The guest said yes by message (for example to extending their stay): record it, with what it brought in. */
+admin.post('/offers-sent/:id/accept', (req, res) => {
+  const o = q.get('SELECT * FROM offers_sent WHERE id = ?', Number(req.params.id));
+  if (!o) throw new HttpError(404, 'That offer is no longer listed.');
+  const amount = Number(String(req.body?.amount ?? '').replace(/[£,\s]/g, ''));
+  if (!Number.isFinite(amount) || amount < 0 || amount > 100000) throw new HttpError(400, 'Enter the amount in pounds, for example 120.');
+  q.run("UPDATE offers_sent SET accepted_at = COALESCE(accepted_at, datetime('now')), accepted_how = 'team', title = COALESCE(title, ?), amount = ? WHERE id = ?", clip(String(req.body?.title || ''), 120) || null, amount, o.id);
+  audit(req.user.id, 'offer.accepted', `offer ${o.id} £${amount}`);
+  res.json({ ok: true });
 });
 
 const translations = new Map(); // recent translations, so pressing the button twice costs nothing

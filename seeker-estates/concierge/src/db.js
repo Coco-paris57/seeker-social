@@ -208,6 +208,32 @@ CREATE TABLE IF NOT EXISTS tasks (         -- messages worth sending for a booki
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (reservation_id, type)
 );
+CREATE TABLE IF NOT EXISTS offers_sent (   -- every offer message that went out, kept after the booking is gone, for Insights
+  id INTEGER PRIMARY KEY,
+  reservation_id INTEGER NOT NULL,
+  property_id INTEGER,
+  guest_name TEXT,
+  type TEXT NOT NULL,              -- the to-do type, e.g. 'upsell_late' or 'upsell_departure'
+  sent_at TEXT NOT NULL DEFAULT (datetime('now')),
+  accepted_at TEXT,                -- when the guest took it up
+  accepted_how TEXT,               -- 'chargeautomation' (bought or requested on the check-in page) | 'team' (marked by hand)
+  title TEXT,                      -- what was bought
+  amount REAL,
+  currency TEXT NOT NULL DEFAULT '£'
+);
+CREATE TABLE IF NOT EXISTS extra_sales (   -- every extra bought or requested through ChargeAutomation
+  id INTEGER PRIMARY KEY,
+  reservation_id INTEGER NOT NULL,
+  property_id INTEGER,
+  title TEXT NOT NULL,
+  status TEXT NOT NULL,
+  amount REAL,
+  currency TEXT NOT NULL DEFAULT '£',
+  ref TEXT,
+  offer_id INTEGER,                -- the offer message it followed, if any
+  at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (reservation_id, title)
+);
 CREATE TABLE IF NOT EXISTS ca_upsells (    -- extras seen in ChargeAutomation (from its purchase/request webhooks), with the last price paid
   property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
   title TEXT NOT NULL,

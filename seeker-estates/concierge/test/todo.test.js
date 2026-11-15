@@ -161,3 +161,45 @@ test('an extra night on its own links to the check-in page only when exactly one
   await handleGuestMessage(cid);
   assert.equal(q.get('SELECT mood FROM conversations WHERE id = ?', cid).mood, 'unhappy');
 });
+
+test('Insights counts offers sent, how many guests accepted, and the money they generated', async () => {
+  q.run('DELETE FROM tasks'); q.run('DELETE FROM offers_sent'); q.run('DELETE FROM extra_sales'); q.run('DELETE FROM messages');
+  q.run('DELETE FROM reservations WHERE id != 501');
+  q.run("UPDATE reservations SET extras = '[]', arrival = ?, departure = ? WHERE id = 501", addDays(ctx.today, 3), addDays(ctx.today, 6));
+  q.run("UPDATE conversations SET mood = 'neutral'");
+  await team('PUT', '/api/admin/offers', { type: 'late_checkout', price: '£30' });
+  const stats = async () => (await team('GET', '/api/admin/insights?days=30')).json.offers;
+  assert.deepEqual([(await stats()).sent, (await stats()).accepted, (await stats()).revenue], [0, 0, 0]);
+
+  // A purchase nobody was offered counts separately.
+  recordExtra({ event: 'booking.upsell.purchased', data: { pms_booking_id: '1-501', title: 'Parking', charge_ref_no: 'p1', currency_symbol: '£', order_details: { amount: 20 } } });
+  // The combined late checkout / extension offer goes out.
+  const both = (await todo()).tasks.find((t) => t.type === 'upsell_departure');
+  const at = new Date(Date.now() + 3600_000).toISOString();
+  await team('POST', `/api/admin/tasks/${both.id}/schedule`, { text: both.text, at });
+  assert.equal(await runTasks(Date.parse(at) + 1000), 1);
+  let o = await stats();
+  assert.deepEqual([o.sent, o.accepted, o.acceptedPercent, o.revenue], [1, 0, 0, 0]);
+  assert.deepEqual(o.other, { count: 1, revenue: 20 });
+  assert.equal(o.open.length, 1);
+
+  // The guest buys late checkout on the check-in page: accepted, with the amount paid. A repeat of the same notice does not count twice.
+  const sale = { event: 'booking.upsell.purchased', data: { pms_booking_id: '1-501', title: 'Late Check-out', charge_ref_no: 'l1', currency_symbol: '£', order_details: { amount: 35 } } };
+  recordExtra(sale); recordExtra(sale);
+  o = await stats();
+  assert.deepEqual([o.sent, o.accepted, o.acceptedPercent, o.revenue], [1, 1, 100, 35]);
+  assert.deepEqual(o.byType, [{ label: 'Offer late checkout or an extra night', sent: 1, accepted: 1, revenue: 35 }]);
+  assert.deepEqual(o.other, { count: 1, revenue: 20 });
+  assert.equal(o.open.length, 0);
+
+  // An extension agreed by message never reaches ChargeAutomation: the team records it.
+  q.run("INSERT INTO offers_sent(reservation_id, property_id, guest_name, type) VALUES(501, ?, 'Zoë', 'upsell_night')", ctx.propertyId);
+  const open = (await stats()).open[0];
+  assert.equal((await team('POST', `/api/admin/offers-sent/${open.id}/accept`, { amount: 'lots' })).status, 400);
+  await team('POST', `/api/admin/offers-sent/${open.id}/accept`, { amount: '£240' });
+  o = await stats();
+  assert.deepEqual([o.sent, o.accepted, o.acceptedPercent, o.revenue], [2, 2, 100, 275]);
+  // The record survives the booking being removed later.
+  q.run('DELETE FROM reservations WHERE id = 501'); q.run('DELETE FROM tasks');
+  assert.equal((await stats()).revenue, 275);
+});

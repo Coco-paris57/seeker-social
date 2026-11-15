@@ -97,6 +97,9 @@ function bodyFor(type, r, property, offer) {
   return fillTemplate(text, r, property);
 }
 
+/** Which extras (as ChargeAutomation names them) an offer message covers. */
+export const offerCovers = (type) => new Set((TASK_TYPES[type]?.parts || [type]).map((part) => TASK_TYPES[part]?.extra).filter(Boolean));
+
 /** Do the dates still allow it? Other bookings and owner blocks both count. */
 export function calendarFree(r, type) {
   const taken = (where, ...dates) => !!(
@@ -259,6 +262,8 @@ export async function runTasks(now = Date.now()) {
         continue;
       }
       await sendMessage(conversation, 'team', t.body, { createdBy: t.created_by, meta: { task: t.type } });
+      // Kept for Insights: how many offers were sent, and later how many were taken up.
+      if (t.type !== 'happy') q.run('INSERT INTO offers_sent(reservation_id, property_id, guest_name, type) VALUES(?, ?, ?, ?)', r.id, r.property_id, r.guest_name, t.type);
       sent++;
     }
   } finally {
