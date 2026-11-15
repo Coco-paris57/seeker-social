@@ -729,3 +729,10 @@ table.data thead th { font-size: 13px; color: var(--text-2); font-weight: 600; }
   .cal-bar .cal-label { display: none; }
 }
 @media (max-width: 899px) { .chat-sheet .thread-details > h2:first-child { display: none; } }
+
+/* Branding settings */
+.brand-picture { display: flex; align-items: center; gap: 14px; padding-top: 10px; border-top: 1px solid var(--line); }
+.brand-preview { flex: none; max-width: 120px; max-height: 64px; object-fit: contain; padding: 6px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface); }
+.brand-preview-mark { width: 64px; height: 64px; }
+.brand-picture .hint { margin: 0 0 6px; }
+input[type="color"] { width: 64px; height: 44px; padding: 3px; border: 1.5px solid var(--control-line); border-radius: var(--radius-s); background: var(--surface); cursor: pointer; }

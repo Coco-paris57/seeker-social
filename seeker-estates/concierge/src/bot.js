@@ -7,6 +7,7 @@ import { emitAdmin, emitConversation, notifyTeam } from './notify.js';
 import { smoobu } from './smoobu.js';
 import { addDays, clip, londonDate, londonToUtc, HttpError } from './util.js';
 import { modelImages } from './media.js';
+import { brand } from './brand.js';
 
 export const SENSITIVE_CATEGORIES = new Set(['access', 'wifi']);
 
@@ -168,7 +169,7 @@ export function buildContext(conversation, { latest = '', uptoMessageId = null }
   const now = new Date();
   return {
     botName: settings.botName,
-    company: config.company.name,
+    company: brand().company,
     officeHours: settings.officeHours,
     emergencyContact: settings.emergencyContact,
     accessHours: settings.accessInfoHours,

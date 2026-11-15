@@ -13,6 +13,7 @@ import { channelInboxOn, ensureWebhook, webhookToken, webhookTokenPlain } from '
 import crypto from 'node:crypto';
 import { addDays, clip, failureLimiter, HttpError, londonDate, newToken, rateLimiter } from '../util.js';
 import { taskOut } from './journey.js';
+import { brand, BRAND_DEFAULTS, brandText, resetBrand, saveBrand, saveBrandFile } from '../brand.js';
 import { createTask, refreshTasks, TASK_TYPES } from '../tasks.js';
 import { offersFor } from '../bot.js';
 import { iso, sse } from './shared.js';
@@ -559,14 +560,14 @@ const slug = (p) => (p.ref || `property-${p.id}`).toLowerCase().replace(/[^a-z0-
 admin.get('/properties/:id/qr.svg', async (req, res) => {
   const p = propertyOr404(req.params.id);
   res.type('image/svg+xml');
-  if (req.query.download) res.attachment(`seeker-qr-${slug(p)}.svg`);
+  if (req.query.download) res.attachment(`qr-${slug(p)}.svg`);
   res.send(await QRCode.toString(qrUrl(p), { ...QR_OPTIONS, type: 'svg' }));
 });
 
 admin.get('/properties/:id/qr.png', async (req, res) => {
   const p = propertyOr404(req.params.id);
   res.type('image/png');
-  if (req.query.download) res.attachment(`seeker-qr-${slug(p)}.png`);
+  if (req.query.download) res.attachment(`qr-${slug(p)}.png`);
   res.send(await QRCode.toBuffer(qrUrl(p), { ...QR_OPTIONS, width: 1200 }));
 });
 
@@ -574,7 +575,7 @@ admin.get('/properties/:id/qr.png', async (req, res) => {
 admin.get('/properties/:id/poster', async (req, res) => {
   const p = propertyOr404(req.params.id);
   const svg = await QRCode.toString(qrUrl(p), { ...QR_OPTIONS, type: 'svg', margin: 0 });
-  res.type('html').send(posterHtml({ property: p, qrSvg: svg, settings: getSettings() }));
+  res.type('html').send(brandText(posterHtml({ property: p, qrSvg: svg, settings: getSettings() })));
 });
 
 // --- knowledge base ---------------------------------------------------------------------
@@ -918,6 +919,36 @@ admin.delete('/knowledge/:id', (req, res) => {
 
 admin.get('/settings', (req, res) => res.json({ settings: getSettings() }));
 
+// --- branding: this agency's name, colours and logo ---------------------------------------
+
+const brandOut = () => {
+  const b = brand();
+  return { name: b.name, company: b.company, app: b.app, color: b.color, accent: b.accent, hasLogo: !!b.logo, hasMark: !!b.mark, custom: b.custom, defaults: BRAND_DEFAULTS, v: Math.max(b.logo?.v || 0, b.mark?.v || 0) };
+};
+admin.get('/brand', (req, res) => res.json({ brand: brandOut() }));
+
+admin.patch('/brand', requireAdmin, (req, res) => {
+  const b = req.body || {};
+  saveBrand({ name: b.name, company: b.company, app: b.app, color: b.color, accent: b.accent });
+  // The assistant's name follows the brand until someone has chosen their own.
+  if (getSettings().botName === SETTING_DEFAULTS.botName && brand().name !== BRAND_DEFAULTS.name) setSetting('botName', `${brand().name} Assistant`);
+  audit(req.user.id, 'brand.update', `${brand().app} ${brand().color} ${brand().accent}`);
+  res.json({ brand: brandOut() });
+});
+
+/** Upload the logo (?slot=logo) or the square icon (?slot=mark). */
+admin.post('/brand/uploads', requireAdmin, express.raw({ type: 'image/*', limit: '700kb' }), (req, res) => {
+  saveBrandFile(String(req.query.slot || ''), req.body, req.headers['content-type']);
+  audit(req.user.id, 'brand.picture', String(req.query.slot));
+  res.status(201).json({ brand: brandOut() });
+});
+
+admin.post('/brand/reset', requireAdmin, (req, res) => {
+  resetBrand();
+  audit(req.user.id, 'brand.reset');
+  res.json({ brand: brandOut() });
+});
+
 admin.patch('/settings', requireAdmin, async (req, res) => {
   const b = req.body || {};
   // Switching channel messages on connects Smoobu first; if that fails nothing is saved.
@@ -1009,7 +1040,7 @@ admin.post('/push/unsubscribe', (req, res) => {
 });
 
 admin.post('/push/test', async (req, res) => {
-  await notifyTeam({ title: 'Seeker Concierge', body: `Test notification from ${req.user.name}. Notifications are working.`, url: '/admin/#/inbox', tag: 'test' });
+  await notifyTeam({ title: brand().app, body: `Test notification from ${req.user.name}. Notifications are working.`, url: '/admin/#/inbox', tag: 'test' });
   res.json({ ok: true, devices: q.get('SELECT COUNT(*) AS n FROM push_subscriptions').n });
 });
 

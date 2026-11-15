@@ -1,5 +1,6 @@
 // Guest-facing API: open a chat from a property QR code (or the general link), verify the
 // booking, exchange messages. A guest session is one conversation, held in an httpOnly cookie.
+import { brand } from '../brand.js';
 import express from 'express';
 import { config } from '../config.js';
 import { q, getSettings } from '../db.js';
@@ -72,7 +73,7 @@ function messageOut(m) {
 function about() {
   const s = getSettings();
   return {
-    company: config.company.name,
+    company: brand().company,
     botName: s.botName,
     officeHours: s.officeHours,
     emergencyContact: s.emergencyContact || null,

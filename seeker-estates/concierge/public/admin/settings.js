@@ -328,6 +328,82 @@ function auditSection() {
   return section('Audit log', h('p', { class: 'muted' }, 'Who approved, edited, answered and changed what.'), details);
 }
 
+/** The company's own name, colours and logo: what the team and guests see across the app. */
+function brandSection() {
+  const body = h('div', null, loading('Loading'));
+  async function load() {
+    let b;
+    try {
+      ({ brand: b } = await api('/brand'));
+    } catch (err) {
+      if (err.status !== 401) fill(body, loadError(err, load));
+      return;
+    }
+    const name = h('input', { type: 'text', value: b.name, maxLength: 30, required: true });
+    const company = h('input', { type: 'text', value: b.company, maxLength: 80, required: true });
+    const app = h('input', { type: 'text', value: b.app, maxLength: 40, required: true });
+    const color = h('input', { type: 'color', value: b.color, 'aria-label': 'Main colour' });
+    const accent = h('input', { type: 'color', value: b.accent, 'aria-label': 'Accent colour' });
+    const save = button('Save branding', { variant: 'primary', type: 'submit', icon: 'check' });
+    const reset = button('Back to the original branding', { variant: 'ghost', small: true, hidden: !b.custom });
+    const done = (message) => { toast(`${message} Reloading to show it everywhere.`, { kind: 'ok' }); setTimeout(() => location.reload(), 900); };
+    const picture = (slot, label, hint, has) => {
+      const input = h('input', { type: 'file', accept: 'image/png,image/jpeg,image/webp,image/svg+xml', class: 'visually-hidden' });
+      const pick = button(has ? `Replace ${label.toLowerCase()}` : `Upload ${label.toLowerCase()}`, { icon: 'image', small: true, onclick: () => input.click() });
+      input.addEventListener('change', () => busy(pick, async () => {
+        const file = input.files[0];
+        if (!file) return;
+        try {
+          const res = await fetch(`/api/admin/brand/uploads?slot=${slot}`, { method: 'POST', headers: { 'Content-Type': file.type }, body: file });
+          const out = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(out.error || 'That picture could not be used.');
+          done(`${label} saved.`);
+        } catch (err) {
+          toast(err.message, { kind: 'error' });
+        }
+      }));
+      return h('div', { class: 'brand-picture' },
+        h('img', { src: `/brand/${slot}?v=${b.v}`, alt: `Current ${label.toLowerCase()}`, class: `brand-preview brand-preview-${slot}` }),
+        h('div', null, h('p', { class: 'field-label' }, label), h('p', { class: 'hint' }, hint), pick, input));
+    };
+    const form = h('form', { class: 'stack' },
+      h('p', { class: 'muted' }, 'Shown to your team and to guests: in the chat, on the QR poster, in notifications and in what the assistant calls the company.'),
+      h('div', { class: 'form-grid' },
+        field('Short name', name, { hint: 'As in "the Seeker team".' }),
+        field('App name', app, { hint: 'The title of this team app.' })),
+      field('Company name', company, { hint: 'The legal name, used in the privacy notice and by the assistant.' }),
+      h('div', { class: 'form-grid' },
+        field('Main colour', color, { hint: 'Menu, buttons and headings. It must be dark enough for white text.' }),
+        field('Accent colour', accent, { hint: 'Badges and highlights.' })),
+      picture('logo', 'Logo', 'Wide logo for the sign-in screen, the guest chat and the poster. PNG or SVG, under 600 KB.', b.hasLogo),
+      picture('mark', 'Square icon', 'Shown in the menu and as the home-screen icon. A square PNG of 512 × 512 works everywhere.', b.hasMark),
+      h('div', { class: 'actions' }, save, reset));
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      busy(save, async () => {
+        try {
+          await api('/brand', { method: 'PATCH', body: { name: name.value, company: company.value, app: app.value, color: color.value, accent: accent.value } });
+          done('Branding saved.');
+        } catch (err) {
+          showError(err);
+        }
+      });
+    });
+    reset.addEventListener('click', async () => {
+      if (!(await confirmDialog({ title: 'Go back to the original branding?', message: 'The names, colours, logo and icon return to the built-in ones.', confirmLabel: 'Reset', danger: true }))) return;
+      try {
+        await api('/brand/reset', { method: 'POST', body: {} });
+        done('Branding reset.');
+      } catch (err) {
+        showError(err);
+      }
+    });
+    fill(body, form);
+  }
+  load();
+  return section('Branding', body);
+}
+
 /** Settings screen. `onSignOut` is provided by the app shell. */
 export function settingsView({ onSignOut }) {
   const signOut = button('Sign out', { icon: 'logout' });
@@ -338,6 +414,7 @@ export function settingsView({ onSignOut }) {
     notificationsSection(),
     assistantSection(),
     channelSection(),
+    isAdmin() && brandSection(),
     section('Through the stay',
       h('p', { class: 'muted' }, 'Messages sent at set points of a stay, and the paid extras the assistant may offer. Both are off until you switch them on.'),
       h('div', { class: 'actions' },

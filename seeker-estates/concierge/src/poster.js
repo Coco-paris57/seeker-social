@@ -1,5 +1,6 @@
 // Print-ready QR card for a property. Styles and the print button live in /shared/poster.*
 // so the page works under the site's content security policy (no inline code).
+import { brand } from './brand.js';
 import { config } from './config.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -23,7 +24,7 @@ export function posterHtml({ property, qrSvg, settings }) {
 <main class="card">
   <div class="frame">
     <header>
-      <img src="/shared/logo.svg" alt="${esc(config.company.name)}" class="logo">
+      <img src="${brand().logo ? `/brand/logo?v=${brand().logo.v}` : '/shared/logo.svg'}" alt="${esc(brand().company)}" class="logo">
       <span class="label">Guest assistance</span>
     </header>
     <h1>Need a hand during your stay?</h1>

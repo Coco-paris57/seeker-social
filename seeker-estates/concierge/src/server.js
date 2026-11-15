@@ -1,4 +1,6 @@
 // Seeker Concierge: HTTP server. Guest chat at /g/<qr token> and /stay, team app at /admin/.
+import fs from 'node:fs';
+import { brand, brandCss, brandFile, brandText } from './brand.js';
 import { runFollowups, runScheduled, seedTemplates, weeklyTidy } from './journey.js';
 import { backfillMoods } from './bot.js';
 import { refreshTasks, runTasks } from './tasks.js';
@@ -60,12 +62,12 @@ export function createApp() {
     if (!p) return res.status(404).end();
     res.type('application/manifest+json').json({
       name: `${getSettings().botName} · ${p.display_name || p.name}`,
-      short_name: 'Seeker stay',
+      short_name: `${brand().name} stay`,
       start_url: `/g/${req.params.token}`,
       scope: '/',
       display: 'standalone',
       background_color: '#F6F1E7',
-      theme_color: '#0F3D2E',
+      theme_color: brand().color,
       icons: [
         { src: '/shared/icon-192.png', sizes: '192x192', type: 'image/png' },
         { src: '/shared/icon-512.png', sizes: '512x512', type: 'image/png' },
@@ -74,13 +76,37 @@ export function createApp() {
     });
   });
 
-  const page = (file) => (req, res) => res.set('Cache-Control', 'no-cache').sendFile(path.join(PUBLIC, file));
+  // --- branding: this agency's colours and pictures, and its names inside the pages and scripts ---
+  app.get('/brand.css', (req, res) => res.type('css').set('Cache-Control', 'no-cache').send(brandCss()));
+  app.get('/brand/:slot', (req, res) => {
+    const f = brandFile(String(req.params.slot));
+    const fallback = { logo: 'shared/logo.svg', mark: 'shared/mark.svg' }[req.params.slot];
+    if (!f && !fallback) return res.status(404).end();
+    // An uploaded picture is only ever a picture: it cannot run anything, even opened on its own.
+    res.set({ 'Cache-Control': 'public, max-age=86400', 'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox" });
+    if (f) return res.type(f.mime).sendFile(f.file);
+    return res.sendFile(path.join(PUBLIC, fallback));
+  });
+  const sendText = (res, file) => {
+    if (!brand().custom) return res.set('Cache-Control', 'no-cache').sendFile(file);
+    return res.set('Cache-Control', 'no-cache').type(path.extname(file)).send(brandText(fs.readFileSync(file, 'utf8')));
+  };
+  const page = (file) => (req, res) => sendText(res, path.join(PUBLIC, file));
   app.get('/', (req, res) => res.redirect('/stay'));
   app.get('/g/:token', page('guest/index.html'));
   app.get('/stay', page('guest/index.html'));
   app.get('/privacy', page('guest/privacy.html'));
   // The service worker must never be served stale, or updates to the team app stall.
-  app.get('/admin/sw.js', (req, res) => res.set({ 'Cache-Control': 'no-cache', 'Service-Worker-Allowed': '/admin/' }).sendFile(path.join(PUBLIC, 'admin/sw.js')));
+  app.get('/admin/sw.js', (req, res) => { res.set('Service-Worker-Allowed', '/admin/'); sendText(res, path.join(PUBLIC, 'admin/sw.js')); });
+  // With a custom brand, pages, scripts and manifests are served with its names in place.
+  app.get(/^\/(admin|guest|shared)\/(?:[\w.-]+\/)*[\w.-]*$/, (req, res, next) => {
+    if (!brand().custom) return next();
+    const rel = req.path.endsWith('/') ? `${req.path}index.html` : req.path;
+    if (!/\.(html|js|webmanifest)$/.test(rel)) return next();
+    const file = path.join(PUBLIC, rel);
+    if (!file.startsWith(PUBLIC + path.sep) || !fs.existsSync(file)) return next();
+    return sendText(res, file);
+  });
   // Pages, scripts and styles are always re-checked with the server, so an update shows at once.
   // Fonts and images change rarely and may be kept for a day.
   app.use(express.static(PUBLIC, {
