@@ -7,7 +7,7 @@ import { inbox } from './state.js';
 const localInput = (iso) => { const d = new Date(iso); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
 
 /** A proposed message with its time: edit, schedule or dismiss. `save(text, at)` and `drop()` do the work. */
-function messageCard({ tone, iconName, title, who, when, why, note, text, at, chatId, save, drop }) {
+export function messageCard({ tone, iconName, title, who, when, why, note, text, at, chatId, save, drop }) {
   const body = autoGrow(h('textarea', { rows: 3, value: text, 'aria-label': 'Message' }));
   const time = h('input', { type: 'datetime-local', value: localInput(at), 'aria-label': 'Send at' });
   const schedule = button('Schedule', { variant: 'primary', icon: 'clock', small: true });

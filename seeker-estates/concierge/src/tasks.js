@@ -7,20 +7,21 @@ import { checkStillNeeded, followUpTime, offersFor, sendMessage, upsellType, wit
 import { channelConversation, fillTemplate } from './journey.js';
 import { emitAdmin, notifyTeam } from './notify.js';
 import { smoobu } from './smoobu.js';
-import { addDays, clip, londonDate, londonToUtc } from './util.js';
+import { addDays, clip, londonDate, londonToUtc, HttpError } from './util.js';
 import { parseJson } from './db.js';
 
 export const TASK_TYPES = {
   upsell_early: { label: 'Offer early check-in', offer: 'Early check-in', extra: 'early_checkin' },
   upsell_late: { label: 'Offer late checkout', offer: 'Late checkout', extra: 'late_checkout' },
   upsell_night: { label: 'Offer an extra night', offer: 'Extra night', extra: 'extra_night' },
+  upsell_before: { label: 'Offer arriving a night earlier', extra: 'extra_night', manualOnly: true },
   happy: { label: 'Thank a happy guest' },
 };
 
 const LOOK_AHEAD = 10; // days before arrival from which offers are proposed
 
 /** The moment to send, and why. Null when it is too late to be useful. */
-function bestTime(type, r, now) {
+function bestTime(type, r, now, manual = false) {
   const today = londonDate(new Date(now));
   const soon = () => followUpTime(1, now);
   const at = (date, time) => { const t = londonToUtc(date, time); return t > now ? new Date(t).toISOString() : null; };
@@ -31,11 +32,15 @@ function bestTime(type, r, now) {
   }
   if (type === 'upsell_late') {
     if (r.departure <= today || r.arrival > addDays(today, LOOK_AHEAD)) return null;
-    return { at: at(addDays(r.departure, -1), '17:00') || soon(), why: 'The evening before checkout, when guests plan their last morning and a later checkout is most tempting.' };
+    return { at: at(addDays(r.departure, -1), '13:00') || soon(), why: 'The day before checkout at 13:00: early enough for the guest to plan their last morning, and for the team to arrange cleaning.' };
   }
   if (type === 'upsell_night') {
-    if (r.departure <= today || r.arrival > addDays(today, LOOK_AHEAD)) return null;
+    if (r.departure <= today || (!manual && r.arrival > addDays(today, LOOK_AHEAD))) return null;
     return { at: at(addDays(r.departure, -2), '11:00') || soon(), why: 'Two days before checkout: early enough to change travel plans, late enough that they know how the trip is going.' };
+  }
+  if (type === 'upsell_before') {
+    if (r.arrival <= today) return null;
+    return { at: at(addDays(r.arrival, -3), '10:00') || soon(), why: 'Three days before arrival: there is still time to change travel plans.' };
   }
   if (type === 'happy') {
     if (r.departure > addDays(today, 1) || r.departure < addDays(today, -3)) return null;
@@ -52,14 +57,51 @@ function bodyFor(type, r, property, offer) {
     upsell_early: `Hello {first_name},\n\nWe are looking forward to welcoming you to {property} on {arrival}. If it would help to arrive earlier, early check-in is available for your stay${price}${terms}. ${how}`,
     upsell_late: `Hello {first_name},\n\nWe hope you are enjoying your stay. If you would like a more relaxed last morning, late checkout is available${price}${terms}. ${how}`,
     upsell_night: `Hello {first_name},\n\nWe hope you are enjoying your stay. The apartment is free the night after your checkout, so if you would like to stay one more night it is available${price}${terms}. ${how}`,
+    upsell_before: `Hello {first_name},\n\nWe are looking forward to welcoming you to {property}. The apartment is free the night before your arrival, so if you would like to arrive a day earlier it is available${price}${terms}. Just reply to this message and we will arrange it.`,
     happy: 'Hello {first_name},\n\nThank you for staying at {property}. We are so glad you enjoyed it. If you have a moment, a short review would mean a great deal to us and helps future guests. We would be delighted to welcome you back.',
   }[type];
   return fillTemplate(text, r, property);
 }
 
+/** Do the dates still allow it? Other bookings and owner blocks both count. */
+export function calendarFree(r, type) {
+  const taken = (where, ...dates) => !!(
+    q.get(`SELECT 1 FROM reservations WHERE property_id = ? AND id != ? AND cancelled = 0 AND ${where}`, r.property_id, r.id, ...dates)
+    || q.get(`SELECT 1 FROM blocks WHERE property_id = ? AND ${where}`, r.property_id, ...dates));
+  if (type === 'upsell_early') return !taken('departure = ?', r.arrival);
+  if (type === 'upsell_late') return !taken('arrival = ?', r.departure);
+  if (type === 'upsell_night') return !taken('arrival <= ? AND departure > ?', r.departure, r.departure);
+  if (type === 'upsell_before') { const night = addDays(r.arrival, -1); return !taken('arrival <= ? AND departure > ?', night, night); }
+  return true;
+}
+const bought = (r, type) => parseJson(r.extras, []).some((x) => x.status !== 'declined' && upsellType(x.title) === TASK_TYPES[type].extra);
+
+/**
+ * A person adds a proposal from the calendar (an extra night into a free gap, before or after a
+ * stay). It appears on the to-do list with a proposed time, like the automatic ones.
+ */
+export function createTask(r, type, user, now = Date.now()) {
+  if (!['upsell_night', 'upsell_before'].includes(type)) throw new HttpError(400, 'That cannot be added from here.');
+  const property = q.get('SELECT * FROM properties WHERE id = ?', r.property_id);
+  if (!property || r.cancelled) throw new HttpError(400, 'This booking is cancelled.');
+  if (!calendarFree(r, type)) throw new HttpError(409, 'That night is no longer free.');
+  const when = bestTime(type, r, now, true);
+  if (!when) throw new HttpError(409, 'It is too late to offer this for that stay.');
+  const offer = (offersFor(r, londonDate(new Date(now))) || []).find((o) => o.extra.startsWith('Extra night'));
+  const body = bodyFor(type, type === 'upsell_before' ? { ...r, checkin_link: null } : r, property, offer);
+  q.run(
+    `INSERT INTO tasks(reservation_id, type, body, send_at, why, manual, created_by) VALUES(?, ?, ?, ?, ?, 1, ?)
+     ON CONFLICT(reservation_id, type) DO UPDATE SET body = excluded.body, send_at = excluded.send_at, why = excluded.why, status = 'suggested', note = '', manual = 1`,
+    r.id, type, body, when.at, when.why, user?.id ?? null,
+  );
+  emitAdmin('todo');
+  return q.get('SELECT * FROM tasks WHERE reservation_id = ? AND type = ?', r.id, type);
+}
+
 /** The extra, if it can still be offered for this booking: switched on, calendar free, not already bought. */
 function offerOpen(r, type, now) {
   const t = TASK_TYPES[type];
+  if (!t.offer) return null;
   const offer = (offersFor(r, londonDate(new Date(now))) || []).find((o) => o.extra.startsWith(t.offer));
   const bought = parseJson(r.extras, []).some((x) => x.status !== 'declined' && upsellType(x.title) === t.extra);
   return offer && offer.calendar === 'possible' && !bought ? offer : null;
@@ -90,7 +132,7 @@ function candidates(r, now) {
 export function refreshTasks(now = Date.now()) {
   const today = londonDate(new Date(now));
   let changed = 0;
-  const bookings = q.all('SELECT * FROM reservations WHERE cancelled = 0 AND departure >= ? AND arrival <= ?', addDays(today, -3), addDays(today, LOOK_AHEAD));
+  const bookings = q.all('SELECT * FROM reservations WHERE cancelled = 0 AND departure >= ? AND (arrival <= ? OR id IN (SELECT reservation_id FROM tasks WHERE manual = 1))', addDays(today, -3), addDays(today, LOOK_AHEAD));
   const live = new Set();
   for (const r of bookings) {
     live.add(r.id);
@@ -101,6 +143,9 @@ export function refreshTasks(now = Date.now()) {
       if (!row && c) {
         q.run('INSERT INTO tasks(reservation_id, type, body, send_at, why) VALUES(?, ?, ?, ?, ?)', r.id, type, c.body, c.at, c.why);
         changed++;
+      } else if (row?.status === 'suggested' && row.manual) {
+        // Added by a person: kept until the night is taken, it is bought, or the moment has passed.
+        if (!calendarFree(r, type) || bought(r, type) || !bestTime(type, r, now, true)) { q.run('DELETE FROM tasks WHERE id = ?', row.id); changed++; }
       } else if (row?.status === 'suggested' && !c) {
         q.run('DELETE FROM tasks WHERE id = ?', row.id); // no longer possible, already bought, or too late
         changed++;
@@ -131,7 +176,7 @@ export async function runTasks(now = Date.now()) {
       if (!r) continue;
       const conversation = channelConversation(r);
       // An offer is only sent if it can still be honoured and has not been bought in the meantime.
-      if (TASK_TYPES[t.type]?.offer && !offerOpen(r, t.type, now)) {
+      if (t.type !== 'happy' && (!calendarFree(r, t.type) || bought(r, t.type))) {
         withholdMessage(conversation, t.body, 'No longer available for these dates, or the guest has already bought it.', { task: t.type });
         continue;
       }

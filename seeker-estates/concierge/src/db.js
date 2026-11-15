@@ -249,6 +249,7 @@ export function openDb(file) {
   if (!has('tickets', 'suggestion')) db.exec('ALTER TABLE tickets ADD COLUMN suggestion TEXT');
   if (!has('conversations', 'summary')) db.exec('ALTER TABLE conversations ADD COLUMN summary TEXT');
   if (!has('conversations', 'mood')) db.exec('ALTER TABLE conversations ADD COLUMN mood TEXT');
+  if (!has('tasks', 'manual')) db.exec('ALTER TABLE tasks ADD COLUMN manual INTEGER NOT NULL DEFAULT 0'); // 1 = created by a person from the calendar
   if (!has('knowledge', 'video_url')) db.exec('ALTER TABLE knowledge ADD COLUMN video_url TEXT');
   if (!has('knowledge', 'media_notes')) db.exec('ALTER TABLE knowledge ADD COLUMN media_notes TEXT');
   if (!has('reservations', 'checkin_done')) db.exec('ALTER TABLE reservations ADD COLUMN checkin_done INTEGER NOT NULL DEFAULT 0');

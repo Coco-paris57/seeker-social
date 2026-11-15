@@ -11,7 +11,10 @@ import { bus, emitAdmin, emitConversation, notifyTeam, vapidPublicKey } from '..
 import { refreshTeamRecords, syncAll } from '../sync.js';
 import { channelInboxOn, ensureWebhook, webhookToken, webhookTokenPlain } from '../channel.js';
 import crypto from 'node:crypto';
-import { clip, failureLimiter, HttpError, newToken, rateLimiter } from '../util.js';
+import { addDays, clip, failureLimiter, HttpError, londonDate, newToken, rateLimiter } from '../util.js';
+import { taskOut } from './journey.js';
+import { createTask, refreshTasks } from '../tasks.js';
+import { offersFor } from '../bot.js';
 import { iso, sse } from './shared.js';
 import { posterHtml } from '../poster.js';
 import { adminFile, getFile, MAX_VIDEO, modelImages, saveUpload, sendFile, sweepFiles } from '../media.js';
@@ -198,6 +201,92 @@ admin.post('/messages/:id/reject', async (req, res) => {
   const { replyText, remember, scope, sensitive, attachments } = req.body || {};
   const out = await rejectDraft(Number(req.params.id), req.user, { replyText, remember: !!remember, scope, sensitive: setBool(sensitive), attachments });
   res.json({ message: out.message ? messageOut(out.message) : null, knowledgeId: out.knowledgeId });
+});
+
+// --- calendar ---------------------------------------------------------------------------
+
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+const nightsBetween = (a, b) => Math.round((Date.parse(`${b}T12:00:00Z`) - Date.parse(`${a}T12:00:00Z`)) / 86400_000);
+
+/** What the calendar shows for one booking: enough to scan the portfolio without opening anything. */
+function bookingOut(r) {
+  const chats = q.all('SELECT id, mood, needs_reply, archived FROM conversations WHERE reservation_id = ? ORDER BY last_message_at DESC', r.id);
+  return {
+    id: r.id, propertyId: r.property_id, guestName: r.guest_name || `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Guest',
+    arrival: r.arrival, departure: r.departure, nights: nightsBetween(r.arrival, r.departure), channel: r.channel || null,
+    adults: r.adults, children: r.children, checkIn: r.check_in, checkOut: r.check_out,
+    checkinCompleted: !!r.checkin_done, hasCheckinLink: !!r.checkin_link,
+    mood: chats.some((c) => c.mood === 'unhappy') ? 'unhappy' : chats.find((c) => c.mood)?.mood || null,
+    unread: chats.some((c) => c.needs_reply), conversationId: chats[0]?.id ?? null,
+    extras: parseJson(r.extras, []).filter((x) => x.status !== 'declined').map((x) => ({ title: x.title, status: x.status })),
+    tasks: q.all("SELECT type, send_at, status FROM tasks WHERE reservation_id = ? AND status IN ('suggested', 'scheduled')", r.id).map((t) => ({ type: t.type, at: t.send_at, status: t.status })),
+  };
+}
+
+/** Bookings, owner blocks, short free gaps and same-day turnovers for a range of days. Read-only: bookings are changed in Smoobu. */
+admin.get('/calendar', (req, res) => {
+  refreshTasks();
+  const today = londonDate();
+  const from = DAY.test(String(req.query.from)) ? String(req.query.from) : today;
+  const days = Math.min(62, Math.max(7, parseInt(req.query.days, 10) || 14));
+  const to = addDays(from, days); // exclusive
+  const properties = q.all('SELECT id, name, display_name, ref FROM properties WHERE active = 1 ORDER BY COALESCE(ref, name)').map((p) => ({ id: p.id, name: p.display_name || p.name }));
+  // A week either side, so a gap or turnover at the edge of the range is still seen.
+  const rows = q.all('SELECT * FROM reservations WHERE cancelled = 0 AND departure >= ? AND arrival <= ? ORDER BY arrival', addDays(from, -7), addDays(to, 7));
+  const blocks = q.all('SELECT property_id AS propertyId, arrival, departure FROM blocks WHERE departure >= ? AND arrival <= ?', addDays(from, -7), addDays(to, 7));
+  const gaps = [];
+  for (const p of properties) {
+    const taken = [...rows.filter((r) => r.property_id === p.id).map((r) => ({ arrival: r.arrival, departure: r.departure, id: r.id })),
+      ...blocks.filter((b) => b.propertyId === p.id).map((b) => ({ arrival: b.arrival, departure: b.departure, id: null }))].sort((a, b) => a.arrival.localeCompare(b.arrival));
+    let end = null;
+    let last = null;
+    for (const t of taken) {
+      if (end && t.arrival > end) {
+        const nights = nightsBetween(end, t.arrival);
+        // One to three free nights between two stays are hard to sell on their own: worth offering to the neighbours.
+        if (nights <= 3 && end >= today) gaps.push({ propertyId: p.id, from: end, to: t.arrival, nights, beforeId: last?.id ?? null, afterId: t.id });
+      }
+      if (!end || t.departure > end) { end = t.departure; last = t; }
+    }
+  }
+  const inRange = rows.filter((r) => r.departure >= from && r.arrival < to).map(bookingOut);
+  const day = (where) => q.all(`SELECT * FROM reservations WHERE cancelled = 0 AND ${where} ORDER BY property_id`, today).map(bookingOut);
+  res.json({
+    from, days, today, properties, reservations: inRange, blocks: blocks.filter((b) => b.departure >= from && b.arrival < to), gaps: gaps.filter((g) => g.to > from && g.from < to),
+    todayPanel: { arrivals: day('arrival = ?'), departures: day('departure = ?'), inHouse: q.all('SELECT * FROM reservations WHERE cancelled = 0 AND arrival < ? AND departure > ? ORDER BY property_id', today, today).map(bookingOut) },
+  });
+});
+
+function reservationOr404(id) {
+  const r = q.get('SELECT * FROM reservations WHERE id = ?', Number(id));
+  if (!r) throw new HttpError(404, 'That booking is no longer here.');
+  return r;
+}
+
+/** The guest card: the booking, what can be offered, messages proposed for it, and the message thread. */
+admin.get('/reservations/:id', (req, res) => {
+  const r = reservationOr404(req.params.id);
+  refreshTasks();
+  const names = userNames();
+  const chats = q.all('SELECT * FROM conversations WHERE reservation_id = ? ORDER BY last_message_at DESC', r.id);
+  const main = chats[0] || null;
+  const property = q.get('SELECT name, display_name FROM properties WHERE id = ?', r.property_id);
+  res.json({
+    reservation: { ...bookingOut(r), propertyName: property ? property.display_name || property.name : null, cancelled: !!r.cancelled },
+    offers: (offersFor(r) || []).map((o) => ({ extra: o.extra, price: o.price || o.last_price_on_checkin_page || null, conditions: o.conditions || null, possible: o.calendar ? o.calendar === 'possible' : true })),
+    tasks: q.all("SELECT * FROM tasks WHERE reservation_id = ? AND status IN ('suggested', 'scheduled') ORDER BY send_at", r.id).map(taskOut),
+    conversation: main ? conversationOut(main) : null,
+    otherConversations: chats.slice(1).map((c) => ({ id: c.id, channel: c.channel })),
+    messages: main ? q.all("SELECT * FROM (SELECT * FROM messages WHERE conversation_id = ? AND (role = 'guest' OR status = 'sent') ORDER BY COALESCE(sent_at, created_at) DESC, id DESC LIMIT 30) ORDER BY COALESCE(sent_at, created_at), id", main.id).map((m) => messageOut(m, names)) : [],
+  });
+});
+
+/** From a free gap in the calendar: propose an extra night to the guest before it, or an earlier arrival to the guest after it. */
+admin.post('/reservations/:id/tasks', (req, res) => {
+  const r = reservationOr404(req.params.id);
+  const t = createTask(r, String(req.body?.type || ''), req.user);
+  audit(req.user.id, 'task.create', `${t.type} booking ${r.id}`);
+  res.status(201).json({ task: taskOut(t) });
 });
 
 // --- requests (tickets) -----------------------------------------------------------------

@@ -125,7 +125,7 @@ journey.delete('/templates/:id', requireAdmin, (req, res) => {
 
 // --- to-do list --------------------------------------------------------------------------
 
-function taskOut(t) {
+export function taskOut(t) {
   const r = q.get('SELECT * FROM reservations WHERE id = ?', t.reservation_id);
   const c = q.get('SELECT id FROM conversations WHERE reservation_id = ? ORDER BY channel = \'smoobu\' DESC, id DESC LIMIT 1', t.reservation_id);
   return {

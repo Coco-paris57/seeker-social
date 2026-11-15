@@ -10,6 +10,7 @@ import { settingsView } from './settings.js';
 import { insightsView } from './insights.js';
 import { extrasView, scheduledView, tidyView } from './journey.js';
 import { todoView } from './planner.js';
+import { calendarView } from './calendar.js';
 import { disablePush, registerServiceWorker, syncSubscription } from './push.js';
 
 const root = document.getElementById('app');
@@ -19,6 +20,7 @@ const NAV = [
   { key: 'inbox', href: '#/inbox', label: 'Inbox', icon: 'inbox' },
   { key: 'conversations', href: '#/conversations', label: 'Chats', icon: 'chat' },
   { key: 'todo', href: '#/todo', label: 'To do', icon: 'check' },
+  { key: 'calendar', href: '#/calendar', label: 'Calendar', icon: 'bookmark' }, // side menu on wide screens; on phones it is under Properties
   { key: 'properties', href: '#/properties', label: 'Properties', icon: 'home' },
   { key: 'knowledge', href: '#/knowledge', label: 'Knowledge', icon: 'book' },
   { key: 'insights', href: '#/insights', label: 'Insights', icon: 'eye' }, // side menu on wide screens; on phones it is under Properties and Settings
@@ -36,6 +38,7 @@ function parseRoute() {
       ? { nav: 'properties', view: `property-${num}`, title: 'Property', params: { id: num } }
       : { nav: 'properties', view: 'properties', title: 'Properties', params: {} };
     case 'insights': return { nav: innerWidth >= 900 ? 'insights' : 'properties', view: 'insights', title: 'Insights', params: {} };
+    case 'calendar': return { nav: innerWidth >= 900 ? 'calendar' : 'properties', view: 'calendar', title: 'Calendar', params: {} };
     case 'todo': return { nav: 'todo', view: 'todo', title: 'To do', params: {} };
     case 'tidy': return { nav: 'knowledge', view: 'tidy', title: 'Weekly tidy-up', params: {} };
     case 'scheduled': return { nav: 'settings', view: 'scheduled', title: 'Scheduled messages', params: {} };
@@ -52,6 +55,7 @@ function createView(route) {
   if (route.view === 'properties') return propertiesView();
   if (route.view.startsWith('property-')) return propertyView(route.params);
   if (route.view === 'insights') return insightsView();
+  if (route.view === 'calendar') return calendarView();
   if (route.view === 'todo') return todoView();
   if (route.view === 'tidy') return tidyView();
   if (route.view === 'scheduled') return scheduledView();

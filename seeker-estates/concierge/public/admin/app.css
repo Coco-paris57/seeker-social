@@ -486,8 +486,8 @@ table.data thead th { font-size: 13px; color: var(--text-2); font-weight: 600; }
 .update-bar { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0; padding: 8px 12px; background: var(--brand); color: var(--white); font-weight: 500; }
 .update-bar .btn { background: var(--white); color: var(--brand); border-color: var(--white); }
 .seen-price { display: flex; gap: 6px; align-items: center; margin: 0; font-size: 14px; color: var(--text-2); }
-.nav li:has(a[data-nav="insights"]) { display: none; }
-@media (min-width: 900px) { .nav li:has(a[data-nav="insights"]) { display: list-item; } }
+.nav li:has(a[data-nav="insights"]), .nav li:has(a[data-nav="calendar"]) { display: none; }
+@media (min-width: 900px) { .nav li:has(a[data-nav="insights"]), .nav li:has(a[data-nav="calendar"]) { display: list-item; } }
 
 /* Suggested check-in message for an unhappy guest */
 .follow-up { margin-top: 10px; padding: 10px 12px; border: 1.5px dashed var(--clay); border-radius: var(--radius-s); background: var(--clay-100); }
@@ -520,3 +520,85 @@ table.data thead th { font-size: 13px; color: var(--text-2); font-weight: 600; }
 .todo-scheduled summary { cursor: pointer; font-weight: 600; min-height: 40px; }
 .todo-scheduled-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 @media (max-width: 430px) { .nav a { font-size: 10.5px; } }
+
+/* Calendar */
+.page-wide { max-width: none; }
+.cal-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+.cal-bar select { width: auto; }
+.cal-label { margin-left: 6px; }
+.today-panel { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px 24px; margin-bottom: 14px; padding: 14px 16px; }
+.today-col h3 { margin: 0 0 6px; font-size: 15px; }
+.today-col ul { list-style: none; margin: 0; padding: 0; }
+.today-col p { margin: 0; font-size: 14px; }
+.today-guest { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 4px 6px; border: 0; background: none; text-align: left; font: inherit; color: var(--text); border-radius: var(--radius-s); cursor: pointer; }
+.today-guest:hover { background: var(--surface-2); }
+.today-name { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.today-name .muted { font-size: 13px; }
+.dot { flex: none; width: 12px; height: 12px; border-radius: 50%; }
+.ch-airbnb { background: #C8582F; }
+.ch-booking { background: #1D4E89; }
+.ch-vrbo { background: #6B4A9E; }
+.ch-direct { background: #0F3D2E; }
+.ch-other { background: #5A6672; }
+.signs { display: inline-flex; align-items: center; gap: 3px; flex: none; }
+.sign { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: var(--white); color: var(--text-2); }
+.sign-positive, .sign-ok { color: var(--ok); }
+.sign-unhappy { color: var(--danger); }
+.sign-wait { color: var(--warn); }
+.sign-extra { color: var(--clay-700); }
+.sign-task { color: var(--brand); }
+.sign-unread { width: 10px; height: 10px; background: var(--clay); border: 2px solid var(--white); box-sizing: content-box; }
+.cal-scroll { overflow-x: auto; padding: 0; margin-bottom: 12px; }
+.cal-grid { display: inline-block; min-width: 100%; }
+.cal-row { display: flex; border-bottom: 1px solid var(--line); }
+.cal-row:last-child { border-bottom: 0; }
+.cal-name { position: sticky; left: 0; z-index: 3; flex: none; width: 170px; padding: 8px 10px; background: var(--surface); border-right: 1px solid var(--line); font-size: 14px; font-weight: 500; display: flex; align-items: center; overflow-wrap: anywhere; }
+.cal-head { position: sticky; top: 0; z-index: 4; background: var(--surface); }
+.cal-head .cal-name { font-size: 13px; color: var(--text-2); }
+.cal-days { display: flex; }
+.cal-day { flex: none; display: flex; flex-direction: column; align-items: center; padding: 6px 0; font-size: 12px; color: var(--text-2); border-right: 1px solid var(--surface-2); }
+.cal-day strong { font-size: 15px; color: var(--text); }
+.cal-day.is-weekend { background: var(--ground); }
+.cal-day.is-today { background: var(--brand); color: var(--white); }
+.cal-day.is-today strong { color: var(--white); }
+.cal-track { position: relative; flex: none; height: 52px; background-image: linear-gradient(to right, var(--surface-2) 1px, transparent 1px); }
+.cal-today { position: absolute; top: 0; bottom: 0; background: var(--brand-50); }
+.cal-booking, .cal-gap, .cal-block { position: absolute; top: 9px; height: 34px; display: flex; align-items: center; gap: 6px; padding: 0 8px; border-radius: 8px; font: inherit; font-size: 13px; font-weight: 600; overflow: hidden; white-space: nowrap; }
+.cal-booking { border: 0; color: var(--white); cursor: pointer; z-index: 1; }
+.cal-booking:hover, .cal-booking:focus-visible { filter: brightness(1.12); }
+.cal-guest { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: left; }
+.cal-gap { border: 1.5px dashed var(--clay); background: var(--clay-100); color: var(--clay-700); cursor: pointer; justify-content: center; }
+.cal-block { background: repeating-linear-gradient(135deg, #E3E6E4, #E3E6E4 6px, #F1F3F2 6px, #F1F3F2 12px); color: var(--text-2); font-weight: 500; }
+.cal-turn, .cal-due { position: absolute; z-index: 2; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; }
+.cal-turn { top: 17px; background: var(--warn-ground); color: #6B4500; border: 1.5px solid var(--warn); }
+.cal-due { top: 0; background: var(--white); color: var(--clay-700); border: 1.5px dashed var(--clay); width: 16px; height: 16px; }
+.cal-due.is-scheduled { background: var(--brand); color: var(--white); border: 1.5px solid var(--brand); }
+.cal-turn.in-sheet, .cal-due.in-sheet, .cal-turn.in-legend, .cal-due.in-legend { position: static; flex: none; }
+.cal-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; list-style: none; margin: 0; padding: 0; font-size: 13px; color: var(--text-2); }
+.cal-legend li { display: flex; align-items: center; gap: 6px; }
+.cal-legend .sign { border: 1px solid var(--line); }
+.swatch { position: static; width: 22px; height: 14px; padding: 0; border-radius: 4px; }
+.sheet { padding: 0; margin-bottom: 12px; overflow: hidden; }
+.sheet-head, .sheet-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.sheet-head div { padding: 6px 8px; font-size: 12px; font-weight: 600; color: var(--text-2); border-bottom: 1px solid var(--line); }
+.sheet-day { min-height: 92px; padding: 4px; border-right: 1px solid var(--surface-2); border-bottom: 1px solid var(--surface-2); display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.sheet-day.is-past { background: var(--ground); }
+.sheet-day.is-today { box-shadow: inset 0 0 0 2px var(--brand); }
+.sheet-date { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--text-2); min-height: 18px; }
+.sheet-stay { display: flex; align-items: center; gap: 4px; width: 100%; min-height: 26px; padding: 2px 6px; border: 0; border-radius: 6px; font: inherit; font-size: 12px; font-weight: 600; color: var(--white); text-align: left; cursor: pointer; overflow: hidden; }
+.sheet-stay.is-out { opacity: .72; font-weight: 500; }
+.sheet-stay.is-blocked { background: #E3E6E4; color: var(--text-2); cursor: default; }
+.sheet-stay.is-gap { background: var(--clay-100); color: var(--clay-700); border: 1.5px dashed var(--clay); }
+.guest-card > * + * { margin-top: 12px; }
+.guest-card h3 { margin-bottom: 0; font-size: 16px; }
+.guest-card .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.mini-thread { list-style: none; margin: 0; padding: 8px; max-height: 300px; overflow: auto; background: var(--ground); border: 1px solid var(--line); border-radius: var(--radius-s); display: flex; flex-direction: column; gap: 8px; }
+.mini-msg { max-width: 88%; padding: 6px 10px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); align-self: flex-end; }
+.mini-msg.mini-guest { align-self: flex-start; background: var(--brand-tint); border-color: transparent; }
+.mini-msg p { margin: 0; font-size: 14px; }
+.mini-who { font-size: 12px; color: var(--text-2); }
+@media (max-width: 899px) {
+  .cal-name { width: 104px; font-size: 12.5px; padding: 6px; }
+  .sheet-day { min-height: 76px; padding: 2px; }
+  .sheet-stay { font-size: 11px; padding: 2px 3px; }
+}
