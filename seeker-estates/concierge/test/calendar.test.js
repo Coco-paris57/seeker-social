@@ -134,3 +134,29 @@ test('guests see the flat address as the property name; the team can still chang
   assert.equal(addressNames(), 0);
   assert.equal(q.get('SELECT display_name FROM properties WHERE id = ?', ctx.propertyId).display_name, 'Camden flat');
 });
+
+test('the dashboard adds up what needs attention, today and the last days; a declined request is not an accepted offer', async () => {
+  assert.equal((await client(srv.base)('GET', '/api/admin/dashboard')).status, 401);
+  const d = (await team('GET', '/api/admin/dashboard')).json;
+  const inbox = (await team('GET', '/api/admin/inbox')).json;
+  assert.equal(d.inbox.approvals, inbox.counts.approvals);
+  assert.equal(d.inbox.requests, inbox.counts.tickets);
+  assert.equal(d.todo, inbox.counts.todo);
+  assert.equal(d.properties.active, 3);
+  assert.equal(d.messagesByDay.length, 14);
+  assert.equal(d.messagesByDay.at(-1).date, d.today);
+  assert.ok(d.messagesByDay.at(-1).n >= 1);
+  assert.equal(d.arrivalsByDay.length, 7);
+  assert.equal(d.arrivalsByDay[0].date, d.today);
+  assert.equal(d.moods.positive + d.moods.neutral + d.moods.unhappy, q.get("SELECT COUNT(*) AS n FROM conversations WHERE id IN (SELECT conversation_id FROM messages WHERE role = 'guest')").n);
+  assert.ok(d.stays.occupied <= d.properties.active);
+
+  const { recordExtra } = await import('../src/routes/webhooks.js');
+  q.run("INSERT INTO offers_sent(reservation_id, property_id, guest_name, type) VALUES(501, ?, 'Zoë', 'upsell_early')", ctx.propertyId);
+  const event = (kind, approval) => ({ event: `booking.upsell.${kind}`, data: { pms_booking_id: '1-501', title: 'Early Check-in', charge_ref_no: 'e1', client_approval_status: approval, currency_symbol: '£', order_details: { amount: 30 } } });
+  recordExtra(event('requested', 'Pending'));
+  assert.deepEqual([(await team('GET', '/api/admin/dashboard')).json.offers.accepted, (await team('GET', '/api/admin/dashboard')).json.offers.revenue], [1, 30]);
+  recordExtra(event('requested', 'Declined')); // the team said no to the request
+  const o = (await team('GET', '/api/admin/insights')).json.offers;
+  assert.deepEqual([o.sent, o.accepted, o.revenue, o.open.length], [1, 0, 0, 1]);
+});

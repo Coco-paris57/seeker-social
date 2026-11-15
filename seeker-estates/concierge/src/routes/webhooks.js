@@ -90,6 +90,8 @@ export function recordExtra(event) {
   const currency = clean(d.currency_symbol, 4) || '£';
   const offer = status === 'declined' ? null : q.all('SELECT * FROM offers_sent WHERE reservation_id = ? ORDER BY id DESC', reservation.id)
     .find((o) => offerCovers(o.type).has(upsellType(title)) && (!o.accepted_at || o.title === title));
+  // A request the team declined is not an acceptance: take it back out of the count.
+  if (status === 'declined') q.run("UPDATE offers_sent SET accepted_at = NULL, accepted_how = NULL, title = NULL, amount = NULL WHERE reservation_id = ? AND accepted_how = 'chargeautomation' AND title = ?", reservation.id, title);
   if (offer) q.run("UPDATE offers_sent SET accepted_at = COALESCE(accepted_at, datetime('now')), accepted_how = 'chargeautomation', title = ?, amount = COALESCE(?, amount), currency = ? WHERE id = ?", title, paid, currency, offer.id);
   q.run(
     `INSERT INTO extra_sales(reservation_id, property_id, title, status, amount, currency, ref, offer_id) VALUES(?, ?, ?, ?, ?, ?, ?, ?)

@@ -689,12 +689,12 @@ admin.post('/uploads', express.raw({ type: ['image/*', 'video/*'], limit: MAX_VI
   res.status(201).json({ file: adminFile(f) });
 });
 
-/** Numbers for the Insights page: how fast guests are answered, by whom, about what, and where the gaps are. */
-admin.get('/insights', (req, res) => {
-  const days = Math.min(365, Math.max(1, parseInt(req.query.days, 10) || 30));
+/**
+ * Minutes guests waited for a real reply over the last `days`: from the first unanswered guest
+ * message to the next sent reply in that chat. Holding notes ("confirming with the team") do not count.
+ */
+function replyTimes(days) {
   const since = `-${days} days`;
-  // Minutes a guest waited for a real reply: from the first unanswered guest message to the next
-  // sent reply in that chat. Holding notes ("confirming with the team") do not count as replies.
   const waits = [];
   let chat = null;
   let waitingSince = null;
@@ -718,6 +718,58 @@ admin.get('/insights', (req, res) => {
   }
   waits.sort((a, b) => a - b);
   const median = waits.length ? waits[Math.floor((waits.length - 1) / 2)] : null;
+  return { median, waits };
+}
+
+/** The dashboard: what needs attention now, today's comings and goings, and how the last days went. */
+admin.get('/dashboard', (req, res) => {
+  refreshTasks();
+  const today = londonDate();
+  const count = (sql, ...p) => q.get(sql, ...p).n;
+  const tickets = q.all("SELECT type, COUNT(*) AS n FROM tickets WHERE status != 'closed' GROUP BY type");
+  const ticketCount = (type) => tickets.find((t) => t.type === type)?.n || 0;
+  const active = count('SELECT COUNT(*) AS n FROM properties WHERE active = 1');
+  const reply = replyTimes(7);
+  // Guest messages per day, for the last 14 days (London dates).
+  const byDate = {};
+  for (const m of q.all("SELECT created_at FROM messages WHERE role = 'guest' AND created_at > datetime('now', '-15 days')")) {
+    const d = londonDate(new Date(`${m.created_at.replace(' ', 'T')}Z`));
+    byDate[d] = (byDate[d] || 0) + 1;
+  }
+  const moods = Object.fromEntries(q.all("SELECT COALESCE(mood, 'neutral') AS mood, COUNT(*) AS n FROM conversations WHERE last_message_at > datetime('now', '-14 days') AND id IN (SELECT conversation_id FROM messages WHERE role = 'guest') GROUP BY 1").map((r) => [r.mood, r.n]));
+  const offers = offerInsights('-30 days');
+  const sent = q.get(
+    `SELECT SUM(CASE WHEN role = 'bot' AND json_extract(meta, '$.auto') = 1 AND kind IN ('answer', 'checkin') THEN 1 ELSE 0 END) AS automatic, COUNT(*) AS total
+     FROM messages WHERE status = 'sent' AND role != 'guest' AND kind NOT IN ('holding', 'scheduled') AND sent_at > datetime('now', '-7 days')`);
+  res.json({
+    today,
+    inbox: { approvals: count("SELECT COUNT(*) AS n FROM messages WHERE status = 'pending'"), requests: tickets.reduce((n, t) => n + t.n, 0), urgent: ticketCount('urgent'), maintenance: ticketCount('maintenance'), questions: ticketCount('question') },
+    todo: count("SELECT (SELECT COUNT(*) FROM tasks WHERE status = 'suggested') + (SELECT COUNT(*) FROM followups WHERE status = 'suggested') AS n"),
+    scheduled: count("SELECT (SELECT COUNT(*) FROM tasks WHERE status = 'scheduled') + (SELECT COUNT(*) FROM followups WHERE status = 'scheduled') AS n"),
+    unread: count('SELECT COUNT(*) AS n FROM conversations WHERE needs_reply = 1 AND archived = 0'),
+    unhappy: count("SELECT COUNT(*) AS n FROM conversations WHERE mood = 'unhappy' AND archived = 0 AND last_message_at > datetime('now', '-14 days')"),
+    properties: { active, total: count('SELECT COUNT(*) AS n FROM properties'), auto: q.all('SELECT * FROM properties WHERE active = 1').filter((p) => propertyMode(p) === 'auto').length },
+    reply: { medianMinutes: reply.median, measured: reply.waits.length },
+    withoutTeamPercent: sent.total ? Math.round(((sent.automatic || 0) / sent.total) * 100) : null,
+    stays: {
+      arrivals: count('SELECT COUNT(*) AS n FROM reservations WHERE cancelled = 0 AND arrival = ?', today),
+      departures: count('SELECT COUNT(*) AS n FROM reservations WHERE cancelled = 0 AND departure = ?', today),
+      // Occupied tonight: a guest sleeps there, whether they arrived today or earlier.
+      occupied: count('SELECT COUNT(DISTINCT property_id) AS n FROM reservations WHERE cancelled = 0 AND arrival <= ? AND departure > ? AND property_id IN (SELECT id FROM properties WHERE active = 1)', today, today),
+      formsMissing: count('SELECT COUNT(*) AS n FROM reservations WHERE cancelled = 0 AND arrival BETWEEN ? AND ? AND checkin_link IS NOT NULL AND checkin_done = 0', today, addDays(today, 2)),
+    },
+    messagesByDay: Array.from({ length: 14 }, (_, i) => { const d = addDays(today, i - 13); return { date: d, n: byDate[d] || 0 }; }),
+    arrivalsByDay: Array.from({ length: 7 }, (_, i) => { const d = addDays(today, i); return { date: d, arrivals: count('SELECT COUNT(*) AS n FROM reservations WHERE cancelled = 0 AND arrival = ?', d), departures: count('SELECT COUNT(*) AS n FROM reservations WHERE cancelled = 0 AND departure = ?', d) }; }),
+    moods: { positive: moods.positive || 0, neutral: moods.neutral || 0, unhappy: moods.unhappy || 0 },
+    offers: { sent: offers.sent, accepted: offers.accepted, revenue: offers.revenue, currency: offers.currency },
+  });
+});
+
+/** Numbers for the Insights page: how fast guests are answered, by whom, about what, and where the gaps are. */
+admin.get('/insights', (req, res) => {
+  const days = Math.min(365, Math.max(1, parseInt(req.query.days, 10) || 30));
+  const since = `-${days} days`;
+  const { median, waits } = replyTimes(days);
   const sent = q.get(
     `SELECT
        SUM(CASE WHEN role = 'bot' AND json_extract(meta, '$.auto') = 1 AND kind IN ('answer', 'checkin') THEN 1 ELSE 0 END) AS automatic,

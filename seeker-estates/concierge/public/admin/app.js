@@ -11,20 +11,21 @@ import { insightsView } from './insights.js';
 import { extrasView, scheduledView, tidyView } from './journey.js';
 import { todoView } from './planner.js';
 import { calendarView } from './calendar.js';
+import { dashboardView } from './dashboard.js';
 import { disablePush, registerServiceWorker, syncSubscription } from './push.js';
 
 const root = document.getElementById('app');
 const TITLE = 'Seeker Concierge';
 
 const NAV = [
+  { key: 'dashboard', href: '#/dashboard', label: 'Dashboard', icon: 'home' },
   { key: 'inbox', href: '#/inbox', label: 'Inbox', icon: 'inbox' },
   { key: 'conversations', href: '#/conversations', label: 'Chats', icon: 'chat' },
   { key: 'todo', href: '#/todo', label: 'To do', icon: 'check' },
   { key: 'calendar', href: '#/calendar', label: 'Calendar', icon: 'bookmark' }, // side menu on wide screens; on phones it is under Properties
-  { key: 'properties', href: '#/properties', label: 'Properties', icon: 'home' },
+  { key: 'properties', href: '#/properties', label: 'Properties', icon: 'shield' },
   { key: 'knowledge', href: '#/knowledge', label: 'Knowledge', icon: 'book' },
   { key: 'insights', href: '#/insights', label: 'Insights', icon: 'eye' }, // side menu on wide screens; on phones it is under Properties and Settings
-  { key: 'settings', href: '#/settings', label: 'Settings', icon: 'sliders' },
 ];
 
 /** Hash to screen. Notifications link to #/inbox, #/tickets/<id> and #/conversations/<id>. */
@@ -45,7 +46,8 @@ function parseRoute() {
     case 'extras': return { nav: 'settings', view: 'extras', title: 'Paid extras', params: {} };
     case 'knowledge': return { nav: 'knowledge', view: 'knowledge', title: 'Knowledge', params: {} };
     case 'settings': return { nav: 'settings', view: 'settings', title: 'Settings', params: {} };
-    default: return { nav: 'inbox', view: 'inbox', title: 'Inbox', params: {} };
+    case 'inbox': return { nav: 'inbox', view: 'inbox', title: 'Inbox', params: {} };
+    default: return { nav: 'dashboard', view: 'dashboard', title: 'Dashboard', params: {} };
   }
 }
 
@@ -55,6 +57,7 @@ function createView(route) {
   if (route.view === 'properties') return propertiesView();
   if (route.view.startsWith('property-')) return propertyView(route.params);
   if (route.view === 'insights') return insightsView();
+  if (route.view === 'dashboard') return dashboardView();
   if (route.view === 'calendar') return calendarView();
   if (route.view === 'todo') return todoView();
   if (route.view === 'tidy') return tidyView();
@@ -93,7 +96,8 @@ function buildShell() {
       h('nav', { class: 'nav', 'aria-label': 'Main' },
         h('div', { class: 'brand' }, h('img', { src: '/shared/mark-reversed.svg', alt: '', width: 40, height: 40 }), h('span', null, TITLE)),
         h('ul', null, links.map((a) => h('li', null, a))),
-        h('p', { class: 'nav-user' }, session.user.name)),
+        // The signed-in person, at the foot of the menu: their name opens Settings.
+        h('a', { class: 'nav-user', href: '#/settings', dataset: { nav: 'settings' }, 'aria-label': `${session.user.name}: settings` }, icon('user', 20), h('span', { class: 'nav-user-name' }, session.user.name), icon('sliders', 16))),
       h('div', { class: 'content' }, demo, offline, main)));
   root.querySelector('.skip-link').addEventListener('click', (e) => {
     e.preventDefault(); // the hash belongs to the router
@@ -118,9 +122,9 @@ function renderBadge() {
   if (unreadBadge) {
     unreadBadge.hidden = !unread;
     unreadBadge.textContent = unread > 99 ? '99+' : unread;
-    shell.links[1].setAttribute('aria-label', unread ? `Chats, ${unread} unread` : 'Chats');
+    shell.links.find((a) => a.dataset.nav === 'conversations')?.setAttribute('aria-label', unread ? `Chats, ${unread} unread` : 'Chats');
   }
-  const inboxLink = shell.links[0];
+  const inboxLink = shell.links.find((a) => a.dataset.nav === 'inbox');
   inboxLink.setAttribute('aria-label', total ? `Inbox, ${total} waiting${counts.urgent ? `, ${counts.urgent} urgent` : ''}` : 'Inbox');
   document.title = `${total ? `(${total}) ` : ''}${parseRoute().title} · ${TITLE}`;
   // Home-screen icon badge where the platform has one.
@@ -132,7 +136,7 @@ function renderBadge() {
 function route(user = false) {
   if (!shell) return;
   const next = parseRoute();
-  for (const a of shell.links) {
+  for (const a of root.querySelectorAll('.nav a[data-nav]')) {
     if (a.dataset.nav === next.nav) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   }
@@ -263,6 +267,7 @@ async function start() {
   }
   buildShell();
   route();
+  inbox.refresh(); // the menu badges, whichever screen opens first
   connectStream();
   syncSubscription();
   return undefined;
