@@ -59,14 +59,34 @@ test('a check-in is sent only when the team schedules it, at the chosen time, an
   assert.match(last.text, /\(edited\)$/);
   assert.equal((await chatOf(id)).followUp, null);
 
-  // Scheduled again, then the guest writes before it goes: it waits for a person.
+  // Scheduled again. What the guest says before it is due decides what happens to it.
+  const { sent } = await import('../src/notify.js');
+  const text = 'Checking in again about the broken heating radiator engineer visit.';
   await say(guest, 'Still not happy, it is awful');
-  await team('POST', `/api/admin/conversations/${id}/followup`, { text: 'Checking in again.', at });
+  // 1. The guest writes about something else: it still goes.
+  await team('POST', `/api/admin/conversations/${id}/followup`, { text, at });
   await say(guest, 'Any news?');
+  assert.equal((await chatOf(id)).followUp.status, 'scheduled');
+  assert.equal(await runFollowups(Date.parse(at) + 1000), 1);
+  // 2. The guest gives a partial update on the same topic: the assistant is not sure, so it asks the team.
+  await say(guest, 'Not happy');
+  await team('POST', `/api/admin/conversations/${id}/followup`, { text: 'Hello, has the plumber managed to repair the leaking bathroom shower properly?', at });
+  await say(guest, 'The plumber looked at the shower in the bathroom');
+  assert.equal(await runFollowups(Date.parse(at) + 1000), 0);
   const held = (await chatOf(id)).followUp;
   assert.equal(held.status, 'suggested');
-  assert.match(held.note, /written since/);
+  assert.match(held.note, /^Not sent: .*Schedule it again if it still fits\.$/);
+  assert.ok(sent.some((n) => n.title === 'Scheduled check-in needs a look'));
+  assert.ok(!(await guest('GET', '/api/guest/me')).json.messages.some((m) => /has the plumber managed/.test(m.text)));
+  // 3. The guest confirms the whole matter: it is unsent, and kept in the chat for the team with the reason.
+  await team('POST', `/api/admin/conversations/${id}/followup`, { text: 'Wanted to confirm the replacement kettle and toaster arrived safely yesterday.', at });
+  await say(guest, 'Yes I confirm the replacement kettle and toaster arrived safely yesterday, wanted to say');
   assert.equal(await runFollowups(Date.parse(at) + 1000), 0);
+  const thread = (await team('GET', `/api/admin/conversations/${id}`)).json.messages;
+  assert.equal(thread.at(-1).status, 'withheld');
+  assert.match(thread.at(-1).withheldReason, /covered in the conversation by the guest/);
+  await say(guest, 'I am still disappointed though');
+  assert.ok((await chatOf(id)).followUp);
   // Dismissed: gone, and not proposed again by a team action.
   await team('DELETE', `/api/admin/conversations/${id}/followup`, {});
   await reassess(id);
@@ -155,6 +175,29 @@ test('a planned message is held back when the guest or the team has already cove
     assert.equal(all.at(-1).status, 'withheld');
     // The guest was never shown it.
     assert.ok(!(await guest('GET', '/api/guest/me')).json.messages.some((m) => m.text === text));
+  } finally {
+    useSmoobuClient(null);
+  }
+});
+
+test('when the assistant is unsure a scheduled message still fits, it asks the team instead of sending', async () => {
+  const { useSmoobuClient } = await import('../src/smoobu.js');
+  const { runScheduled, dueAt } = await import('../src/journey.js');
+  const outbox = [];
+  useSmoobuClient({ sendMessageToGuest: async (id, body) => { outbox.push(body); return {}; } });
+  try {
+    q.run('DELETE FROM reservations WHERE id = 777');
+    q.run("DELETE FROM conversations WHERE channel = 'smoobu'");
+    const t = (await team('POST', '/api/admin/templates', { name: 'Parking note', anchor: 'arrival', days: 0, time: '08:00', body: 'Please remember visitor parking permits must be displayed inside the windscreen overnight.', enabled: true, auto: true })).json.template;
+    const r = q.get('SELECT * FROM reservations WHERE id = 501');
+    const cid = q.insert("INSERT INTO conversations(property_id, reservation_id, channel, guest_name, verified) VALUES(?, 501, 'smoobu', 'Zoë', 1)", ctx.propertyId);
+    q.run("INSERT INTO messages(conversation_id, role, body, status, sent_at) VALUES(?, 'guest', 'We are not bringing a car, so no parking permits needed for visitor spaces', 'sent', datetime('now'))", cid);
+    const out = await runScheduled(dueAt(q.get('SELECT * FROM templates WHERE id = ?', t.id), r) + 1000);
+    assert.deepEqual(out, { sent: 0, queued: 1 }); // set to send automatically, but not sure: a person decides
+    assert.equal(outbox.length, 0);
+    const card = (await team('GET', '/api/admin/inbox')).json.approvals.find((a) => a.conversation.id === cid);
+    assert.match(card.draft.checkNote, /guest has said something on this topic/);
+    await team('DELETE', `/api/admin/templates/${t.id}`, {});
   } finally {
     useSmoobuClient(null);
   }

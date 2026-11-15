@@ -269,14 +269,14 @@ export function withholdMessage(conversation, body, reason, meta = {}) {
   return id;
 }
 
-/** Is a planned message still needed, given what has been said? On a model error: not sure, so a person decides. */
+/** Is a planned message still needed, given what has been said? verdict: 'send' | 'hold' | 'ask_team'. On a model error a person decides. */
 export async function checkStillNeeded(conversation, text) {
-  if (!q.get('SELECT 1 FROM messages WHERE conversation_id = ? AND (role = \'guest\' OR status = \'sent\')', conversation.id)) return { send: true, reason: '' };
+  if (!q.get('SELECT 1 FROM messages WHERE conversation_id = ? AND (role = \'guest\' OR status = \'sent\')', conversation.id)) return { verdict: 'send', reason: '' };
   try {
     return await llm.stillNeeded(buildContext(conversation, { latest: '' }), text);
   } catch (e) {
     console.error(`Relevance check failed for conversation ${conversation.id}: ${e.message}`);
-    return { send: true, unsure: true, reason: '' };
+    return { verdict: 'ask_team', reason: 'This could not be checked against the conversation.' };
   }
 }
 
@@ -305,10 +305,8 @@ async function applyAssessment(conversation, a, { guestWrote = false } = {}) {
   q.run("UPDATE conversations SET summary = COALESCE(NULLIF(?, ''), summary), mood = ? WHERE id = ?", clip(a.chatSummary || '', 400), a.mood || 'neutral', conversation.id);
   const current = q.get('SELECT * FROM followups WHERE conversation_id = ?', conversation.id);
   if (guestWrote && current?.status === 'dismissed') q.run('DELETE FROM followups WHERE id = ?', current.id);
-  if (guestWrote && current?.status === 'scheduled') {
-    // The guest has written since it was scheduled: it may no longer fit, so a person looks again.
-    q.run("UPDATE followups SET status = 'suggested', note = 'The guest has written since this was scheduled. Check it still fits.' WHERE id = ?", current.id);
-  } else if (a.followUp && (!current || (current.status === 'suggested' && !current.note) || (guestWrote && current.status === 'dismissed'))) {
+  // A scheduled check-in is left alone here: it is checked against the whole conversation when it is due.
+  if (a.followUp && (!current || (current.status === 'suggested' && !current.note) || (guestWrote && current.status === 'dismissed'))) {
     q.run(
       `INSERT INTO followups(conversation_id, body, send_at) VALUES(?, ?, ?)
        ON CONFLICT(conversation_id) DO UPDATE SET body = excluded.body, send_at = excluded.send_at, status = 'suggested', note = ''`,

@@ -5,7 +5,7 @@
 import { q, getRaw, setRaw, audit } from './db.js';
 import * as llm from './llm.js';
 import { checkStillNeeded, queueDraft, saveKnowledge, sendMessage, withholdMessage, CHECKIN_LINK } from './bot.js';
-import { notifyTeam } from './notify.js';
+import { emitConversation, notifyTeam } from './notify.js';
 import { smoobu } from './smoobu.js';
 import { addDays, clip, londonDate, londonToUtc, HttpError } from './util.js';
 
@@ -184,12 +184,14 @@ export async function runScheduled(now = Date.now()) {
         let message;
         // What the guest and the team have said since may have made this message pointless or wrong.
         const needed = await checkStillNeeded(conversation, text);
-        if (!needed.send) {
+        if (needed.verdict === 'hold') {
           q.run('UPDATE template_sends SET message_id = ? WHERE template_id = ? AND reservation_id = ?', withholdMessage(conversation, text, needed.reason, meta), t.id, r.id);
           out.held = (out.held || 0) + 1;
           continue;
         }
-        if (t.auto && !needed.unsure) {
+        // Not sure it still fits: never sent on its own, a person decides in the Inbox.
+        if (needed.verdict === 'ask_team') meta.checkNote = needed.reason || 'The conversation touches this topic. Check the message still fits.';
+        if (t.auto && needed.verdict === 'send') {
           message = await sendMessage(conversation, 'bot', text, { kind: 'scheduled', meta: { ...meta, auto: true } });
           out.sent++;
         } else {
@@ -217,15 +219,18 @@ export async function runFollowups(now = Date.now()) {
     if (q.run("UPDATE followups SET status = 'dismissed' WHERE id = ? AND status = 'scheduled'", f.id).changes === 0) continue;
     const conversation = q.get('SELECT * FROM conversations WHERE id = ?', f.conversation_id);
     if (!conversation) continue;
-    // The team may have dealt with it since this was scheduled (a guest writing already holds it back).
-    const changed = q.get("SELECT 1 FROM messages WHERE conversation_id = ? AND status = 'sent' AND kind != 'holding' AND sent_at > ?", conversation.id, f.created_at);
-    const needed = changed ? await checkStillNeeded(conversation, f.body) : { send: true };
-    if (!needed.send) {
+    // Anything the guest or the team has said since it was scheduled may have made it unnecessary.
+    const changed = q.get("SELECT 1 FROM messages WHERE conversation_id = ? AND (role = 'guest' OR (status = 'sent' AND kind != 'holding')) AND COALESCE(sent_at, created_at) > ?", conversation.id, f.created_at);
+    const needed = changed ? await checkStillNeeded(conversation, f.body) : { verdict: 'send' };
+    if (needed.verdict === 'hold') {
       withholdMessage(conversation, f.body, needed.reason, { followUp: true });
       continue;
     }
-    if (needed.unsure) {
-      q.run("UPDATE followups SET status = 'suggested', note = 'This could not be checked against the conversation. Look before sending.' WHERE id = ?", f.id);
+    if (needed.verdict === 'ask_team') {
+      // Not sure: back to the team as a suggestion, with the doubt spelled out.
+      q.run("UPDATE followups SET status = 'suggested', note = ? WHERE id = ?", `Not sent: ${needed.reason || 'the conversation has moved on since this was scheduled.'} Schedule it again if it still fits.`, f.id);
+      emitConversation(conversation.id, 'conversation');
+      await notifyTeam({ title: 'Scheduled check-in needs a look', body: clip(`${conversation.guest_name || 'A guest'}: ${needed.reason || 'the conversation has moved on.'}`, 160), url: `/admin/#/conversations/${conversation.id}`, tag: `followup-${conversation.id}` });
       continue;
     }
     await sendMessage(conversation, 'team', f.body, { createdBy: f.created_by, meta: { followUp: true } });

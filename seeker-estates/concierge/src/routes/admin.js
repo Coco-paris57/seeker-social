@@ -44,7 +44,7 @@ function messageOut(m, names = userNames()) {
     status: m.status, kind: m.kind, at: iso(m.created_at), sentAt: iso(m.sent_at),
     confidence: meta.confidence || null, category: meta.category || null, summary: meta.summary || null,
     automatic: !!meta.auto, edited: !!meta.edited, original: meta.original || null, ticketId: meta.ticketId || null,
-    deliveryError: meta.deliveryError || null, withheldReason: meta.withheldReason || null,
+    deliveryError: meta.deliveryError || null, withheldReason: meta.withheldReason || null, checkNote: meta.checkNote || null,
     attachments: (m.role === 'guest' ? q.all('SELECT token, kind FROM files WHERE message_id = ?', m.id) : meta.attachments || []).map((a) => adminFile(a)), links: meta.links || [],
     authorName: names[m.created_by] || names[meta.approvedBy] || names[meta.answeredBy] || null,
   };

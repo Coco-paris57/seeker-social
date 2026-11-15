@@ -187,6 +187,7 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
         h('label', { htmlFor: textId, class: 'label' }, scheduled ? 'Scheduled message (edit if needed)' : 'Drafted reply (edit if needed)'),
         scheduled ? chip(String(draft.summary || 'Scheduled').replace(/^Scheduled: /, ''), { icon: 'clock' }) : confidence ? chip(confidence.label, confidence) : null),
       news,
+      draft.checkNote && h('p', { class: 'note check-note' }, icon('alert', 16), `The assistant is not sure this is still needed: ${draft.checkNote}`),
       textarea,
       // The draft is written in the guest's language: read it in English before approving.
       !isEnglish(conversation.language) && translateControl(() => textarea.value, { label: 'Translate this reply to English' }),

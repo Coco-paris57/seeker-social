@@ -499,3 +499,4 @@ table.data thead th { font-size: 13px; color: var(--text-2); font-weight: 600; }
 .follow-when input { width: auto; }
 .follow-up details > * + * { margin-top: 8px; }
 .follow-up summary { cursor: pointer; min-height: 32px; list-style-position: outside; }
+.check-note { color: #6B4500; background: var(--warn-ground); padding: 8px 10px; border-radius: var(--radius-s); align-items: flex-start; }
