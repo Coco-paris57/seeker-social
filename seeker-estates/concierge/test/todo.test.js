@@ -203,3 +203,23 @@ test('Insights counts offers sent, how many guests accepted, and the money they 
   q.run('DELETE FROM reservations WHERE id = 501'); q.run('DELETE FROM tasks');
   assert.equal((await stats()).revenue, 275);
 });
+
+test('a scheduled offer goes back to the to-do list as soon as the guest raises the same thing', async () => {
+  q.run('DELETE FROM tasks'); q.run('DELETE FROM messages'); q.run('DELETE FROM offers');
+  q.run("INSERT INTO reservations(id, property_id, first_name, last_name, guest_name, arrival, departure) VALUES(520, ?, 'Ana', 'Lima', 'Ana Lima', ?, ?)", ctx.propertyId, addDays(ctx.today, 3), addDays(ctx.today, 6));
+  await team('PUT', '/api/admin/offers', { type: 'late_checkout', price: '£30' });
+  const late = (await todo()).tasks.find((t) => t.reservationId === 520 && t.type === 'upsell_late');
+  const at = new Date(Date.now() + 3600_000).toISOString();
+  await team('POST', `/api/admin/tasks/${late.id}/schedule`, { text: late.text, at });
+  const cid = q.insert("INSERT INTO conversations(property_id, reservation_id, channel, guest_name, verified, mood) VALUES(?, 520, 'smoobu', 'Ana Lima', 1, 'neutral')", ctx.propertyId);
+  const { handleGuestMessage } = await import('../src/bot.js');
+  q.run("INSERT INTO messages(conversation_id, role, body, sent_at) VALUES(?, 'guest', 'Hello, we would like a more relaxed last morning, is late checkout available and can we add it on the online check-in page?', datetime('now'))", cid);
+  await handleGuestMessage(cid);
+  const d = await todo();
+  assert.equal(d.scheduled.length, 0); // no longer scheduled
+  const back = d.tasks.find((t) => t.id === late.id);
+  assert.match(back.note, /^Unscheduled: /);
+  const before = outbox.length;
+  assert.equal(await runTasks(Date.parse(at) + 1000), 0);
+  assert.equal(outbox.length, before);
+});

@@ -3,7 +3,7 @@
 import { config } from './config.js';
 import { q, getSettings, audit, parseJson } from './db.js';
 import * as llm from './llm.js';
-import { emitConversation, notifyTeam } from './notify.js';
+import { emitAdmin, emitConversation, notifyTeam } from './notify.js';
 import { smoobu } from './smoobu.js';
 import { addDays, clip, londonDate, londonToUtc, HttpError } from './util.js';
 import { modelImages } from './media.js';
@@ -329,6 +329,33 @@ export async function backfillMoods(limit = 80) {
   return rows.length;
 }
 
+/**
+ * Something new was said in this conversation. Any message already scheduled for this guest (a
+ * check-in, an offer) is looked at again straight away: if the conversation now covers its topic,
+ * or the assistant is not sure, it is unscheduled and goes back to the to-do list for a person.
+ */
+export async function recheckScheduled(conversation) {
+  const note = (v) => `Unscheduled: ${v.reason || 'the conversation has moved on since this was scheduled.'} Review it, then schedule again or dismiss.`;
+  const who = conversation.guest_name || 'A guest';
+  let changed = 0;
+  const f = q.get("SELECT * FROM followups WHERE conversation_id = ? AND status = 'scheduled'", conversation.id);
+  if (f) {
+    const v = await checkStillNeeded(conversation, f.body);
+    if (v.verdict !== 'send') changed += q.run("UPDATE followups SET status = 'suggested', note = ? WHERE id = ? AND status = 'scheduled'", note(v), f.id).changes;
+  }
+  if (conversation.reservation_id) {
+    for (const t of q.all("SELECT * FROM tasks WHERE reservation_id = ? AND status = 'scheduled'", conversation.reservation_id)) {
+      const v = await checkStillNeeded(conversation, t.body);
+      if (v.verdict !== 'send') changed += q.run("UPDATE tasks SET status = 'suggested', note = ? WHERE id = ? AND status = 'scheduled'", note(v), t.id).changes;
+    }
+  }
+  if (!changed) return 0;
+  emitConversation(conversation.id, 'conversation');
+  emitAdmin('todo');
+  await notifyTeam({ title: 'Scheduled message unscheduled', body: clip(`${who}: the conversation now covers it. It is back on the to-do list.`, 160), url: '/admin/#/todo', tag: `unscheduled-${conversation.id}` });
+  return changed;
+}
+
 const reassessing = new Map();
 /**
  * Look at the conversation again after the team has acted, so the mood and the summary follow
@@ -339,6 +366,7 @@ export function reassess(conversationId, { force = false } = {}) {
   const run = (reassessing.get(conversationId) || Promise.resolve()).then(async () => {
     const conversation = q.get('SELECT * FROM conversations WHERE id = ?', conversationId);
     if (!conversation) return;
+    await recheckScheduled(conversation); // a team reply may already have said what a scheduled message was going to say
     // force: the chat has never been read (older chats, or ones a person is handling), so read it once.
     if (!(force && !conversation.mood) && conversation.mood !== 'unhappy' && !q.get("SELECT 1 FROM followups WHERE conversation_id = ? AND status = 'suggested'", conversationId)) return;
     if (!q.get("SELECT 1 FROM messages WHERE conversation_id = ? AND role = 'guest'", conversationId)) return;
@@ -482,6 +510,7 @@ async function processPending(conversationId, reuse) {
   markHandled();
   // Kept for the team: where the chat stands, and how the guest sounds.
   await applyAssessment(conversation, decision, { guestWrote: true });
+  await recheckScheduled(conversation);
   if (decision.language && decision.language !== conversation.language) {
     q.run('UPDATE conversations SET language = ? WHERE id = ?', decision.language, conversation.id);
   }

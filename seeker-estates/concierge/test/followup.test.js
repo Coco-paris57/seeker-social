@@ -72,19 +72,21 @@ test('a check-in is sent only when the team schedules it, at the chosen time, an
   await say(guest, 'Not happy');
   await team('POST', `/api/admin/conversations/${id}/followup`, { text: 'Hello, has the plumber managed to repair the leaking bathroom shower properly?', at });
   await say(guest, 'The plumber looked at the shower in the bathroom');
-  assert.equal(await runFollowups(Date.parse(at) + 1000), 0);
+  // Unscheduled the moment the guest wrote, not left until its send time, and back on the to-do list.
   const held = (await chatOf(id)).followUp;
   assert.equal(held.status, 'suggested');
-  assert.match(held.note, /^Not sent: .*Schedule it again if it still fits\.$/);
-  assert.ok(sent.some((n) => n.title === 'Scheduled check-in needs a look'));
+  assert.match(held.note, /^Unscheduled: .*Review it, then schedule again or dismiss\.$/);
+  assert.ok(sent.some((n) => n.title === 'Scheduled message unscheduled'));
+  assert.ok((await team('GET', '/api/admin/todo')).json.followUps.some((f) => f.conversationId === id && /^Unscheduled/.test(f.note)));
+  assert.equal(await runFollowups(Date.parse(at) + 1000), 0);
   assert.ok(!(await guest('GET', '/api/guest/me')).json.messages.some((m) => /has the plumber managed/.test(m.text)));
   // 3. The guest confirms the whole matter: it is unsent, and kept in the chat for the team with the reason.
   await team('POST', `/api/admin/conversations/${id}/followup`, { text: 'Wanted to confirm the replacement kettle and toaster arrived safely yesterday.', at });
   await say(guest, 'Yes I confirm the replacement kettle and toaster arrived safely yesterday, wanted to say');
+  const voided = (await chatOf(id)).followUp;
+  assert.equal(voided.status, 'suggested');
+  assert.match(voided.note, /^Unscheduled: Already covered in the conversation by the guest\./);
   assert.equal(await runFollowups(Date.parse(at) + 1000), 0);
-  const thread = (await team('GET', `/api/admin/conversations/${id}`)).json.messages;
-  assert.equal(thread.at(-1).status, 'withheld');
-  assert.match(thread.at(-1).withheldReason, /covered in the conversation by the guest/);
   await say(guest, 'I am still disappointed though');
   assert.ok((await chatOf(id)).followUp);
   // Dismissed: gone, and not proposed again by a team action.
@@ -170,9 +172,11 @@ test('a planned message is held back when the guest or the team has already cove
     const text = 'Hello, we wanted to check the shower is working properly again after the plumber visit.';
     await team('POST', `/api/admin/conversations/${id}/followup`, { text, at });
     await team('POST', `/api/admin/conversations/${id}/reply`, { text: 'Hello, the plumber has finished: we wanted to check the shower is working properly again after the visit?' });
+    await reassess(id); // the look taken after the team's reply has finished
+    const back = (await team('GET', `/api/admin/conversations/${id}`)).json.conversation.followUp;
+    assert.equal(back.status, 'suggested'); // unscheduled as soon as the team covered it
+    assert.match(back.note, /^Unscheduled: Already covered in the conversation by the team\./);
     assert.equal(await runFollowups(Date.parse(at) + 1000), 0);
-    const all = (await team('GET', `/api/admin/conversations/${id}`)).json.messages;
-    assert.equal(all.at(-1).status, 'withheld');
     // The guest was never shown it.
     assert.ok(!(await guest('GET', '/api/guest/me')).json.messages.some((m) => m.text === text));
   } finally {
