@@ -202,17 +202,17 @@ These are market bands, not comps. "Ours" is the PriceLabs room `price` (`prices
 - **For Corentin to confirm (carried policy conflict):** policy `handbacks` says "before the date, maximise revenue normally", but the block holds about £803 of room nights.
 
 ## Priority 4: P09 Torrent Lodge
-- **No open night before the 26 Nov handback.** Nothing to position. 2-night comp level is £161-200.50 (20-26 Nov). `quality_premium` = 0.0 (5.0 from 3 reviews; comp median 4.56). `recommend`: raise-signal.
+- **No open night before the 26 Nov handback.** Nothing to position. 2-night comp median is £168 (20-22 and 24-26 Nov, n = 3). `quality_premium` = 0.0 (5.0 from 3 reviews; comp median 4.56). `recommend`: raise-signal.
 
 ## Summary per property
 | Ref | Ours | Comp median range | Our pctl | Rating ours vs comp median | Reviews ours vs median (gap) | `quality_premium` | Booked 30 / 31-60 vs market | `recommend` 30 / 31-60 | Supported position |
 |---|---|---|---|---|---|---|---|---|---|
 | P01 | nothing open (18-20 Dec blocked) | stored 282-452 (n 1-7); 18-21 Dec 369.67 (7) | n/a (would be P29 stored / -8% band) | 4.75 vs 4.8 | 4 vs 30 (-26) | 0.0 (<5 reviews) | 100% / 100% vs 34% / 28% | raise-signal | **parity** if reopened (today's price is -8% to -14%: supported) |
-| P04 (synced 1657...) | 18-20 Nov 193.50; Dec 128-216.67; **Christmas 164.43-221.33** | stored 186.50-252.50 (n 1-4); band 181-257 (n 2-9) | P0 stored; P0-P57 band | **4.2** vs 4.83 | 10 vs 27 (-17) | -0.15 | 52% / 0% (Smoobu, 13 n reopened) vs 24% / 19% | raise +10% / fix-listing 0%; NL P31 / P57 | **-15% to 0%.** 18-19 Nov hold. **6-16 Dec about +20%**; 17-19 Dec hold. **Christmas 20-26 Dec hold; 27 Dec-1 Jan hold the price, review min 7/5 (Corentin)**; fix the PriceLabs booked state first |
-| P04 unsynced 1455... | 177-231.67; **bookable on sold 20-24 Nov (£742)**; not bookable at Christmas | | | 4.69 | 26 | n/a | | | map or unlist |
-| P09 | no sellable night | 161-248.50 | n/a | 5.0 vs 4.56 | 3 vs 25 (-22) | 0.0 | 100% vs 40% | raise-signal | nothing to position before the handback |
+| P04 (synced 1657...) | 18-20 Nov 193.50; Dec 128-216.67; **Christmas 164.43-221.33** | stored 186.50-254 (n 1-4); band 181-257 (n 2-9) | P0 stored; P0-P57 band | **4.2** vs 4.83 | 10 vs 27 (-17) | -0.15 | 52% / 0% (Smoobu, 13 n reopened) vs 24% / 19% | raise +10% / fix-listing 0%; NL P31 / P57 | **-15% to 0%.** 18-19 Nov hold. **6-16 Dec about +20%**; 17-19 Dec hold. **Christmas 20-26 Dec hold; 27 Dec-1 Jan hold the price, review min 7/5 (Corentin)**; fix the PriceLabs booked state first |
+| P04 unsynced 1455... | 177-231.67 (Nov runs 176.95-196.20, Dec 184.43-231.67); **bookable on sold 20-24 Nov (£742)**; not bookable at Christmas | | | 4.69 | 26 | n/a | | | map or unlist |
+| P09 | no sellable night | 168-248.50 (n 1-5) | n/a | 5.0 vs 4.56 | 3 vs 25 (-22) | 0.0 | 100% vs 40% | raise-signal | nothing to position before the handback |
 | P12 | open 253.75-360 all-in | band 230-282; stored 233-283 | P50-P100 (median P67) | 4.27 vs 4.86 | 15 vs 19 (-4) | -0.15 | 69% vs 43% | mechanical raise +5% (P75, 9 stays); NL raise +5% (P88): **not adopted** | **-15% to 0% vs band.** **18-19 Nov -8%; 26 Nov -22% to -33%; 1 Dec -5%; 2-3 Dec -12%.** Hold 20 Nov and 30 Nov |
-| P15 | no listing of ours | 135-181 (n 1-6) | n/a | n/a vs 4.84 | n/a | n/a | n/a | n/a | reference only |
+| P15 | no listing of ours | 135-167.50 (n 1-6) | n/a | n/a vs 4.84 | n/a | n/a | n/a | n/a | reference only |
 | P07 | blocked on purpose (policy); not analysed | | | | | | | | |
 
 ## Plan items in this batch (status 17 Nov)
