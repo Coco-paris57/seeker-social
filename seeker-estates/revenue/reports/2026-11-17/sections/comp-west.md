@@ -222,7 +222,7 @@ Column key:
 1. **Booking.com NOT CHECKED** (bot check met on 14 Nov; not retried or bypassed). This covers comps, our displayed Booking.com prices and the P13 22-27 Dec promotion breakdown; the 0.6926 stack is inferred. Comp cancellation policies: NOT CHECKED.
 2. **P13 22-27 Dec commission 17.7%** with a check-in outside the recorded booster dates (policy: to 20 Dec). Whether the booster was extended: NOT CHECKED (channel agent / Corentin).
 3. **PriceLabs has not registered the P13 22-27 Dec booking** (open on both twins as of the 16 Nov 09:42Z refresh). Smoobu and Airbnb are closed. No refresh was triggered (read-only).
-4. **Airbnb factor of about 0.765 inside about 28 days** on P13 (13-16 Dec today, 10-13 Dec sold yesterday) and P20 (20-24 Nov). It is not in policy (policy says -10% within 14 days). The live Smoobu Airbnb rules: NOT CHECKED.
+4. **P13 Airbnb factor of about 0.765 inside about 28 days** (13-16 Dec today; the 10-13 Dec sale yesterday). It is not in policy, which says -10% within 14 days. The live Smoobu Airbnb rules: NOT CHECKED. P20's 0.766 on 20-24 Nov is within its policy last-minute 15% (0-14 days), so it is not flagged.
 5. **P20 16-18 Dec +15-20% PriceLabs rise** with no log or override change, and the `price` vs `user_price` divergence: cause NOT CHECKED (PriceLabs auditor).
 6. **Thin comp coverage** (wider-sample or market percentiles shown alongside):
    - P13: n=1-3 on 20-22 Nov, 24-26 Nov, 18-22 Dec, 13-22 Dec, 22-27 Dec and 23-27 Dec.
