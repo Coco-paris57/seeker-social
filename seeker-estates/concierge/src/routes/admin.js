@@ -16,8 +16,9 @@ import { taskOut } from './journey.js';
 import { brand, BRAND_DEFAULTS, brandText, resetBrand, saveBrand, saveBrandFile } from '../brand.js';
 import { syncThread } from '../thread-sync.js';
 import { learnStyle, setStyle, styleStatus } from '../style.js';
+import { historyStatus, startHistory } from '../history.js';
 import { importGuestMessage } from './webhooks.js';
-import { createTask, refreshTasks, TASK_TYPES } from '../tasks.js';
+import { createTask, refreshTasks, todoCount, TASK_TYPES } from '../tasks.js';
 import { offersFor } from '../bot.js';
 import { iso, sse } from './shared.js';
 import { posterHtml } from '../poster.js';
@@ -188,7 +189,7 @@ function inbox() {
   const tickets = q.all(`SELECT * FROM tickets WHERE status != 'closed' ORDER BY ${order}, id`).map((t) => ticketOut(t, names));
   return {
     approvals, tickets,
-    counts: { todo: q.get("SELECT (SELECT COUNT(*) FROM tasks WHERE status = 'suggested') + (SELECT COUNT(*) FROM followups WHERE status = 'suggested') AS n").n, approvals: approvals.length, tickets: tickets.length, urgent: tickets.filter((t) => t.type === 'urgent').length, total: approvals.length + tickets.length,
+    counts: { todo: todoCount(), approvals: approvals.length, tickets: tickets.length, urgent: tickets.filter((t) => t.type === 'urgent').length, total: approvals.length + tickets.length,
       unread: q.get('SELECT COUNT(*) AS n FROM conversations WHERE needs_reply = 1 AND archived = 0 AND id IN (SELECT conversation_id FROM messages)').n },
   };
 }
@@ -750,7 +751,7 @@ admin.get('/dashboard', (req, res) => {
   res.json({
     today,
     inbox: { approvals: count("SELECT COUNT(*) AS n FROM messages WHERE status = 'pending'"), requests: tickets.reduce((n, t) => n + t.n, 0), urgent: ticketCount('urgent'), maintenance: ticketCount('maintenance'), questions: ticketCount('question') },
-    todo: count("SELECT (SELECT COUNT(*) FROM tasks WHERE status = 'suggested') + (SELECT COUNT(*) FROM followups WHERE status = 'suggested') AS n"),
+    todo: todoCount(),
     scheduled: count("SELECT (SELECT COUNT(*) FROM tasks WHERE status = 'scheduled') + (SELECT COUNT(*) FROM followups WHERE status = 'scheduled') AS n"),
     unread: count('SELECT COUNT(*) AS n FROM conversations WHERE needs_reply = 1 AND archived = 0'),
     unhappy: count("SELECT COUNT(*) AS n FROM conversations WHERE mood = 'unhappy' AND archived = 0 AND last_message_at > datetime('now', '-14 days')"),
@@ -985,21 +986,28 @@ admin.get('/settings', (req, res) => res.json({ settings: getSettings(), channel
 
 // --- how the team writes ------------------------------------------------------------------
 
-admin.get('/style', (req, res) => res.json(styleStatus()));
+admin.get('/style', (req, res) => res.json({ ...styleStatus(), history: historyStatus() }));
+
+/** Read every past conversation in Smoobu once and learn from it. Runs in the background. */
+admin.post('/style/history', requireAdmin, (req, res) => {
+  if (!historyStatus().available) throw new HttpError(409, 'Smoobu is not connected.');
+  audit(req.user.id, 'style.history');
+  res.json({ ...styleStatus(), history: startHistory() });
+});
 
 /** Study the team's own messages again now. */
 admin.post('/style/learn', requireAdmin, async (req, res) => {
   const style = await learnStyle({ force: true });
   if (style == null) throw new HttpError(409, 'There are not enough messages written by the team yet. It needs at least three.');
   audit(req.user.id, 'style.learn');
-  res.json(styleStatus());
+  res.json({ ...styleStatus(), history: historyStatus() });
 });
 
 /** Set the guide by hand, or clear it. */
 admin.put('/style', requireAdmin, (req, res) => {
   setStyle(req.body?.style);
   audit(req.user.id, 'style.edit');
-  res.json(styleStatus());
+  res.json({ ...styleStatus(), history: historyStatus() });
 });
 
 // --- branding: this agency's name, colours and logo ---------------------------------------

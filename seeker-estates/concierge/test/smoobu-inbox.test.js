@@ -305,3 +305,62 @@ test('outside replies teach the assistant: real answers are kept for the propert
   await team('PUT', '/api/admin/style', { style: '' });
   assert.ok(!systemPrompt(buildContext(c)).includes('How this team writes'));
 });
+
+test('past Smoobu conversations are read once: real answers are learned, templates and anything with a code are left out', async () => {
+  const { learnHistory, carriesSecret } = await import('../src/history.js');
+  const { styleStatus } = await import('../src/style.js');
+  q.run('UPDATE properties SET smoobu_id = 4400, team_record = ? WHERE id = ?', JSON.stringify({ accessCode: 'Lockbox 4821', wifi: 'Seeker-Guest / riverview77' }), ctx.propertyId);
+  const welcome = 'Welcome to London! We are delighted to host you and hope you have a wonderful stay in the apartment.';
+  const threads = {
+    8101: [
+      { id: 1, type: 2, message: welcome },
+      { id: 2, type: 1, message: 'Where can we leave our luggage after checkout?' },
+      { id: 3, type: 2, message: 'Hi Tom,\nYou are welcome to leave your bags in the hallway cupboard until 3pm on your checkout day.\nKind regards,\nThe Seeker Team' },
+      { id: 4, type: 1, message: 'What is the code for the door again?' },
+      { id: 5, type: 2, message: 'Hi Tom, the lockbox code is 4821 and it is to the left of the door. Kind regards' },
+    ],
+    8102: [
+      { id: 6, type: 1, message: 'Hello, we just booked!' },
+      { id: 7, type: 2, message: welcome },
+      { id: 8, type: 1, message: 'Is there a hairdryer?' },
+      { id: 9, type: 2, message: 'Hi Maria,\nYes, there is a hairdryer in the top drawer in the bedroom.\nKind regards,\nThe Seeker Team' },
+      { id: 10, type: 1, message: 'wifi?' },
+      { id: 11, type: 2, message: 'Hi Maria, the password is riverview77, the network is Seeker-Guest.' },
+    ],
+  };
+  let read = 0;
+  fake.reservations = async () => [{ id: 8101, apartment: { id: 4400 } }, { id: 8102, apartment: { id: 4400 } }, { id: 8103, apartment: { id: 999 } }];
+  fake.messages = async (id) => { read++; return threads[id] || []; };
+  const before = q.get('SELECT COUNT(*) AS n FROM messages').n;
+  const out = await learnHistory();
+  assert.deepEqual(out, { read: 2, learned: 2 }); // the booking at an unknown apartment is not read
+  const kept = q.all("SELECT question, answer, private FROM examples WHERE property_id = ? AND (answer LIKE '%hallway cupboard until 3pm%' OR answer LIKE '%top drawer in the bedroom%')", ctx.propertyId);
+  assert.equal(kept.length, 2);
+  assert.ok(kept.every((e) => e.private === 1)); // reused for guests with a booking only
+  // Never learned: the template sent to both guests, and the replies giving the door code or the WiFi password.
+  assert.ok(!q.get("SELECT 1 FROM examples WHERE answer LIKE '%4821%' OR answer LIKE '%riverview77%' OR answer LIKE '%Welcome to London%'"));
+  assert.ok(!q.get("SELECT 1 FROM history_samples WHERE body LIKE '%4821%' OR body LIKE '%riverview77%' OR body LIKE '%Welcome to London%'"));
+  assert.equal(q.get('SELECT COUNT(*) AS n FROM history_samples').n, 2);
+  assert.equal(q.get('SELECT COUNT(*) AS n FROM messages').n, before); // nothing was added to any chat
+  assert.ok(carriesSecret('Door code: 9907#', null) && !carriesSecret('Checkout is at 10am, 3 nights booked.', null));
+  // The hand-written replies count towards how the team writes.
+  assert.ok(styleStatus().samples >= 2);
+  // A second run reads nothing again.
+  read = 0;
+  assert.deepEqual(await learnHistory(), { read: 0, learned: 0 });
+  assert.equal(read, 0);
+  // From the app: administrators only, and the status is reported.
+  assert.equal((await client(srv.base)('POST', '/api/admin/style/history', {})).status, 401);
+  const team = await signIn(srv.base);
+  const started = (await team('POST', '/api/admin/style/history', {})).json;
+  assert.equal(started.history.available, true);
+});
+
+test('the number on the To do tab is the number of items on the list', async () => {
+  const team = await signIn(srv.base);
+  q.run("INSERT INTO tasks(reservation_id, type, body, send_at) VALUES(999999, 'upsell_late', 'x', datetime('now', '+1 day'))"); // its booking is gone
+  const list = (await team('GET', '/api/admin/todo')).json;
+  const inbox = (await team('GET', '/api/admin/inbox')).json;
+  assert.equal(inbox.counts.todo, list.tasks.length + list.followUps.length);
+  assert.equal(list.badge, inbox.counts.todo);
+});

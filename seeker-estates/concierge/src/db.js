@@ -121,6 +121,8 @@ CREATE TABLE IF NOT EXISTS audit (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE TABLE IF NOT EXISTS smoobu_seen (message_id INTEGER PRIMARY KEY);
+CREATE TABLE IF NOT EXISTS history_read (reservation_id INTEGER PRIMARY KEY);   -- past Smoobu threads already studied
+CREATE TABLE IF NOT EXISTS history_samples (message_id INTEGER PRIMARY KEY, body TEXT NOT NULL);   -- replies the team wrote by hand in the past: for the writing style
 CREATE TABLE IF NOT EXISTS examples (   -- replies a team member approved, kept so the assistant learns each property
   id INTEGER PRIMARY KEY,
   property_id INTEGER REFERENCES properties(id) ON DELETE CASCADE,

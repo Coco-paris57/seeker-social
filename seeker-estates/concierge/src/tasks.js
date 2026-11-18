@@ -233,6 +233,15 @@ export function refreshTasks(now = Date.now()) {
   return changed;
 }
 
+/**
+ * The number on the To do tab: messages proposed and not yet scheduled or dismissed. Counted the
+ * same way the list is drawn (the booking or chat must still exist), so the two cannot disagree.
+ */
+export function todoCount() {
+  return q.get(`SELECT (SELECT COUNT(*) FROM tasks t JOIN reservations r ON r.id = t.reservation_id WHERE t.status = 'suggested' AND r.cancelled = 0)
+    + (SELECT COUNT(*) FROM followups f JOIN conversations c ON c.id = f.conversation_id WHERE f.status = 'suggested') AS n`).n;
+}
+
 let drafting = false;
 /** Write the review text for guests who have checked out, from their conversation. Call this every minute. */
 export async function draftReviews(limit = 5) {

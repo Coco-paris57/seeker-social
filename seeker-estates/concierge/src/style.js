@@ -7,6 +7,8 @@ import { clip } from './util.js';
 
 const MIN_NEW = 8; // new team-written messages before the guide is written again
 const SAMPLES = 40;
+/** Hand-written replies from past Smoobu conversations (see history.js). */
+const fromHistory = () => q.all('SELECT body FROM history_samples ORDER BY message_id DESC LIMIT ?', SAMPLES);
 
 /** Messages a person on the team worded: their own replies, and drafts they corrected. Automatic and fixed texts are left out. */
 function teamWritten(afterId = 0) {
@@ -17,7 +19,7 @@ function teamWritten(afterId = 0) {
 }
 
 export function styleStatus() {
-  return { style: getRaw('house_style') || '', updatedAt: getRaw('house_style_at') || null, edited: getRaw('house_style_edited') === '1', waiting: teamWritten(Number(getRaw('house_style_upto')) || 0).length, needed: MIN_NEW, samples: teamWritten(0).length };
+  return { style: getRaw('house_style') || '', updatedAt: getRaw('house_style_at') || null, edited: getRaw('house_style_edited') === '1', waiting: teamWritten(Number(getRaw('house_style_upto')) || 0).length, needed: MIN_NEW, samples: teamWritten(0).length + fromHistory().length };
 }
 
 let learning = false;
@@ -28,14 +30,15 @@ export async function learnStyle({ force = false } = {}) {
   const upto = Number(getRaw('house_style_upto')) || 0;
   if (!force && teamWritten(upto).length < MIN_NEW) return null;
   const rows = teamWritten(0);
-  if (rows.length < 3) return null; // too little to describe a habit
+  const past = fromHistory();
+  if (rows.length + past.length < 3) return null; // too little to describe a habit
   learning = true;
   try {
-    const style = await llm.houseStyle(rows.reverse().map((r) => clip(r.body.replace(/https?:\/\/\S+/g, '[link]'), 700)));
+    const style = await llm.houseStyle([...past.reverse(), ...rows.slice().reverse()].map((r) => clip(r.body.replace(/https?:\/\/\S+/g, '[link]'), 700)));
     if (!style) return null;
     setRaw('house_style', style);
     setRaw('house_style_at', new Date().toISOString());
-    setRaw('house_style_upto', String(Math.max(...rows.map((r) => r.id))));
+    setRaw('house_style_upto', String(Math.max(0, ...rows.map((r) => r.id))));
     setRaw('house_style_edited', '0');
     return style;
   } finally {

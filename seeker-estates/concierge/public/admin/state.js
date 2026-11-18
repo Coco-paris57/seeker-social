@@ -45,6 +45,13 @@ export const inbox = {
     return loadingPromise;
   },
 
+  /** The To do screen has just counted its own list: the number on the tab follows it. */
+  setTodo(n) {
+    if (!inbox.data?.counts || inbox.data.counts.todo === n) return;
+    inbox.data.counts.todo = n;
+    for (const fn of listeners) fn();
+  },
+
   reset() {
     inbox.data = null;
     inbox.error = null;

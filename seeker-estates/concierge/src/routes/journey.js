@@ -7,7 +7,7 @@ import { CATEGORIES } from '../llm.js';
 import { decideSuggestion, PLACEHOLDERS, runTidy, seedTemplates } from '../journey.js';
 import { clip, HttpError } from '../util.js';
 import { checkStillNeeded, upsellType } from '../bot.js';
-import { draftReviews, refreshTasks, TASK_TYPES } from '../tasks.js';
+import { draftReviews, refreshTasks, todoCount, TASK_TYPES } from '../tasks.js';
 import { iso } from './shared.js';
 
 export const journey = express.Router();
@@ -139,7 +139,7 @@ export function taskOut(t) {
 journey.get('/todo', (req, res) => {
   refreshTasks();
   draftReviews().catch((e) => console.error(`Review drafts: ${e.message}`)); // written in the background; the list refreshes when they are ready
-  const tasks = q.all("SELECT * FROM tasks WHERE status = 'suggested' ORDER BY send_at").map(taskOut);
+  const tasks = q.all("SELECT t.* FROM tasks t JOIN reservations r ON r.id = t.reservation_id WHERE t.status = 'suggested' AND r.cancelled = 0 ORDER BY t.send_at").map(taskOut);
   const scheduled = q.all("SELECT * FROM tasks WHERE status = 'scheduled' ORDER BY send_at").map(taskOut);
   const followUps = q.all("SELECT f.*, c.guest_name, c.property_id, c.mood FROM followups f JOIN conversations c ON c.id = f.conversation_id WHERE f.status = 'suggested' ORDER BY f.send_at")
     .map((f) => ({ conversationId: f.conversation_id, guestName: f.guest_name || 'Unverified guest', propertyName: propertyName(f.property_id), text: f.body, at: f.send_at, note: f.note || null }));
@@ -150,7 +150,7 @@ journey.get('/todo', (req, res) => {
   const approvals = q.get("SELECT COUNT(*) AS n FROM messages WHERE status = 'pending'").n;
   const unread = q.get('SELECT COUNT(*) AS n FROM conversations WHERE needs_reply = 1 AND archived = 0').n;
   const tidy = q.get("SELECT COUNT(*) AS n FROM suggestions WHERE status = 'open'").n;
-  res.json({ tasks, scheduled, followUps, unhappy, tickets, approvals, unread, tidy,
+  res.json({ tasks, scheduled, followUps, unhappy, tickets, approvals, unread, tidy, badge: todoCount(),
     count: tasks.length + followUps.length + unhappy.length + tickets.length + approvals + (tidy ? 1 : 0) });
 });
 

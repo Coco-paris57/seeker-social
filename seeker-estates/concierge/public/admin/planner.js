@@ -4,7 +4,7 @@
 import { api, autoGrow, busy, button, chip, fill, fullTime, h, icon, loadError, loading, pageHeader, showError, stayDate, timeEl, toast, TICKET_TYPES } from './lib.js';
 import { inbox } from './state.js';
 
-const localInput = (iso) => { const d = new Date(iso); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
+const localInput = (iso) => { let d = new Date(iso); if (Number.isNaN(d.getTime())) d = new Date(Date.now() + 3600_000); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
 
 /** A proposed message with its time: edit, schedule or dismiss. `save(text, at)` and `drop()` do the work. */
 export function messageCard({ tone, iconName, title, who, when, why, note, text, at, chatId, save, drop }) {
@@ -78,12 +78,15 @@ export function todoView() {
       return;
     }
     editing = true;
+    inbox.setTodo(d.badge ?? d.tasks.length + d.followUps.length); // the number on the tab is this list
     const done = (message) => { toast(message, { kind: 'ok' }); editing = false; inbox.refresh(); load(); };
     const fail = (err) => { showError(err); editing = false; load(); };
     const stay = (t) => `${t.propertyName || 'No property'} · ${stayDate(t.arrival)} to ${stayDate(t.departure)}${t.channel ? ` · ${t.channel}` : ''}`;
     const upsells = d.tasks.filter((t) => t.kind === 'upsell');
     const happy = d.tasks.filter((t) => t.kind === 'happy');
     const reviews = d.tasks.filter((t) => t.kind === 'review');
+    // One item that cannot be drawn must not hide the others.
+    const safely = (draw) => (item) => { try { return draw(item); } catch (err) { console.error(err); return h('article', { class: 'card todo-card' }, h('p', { class: 'muted' }, `${item.guestName || 'An item'} could not be shown. Open the chat to deal with it.`)); } };
     const taskCard = (t, tone, iconName) => messageCard({
       tone, iconName, title: t.label, who: t.guestName, when: stay(t), why: t.why, note: t.note, text: t.text, at: t.at, chatId: t.conversationId,
       save: (text, at) => api(`/tasks/${t.id}/schedule`, { method: 'POST', body: { text, at } }).then(() => done(`Scheduled for ${fullTime(at)}`), fail),
@@ -100,18 +103,18 @@ export function todoView() {
     fill(body,
       empty && h('div', { class: 'card section empty' }, icon('check', 28), h('p', null, h('strong', null, 'Nothing to do.')), h('p', { class: 'muted' }, 'New items appear here as guests write and stays approach.')),
       section('Unhappy guests', 'A check-in message the assistant suggests, with a time. Nothing is sent unless you schedule it.', [
-        ...d.followUps.map((f) => messageCard({
+        ...d.followUps.map(safely((f) => messageCard({
           tone: 'danger', iconName: 'frown', title: 'Check in with an unhappy guest', who: f.guestName, when: f.propertyName, note: f.note, text: f.text, at: f.at, chatId: f.conversationId,
           save: (text, at) => api(`/conversations/${f.conversationId}/followup`, { method: 'POST', body: { text, at } }).then(() => done(`Scheduled for ${fullTime(at)}`), fail),
           drop: () => api(`/conversations/${f.conversationId}/followup`, { method: 'DELETE', body: {} }).then(() => done('Dismissed'), fail),
-        })),
+        }))),
         ...d.unhappy.map((u) => h('article', { class: 'card todo-card' },
           h('header', { class: 'card-head' }, h('div', { class: 'card-title' }, chip('Unhappy', { tone: 'danger', icon: 'frown' }), h('strong', null, u.guestName)), h('div', { class: 'card-meta' }, h('a', { href: `#/conversations/${u.conversationId}` }, 'Open chat'))),
           h('p', { class: 'muted' }, [u.propertyName, u.summary ? ` · ${u.summary}` : '']))),
       ]),
-      section('Offers to send', 'Extras that are switched on and free in the calendar for these stays. The time is when guests are most likely to say yes.', upsells.map((t) => taskCard(t, 'brand', 'plus'))),
-      section('Happy guests', 'A thank-you and review request for guests who sounded pleased.', happy.map((t) => taskCard(t, 'ok', 'smile'))),
-      section('Reviews to write', 'Your review of each guest who has checked out, drafted from their conversation. Copy it, post it on Airbnb or Vrbo, then mark it posted. Airbnb closes reviews 14 days after checkout.', reviews.map((t) => reviewCard(t, { done, fail }))),
+      section('Offers to send', 'Extras that are switched on and free in the calendar for these stays. The time is when guests are most likely to say yes.', upsells.map(safely((t) => taskCard(t, 'brand', 'plus')))),
+      section('Happy guests', 'A thank-you and review request for guests who sounded pleased.', happy.map(safely((t) => taskCard(t, 'ok', 'smile')))),
+      section('Reviews to write', 'Your review of each guest who has checked out, drafted from their conversation. Copy it, post it on Airbnb or Vrbo, then mark it posted. Airbnb closes reviews 14 days after checkout.', reviews.map(safely((t) => reviewCard(t, { done, fail })))),
       waiting.length > 0 && h('section', { class: 'todo-section' }, h('h2', null, 'Waiting for you'), h('ul', { class: 'todo-links card' }, waiting)),
       d.scheduled.length > 0 && h('details', { class: 'todo-scheduled' },
         h('summary', null, `${d.scheduled.length} ${d.scheduled.length === 1 ? 'message' : 'messages'} scheduled`),
