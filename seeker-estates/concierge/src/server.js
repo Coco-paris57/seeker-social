@@ -4,6 +4,9 @@ import { brand, brandCss, brandFile, brandText } from './brand.js';
 import { runFollowups, runScheduled, seedTemplates, weeklyTidy } from './journey.js';
 import { backfillMoods } from './bot.js';
 import { draftReviews, refreshTasks, runTasks } from './tasks.js';
+import { pollThreads } from './thread-sync.js';
+import { importGuestMessage } from './routes/webhooks.js';
+import { channelInboxOn } from './channel.js';
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -144,6 +147,8 @@ async function main() {
   setInterval(() => runScheduled().catch((e) => console.error(`Scheduled messages: ${e.message}`)), 5 * 60_000).unref();
   setInterval(() => runFollowups().catch((e) => console.error(`Follow-ups: ${e.message}`)), 60_000).unref();
   setInterval(() => { try { refreshTasks(); } catch (e) { console.error(`To-do list: ${e.message}`); } runTasks().catch((e) => console.error(`To-do messages: ${e.message}`)); draftReviews().catch((e) => console.error(`Review drafts: ${e.message}`)); }, 60_000).unref();
+  // Replies sent directly on Airbnb, Booking.com or in Smoobu: checked every three minutes for chats that are waiting.
+  setInterval(() => { if (channelInboxOn()) pollThreads(importGuestMessage).catch((e) => console.error(`Thread check: ${e.message}`)); }, 3 * 60_000).unref();
   setInterval(() => weeklyTidy().catch((e) => console.error(`Weekly tidy-up: ${e.message}`)), 60_000).unref();
   if (config.llmMode === 'claude') backfillMoods().then((n) => { if (n) console.log(`Moods: read ${n} earlier conversation(s)`); }).catch((e) => console.error(`Moods: ${e.message}`));
   try { seedTemplates(); } catch (e) { console.error(`Starter messages: ${e.message}`); }

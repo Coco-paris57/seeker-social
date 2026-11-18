@@ -731,7 +731,7 @@ const significant = (text) => new Set(String(text).toLowerCase().match(/[a-z0-9]
  * the assistant learns what the team considers right for each property and how they word it.
  * The guest's private check-in link is replaced by its placeholder before storing.
  */
-function rememberApproval(conversation, meta, answer, user, edited) {
+export function rememberApproval(conversation, meta, answer, user, edited) {
   if (!conversation.property_id) return;
   const question = clip(meta.summary || '', 300);
   if (!question) return;

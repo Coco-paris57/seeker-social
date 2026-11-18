@@ -187,3 +187,66 @@ test('an enquiry from a booking channel is answered as an enquiry: never a stay,
   assert.equal(context.property.address, undefined);
   assert.equal((await team('GET', `/api/admin/conversations/${c.id}`)).json.conversation.stage, 'enquiry');
 });
+
+test('a reply sent directly on Airbnb or in Smoobu appears in the chat and settles the waiting draft', async () => {
+  const { syncThread, pollThreads } = await import('../src/thread-sync.js');
+  const { importGuestMessage } = await import('../src/routes/webhooks.js');
+  setSetting('channelAuto', false); // replies wait for approval, as on the live service
+  q.run("INSERT INTO reservations(id, property_id, first_name, last_name, guest_name, arrival, departure, channel) VALUES(7100, ?, 'Mo', 'Reed', 'Mo Reed', date('now'), date('now', '+3 days'), 'Airbnb')", ctx.propertyId);
+  let thread = [
+    { id: 9200, type: 2, message: 'Welcome! Your check-in instructions will follow.' }, // an older automatic message
+    { id: 9201, type: 1, message: 'How do I use the washing machine?' },
+  ];
+  fake.messages = async (id) => (id === 7100 ? thread : []);
+  await handleSmoobuEvent({ action: 'newMessage', data: { id: 9201, sender: 'guest', booking: { id: 7100 } } });
+  const c = () => q.get('SELECT * FROM conversations WHERE reservation_id = 7100');
+  const pending = () => q.all("SELECT * FROM messages WHERE conversation_id = ? AND status = 'pending'", c().id);
+  assert.equal(pending().length, 1);
+  assert.equal(c().needs_reply, 1);
+  const sentBefore = outbox.length;
+
+  // Nothing new in Smoobu: nothing changes, and the old automatic message is not pulled in as a reply.
+  assert.equal(await syncThread(7100, { importGuest: importGuestMessage, force: true }), 0);
+  assert.equal(pending().length, 1);
+
+  // A colleague answers in the Airbnb app. Smoobu tells us a host message was sent.
+  thread = [...thread, { id: 9202, type: 2, message: '', htmlMessage: '<p>Turn the dial to Cotton 40 and press Start. The washing machine is how you use it with pods under the sink.</p>' }];
+  await handleSmoobuEvent({ action: 'newMessage', data: { id: 9202, sender: 'host', booking: { id: 7100 } } });
+  const team = await signIn(srv.base);
+  const view = (await team('GET', `/api/admin/conversations/${c().id}`)).json;
+  const outside = view.messages.at(-1);
+  assert.equal(outside.role, 'team');
+  assert.equal(outside.external, true);
+  assert.match(outside.text, /^Turn the dial to Cotton 40/);
+  assert.equal(pending().length, 0); // the draft said the same thing: withdrawn, not sent on top
+  assert.equal(c().needs_reply, 0);
+  assert.equal(outbox.length, sentBefore); // nothing was sent by the app
+  assert.ok(q.get("SELECT 1 FROM examples WHERE answer LIKE 'Turn the dial to Cotton 40 and press Start. The washing%'")); // and the team's own wording is learned
+  // The same notice again, or a later check, does not add it twice.
+  await handleSmoobuEvent({ action: 'newMessage', data: { id: 9202, sender: 'host', booking: { id: 7100 } } });
+  assert.equal(await syncThread(7100, { force: true }), 0);
+  assert.equal(q.get("SELECT COUNT(*) AS n FROM messages WHERE conversation_id = ? AND json_extract(meta, '$.external') = 1", c().id).n, 1);
+
+  // A reply approved in the app reaches Smoobu too; it is recognised as ours and not added again.
+  thread = [...thread, { id: 9203, type: 1, message: 'And how do I use the washing machine dryer setting?' }];
+  await handleSmoobuEvent({ action: 'newMessage', data: { id: 9203, sender: 'guest', booking: { id: 7100 } } });
+  const draft = pending()[0];
+  await team('POST', `/api/admin/messages/${draft.id}/approve`, {});
+  thread = [...thread, { id: 9204, type: 2, message: outbox.at(-1).body }];
+  assert.equal(await syncThread(7100, { force: true }), 0);
+
+  // An unrelated automatic message while a draft waits leaves the draft alone.
+  thread = [...thread, { id: 9205, type: 1, message: 'Where is the nearest pharmacy and supermarket please?' }];
+  await handleSmoobuEvent({ action: 'newMessage', data: { id: 9205, sender: 'guest', booking: { id: 7100 } } });
+  const waiting = pending().length + q.get("SELECT COUNT(*) AS n FROM tickets WHERE conversation_id = ? AND status = 'open'", c().id).n;
+  assert.ok(waiting >= 1);
+  thread = [...thread, { id: 9206, type: 2, message: 'Reminder: quiet hours are from 22:00 to 08:00.' }];
+  assert.equal(await pollThreads(importGuestMessage), 1); // found by the regular check, with no notification
+  assert.equal(pending().length + q.get("SELECT COUNT(*) AS n FROM tickets WHERE conversation_id = ? AND status = 'open'", c().id).n, waiting);
+  assert.equal(c().needs_reply, 1); // still waiting for a real answer
+
+  // A guest message whose notification never arrived is picked up by the same check.
+  thread = [...thread, { id: 9207, type: 1, message: 'Hello? Is anyone there?' }];
+  await syncThread(7100, { importGuest: importGuestMessage, force: true });
+  assert.ok(q.get("SELECT 1 FROM messages WHERE conversation_id = ? AND role = 'guest' AND body = 'Hello? Is anyone there?'", c().id));
+});

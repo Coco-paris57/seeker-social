@@ -11,6 +11,7 @@ import { htmlToText } from '../util.js';
 import { channelInboxOn, webhookToken, webhookTokenPlain } from '../channel.js';
 import { upsellType } from '../bot.js';
 import { offerCovers } from '../tasks.js';
+import { syncThread } from '../thread-sync.js';
 
 export const webhooks = express.Router();
 
@@ -114,6 +115,9 @@ export async function handleSmoobuEvent(event) {
     emitAdmin('todo');
   } else if (action === 'newMessage' && data.sender === 'guest' && channelInboxOn()) {
     await importGuestMessage(Number(data.booking?.id), Number(data.id));
+  } else if (action === 'newMessage' && channelInboxOn()) {
+    // Sent by the host: from this app, or by a team member directly on Airbnb, Booking.com or in Smoobu.
+    await syncThread(Number(data.booking?.id), { importGuest: importGuestMessage, force: true });
   }
 }
 

@@ -14,6 +14,8 @@ import crypto from 'node:crypto';
 import { addDays, clip, failureLimiter, HttpError, londonDate, newToken, rateLimiter } from '../util.js';
 import { taskOut } from './journey.js';
 import { brand, BRAND_DEFAULTS, brandText, resetBrand, saveBrand, saveBrandFile } from '../brand.js';
+import { syncThread } from '../thread-sync.js';
+import { importGuestMessage } from './webhooks.js';
 import { createTask, refreshTasks, TASK_TYPES } from '../tasks.js';
 import { offersFor } from '../bot.js';
 import { iso, sse } from './shared.js';
@@ -48,7 +50,7 @@ function messageOut(m, names = userNames()) {
     status: m.status, kind: m.kind, at: iso(m.created_at), sentAt: iso(m.sent_at),
     confidence: meta.confidence || null, category: meta.category || null, summary: meta.summary || null,
     automatic: !!meta.auto, edited: !!meta.edited, original: meta.original || null, ticketId: meta.ticketId || null,
-    deliveryError: meta.deliveryError || null, withheldReason: meta.withheldReason || null, checkNote: meta.checkNote || null,
+    deliveryError: meta.deliveryError || null, external: !!meta.external, withheldReason: meta.withheldReason || null, checkNote: meta.checkNote || null,
     attachments: (m.role === 'guest' ? q.all('SELECT token, kind FROM files WHERE message_id = ?', m.id) : meta.attachments || []).map((a) => adminFile(a)), links: meta.links || [],
     authorName: names[m.created_by] || names[meta.approvedBy] || names[meta.answeredBy] || null,
   };
@@ -354,6 +356,8 @@ function conversationOr404(id) {
 admin.get('/conversations/:id', (req, res) => {
   const c = conversationOr404(req.params.id);
   if (!c.mood) reassess(c.id, { force: true }); // an older chat: read it now, the face appears when done
+  // Opening a booking-channel chat checks Smoobu for replies sent outside the app; the thread updates if any are found.
+  if (c.channel === 'smoobu' && c.reservation_id && channelInboxOn()) syncThread(c.reservation_id, { importGuest: importGuestMessage }).catch((e) => console.error(`Thread check: ${e.message}`));
   const names = userNames();
   res.json({
     conversation: conversationOut(c),
