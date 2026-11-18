@@ -101,7 +101,8 @@ function threadPane(id, { onGone }) {
       h('div', { class: 'actions' }, schedule, dismiss)));
   }
   const list = h('ol', { class: 'messages', 'aria-label': 'Messages' });
-  const scroller = h('div', { class: 'thread-scroll', tabIndex: 0, role: 'region', 'aria-label': 'Message history' }, loading('Loading the conversation'), list);
+  const writing = h('p', { class: 'typing-note', role: 'status', hidden: true }, h('span', null, h('i'), h('i'), h('i')), 'The assistant is writing a draft…');
+  const scroller = h('div', { class: 'thread-scroll', tabIndex: 0, role: 'region', 'aria-label': 'Message history' }, loading('Loading the conversation'), list, writing);
   const details = h('aside', { class: 'thread-details', id: detailsId, 'aria-label': 'Guest details and requests' });
 
   const replyId = uid('reply');
@@ -136,10 +137,9 @@ function threadPane(id, { onGone }) {
       h('header', { class: 'thread-head' },
         h('a', { class: 'back-link', href: '#/conversations' }, icon('back', 18), 'All conversations'),
         h('div', { class: 'thread-head-row' }, h('div', null, title, headChips), detailsBtn),
-        sub, summaryBox, followBox),
-      readBar,
-      takeover,
-      h('div', { class: 'thread-main' }, scroller, details),
+        sub, summaryBox),
+      // The messages get the height; the suggested check-in, the chat actions and the stay sit in the column beside them.
+      h('div', { class: 'thread-main' }, scroller, h('div', { class: 'thread-side' }, followBox, readBar, takeover, details)),
       composer);
   if (narrow) { details.removeAttribute('id'); detailsBtn.setAttribute('aria-label', 'Guest and stay'); }
 
@@ -368,7 +368,7 @@ function threadPane(id, { onGone }) {
   replyBox.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) send(); });
 
   load();
-  return { el, reload: load };
+  return { el, reload: load, typing(on) { writing.hidden = !on; if (on) scroller.scrollTop = scroller.scrollHeight; } };
 }
 
 function listItem(c, activeId) {
@@ -465,7 +465,9 @@ export function conversationsView(params) {
     el,
     update(next) { if ((next.id || null) !== activeId) show(next.id); },
     /** Live update: refresh the list, and the open thread when the event is about it. */
+    onTyping(data) { if (thread && data.conversationId === activeId) thread.typing(!!data.on); },
     onEvent(type, data) {
+      if (type === 'draft' || type === 'message') thread?.typing(false);
       loadList();
       if (thread && (data.conversationId == null || data.conversationId === activeId)) thread.reload();
     },

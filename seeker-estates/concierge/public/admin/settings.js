@@ -2,6 +2,7 @@
 import { api, busy, button, check, chip, confirmDialog, field, fill, fullTime, h, icon, loadError, loading, openDialog, pageHeader, showError, toast } from './lib.js';
 import { disablePush, enablePush, pushState } from './push.js';
 import { isAdmin, session } from './state.js';
+import { BACKGROUNDS, getLook, setLook } from './look.js';
 
 const section = (title, ...content) => h('section', { class: 'card section' }, h('h2', null, title), content);
 
@@ -328,6 +329,32 @@ function auditSection() {
   return section('Audit log', h('p', { class: 'muted' }, 'Who approved, edited, answered and changed what.'), details);
 }
 
+/** How the app looks and moves on this device. The brand colours are not changed here. */
+function appearanceSection() {
+  const look = getLook();
+  const glass = h('input', { type: 'range', min: 0, max: 100, step: 5, value: look.glass, 'aria-label': 'Glass effect' });
+  glass.addEventListener('input', () => setLook({ glass: Number(glass.value) }));
+  const toggle = (key, label, hint) => {
+    const c = check(label, { switchStyle: true, checked: look[key], onchange: (e) => setLook({ [key]: e.target.checked }) });
+    c.input.setAttribute('aria-label', label);
+    return h('div', { class: 'look-row' }, h('div', null, h('strong', null, label), h('small', null, hint)), h('span', { class: 'check switch' }, c.input));
+  };
+  const bgs = Object.entries(BACKGROUNDS).map(([key, label]) => {
+    const b = h('button', { type: 'button', class: `look-bg is-${key}`, 'aria-pressed': String(look.background === key) }, label);
+    b.addEventListener('click', () => { setLook({ background: key }); for (const o of bgs) o.setAttribute('aria-pressed', String(o === b)); });
+    return b;
+  });
+  const swatch = (v) => { const i = h('i'); i.style.background = `var(${v})`; return i; };
+  return section('Appearance',
+    h('p', { class: 'muted' }, 'Saved on this device for you only. Press Ctrl or ⌘ and K anywhere to search or jump to a screen.'),
+    h('div', { class: 'look-row' }, h('div', null, h('strong', null, 'Glass effect'), h('small', null, 'How see-through the cards are. All the way left gives solid cards.')), glass),
+    toggle('motion', 'Animations', 'Screens, charts and numbers move. Off if your device asks for less motion.'),
+    toggle('opening', 'Opening animation', 'The app comes into focus when you first open it.'),
+    toggle('compact', 'Compact mode', 'Smaller cards, more on one screen.'),
+    h('div', null, h('p', { class: 'field-label' }, 'Background'), h('div', { class: 'look-bgs' }, bgs)),
+    h('div', { class: 'look-row' }, h('div', null, h('strong', null, 'Brand colours'), h('small', null, 'Kept as they are. Administrators change them under Branding.')), h('span', { class: 'look-swatch' }, swatch('--brand'), swatch('--clay'), swatch('--sand'))));
+}
+
 /** The company's own name, colours and logo: what the team and guests see across the app. */
 function brandSection() {
   const body = h('div', null, loading('Loading'));
@@ -412,6 +439,7 @@ export function settingsView({ onSignOut }) {
     pageHeader('Settings', { sub: `Signed in as ${session.user.name} (${session.user.email})` }),
     statusSection(),
     notificationsSection(),
+    appearanceSection(),
     assistantSection(),
     channelSection(),
     isAdmin() && brandSection(),

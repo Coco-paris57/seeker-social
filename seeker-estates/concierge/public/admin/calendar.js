@@ -232,7 +232,12 @@ export function calendarView() {
       const track = h('div', { class: 'cal-track' });
       track.style.width = `${width}px`;
       track.style.backgroundSize = `${W}px 100%`;
-      if (d.today >= d.from && diff(d.from, d.today) < d.days) { const t = h('div', { class: 'cal-today' }); t.style.left = `${diff(d.from, d.today) * W}px`; t.style.width = `${W}px`; track.append(t); }
+      if (d.today >= d.from && diff(d.from, d.today) < d.days) {
+        const t = h('div', { class: 'cal-today' }); t.style.left = `${diff(d.from, d.today) * W}px`; t.style.width = `${W}px`; track.append(t);
+        // Where we are in the day.
+        const nowAt = new Date(); const line = h('div', { class: 'cal-now', title: 'Now' });
+        line.style.left = `${(diff(d.from, d.today) + (nowAt.getHours() * 60 + nowAt.getMinutes()) / 1440) * W}px`; track.append(line);
+      }
       const mine = d.reservations.filter((r) => r.propertyId === p.id);
       for (const b of d.blocks.filter((k) => k.propertyId === p.id)) { const n = place(h('div', { class: 'cal-block', title: 'Blocked by the owner' }, 'Blocked'), x(b.arrival), x(b.departure)); if (n) track.append(n); }
       for (const g of d.gaps.filter((k) => k.propertyId === p.id)) {

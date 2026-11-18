@@ -12,6 +12,8 @@ import { extrasView, scheduledView, tidyView } from './journey.js';
 import { todoView } from './planner.js';
 import { calendarView } from './calendar.js';
 import { dashboardView } from './dashboard.js';
+import { applyLook, getLook } from './look.js';
+import { openPalette, watchPaletteKey } from './palette.js';
 import { disablePush, registerServiceWorker, syncSubscription } from './push.js';
 
 const root = document.getElementById('app');
@@ -94,6 +96,7 @@ function buildShell() {
     openDialog({
       title: 'More', sheet: true,
       build: (close) => h('div', { class: 'more-sheet' },
+        h('button', { type: 'button', class: 'btn btn-secondary more-search', onclick: () => { close(); openPalette(); } }, icon('search', 18), h('span', null, 'Search guests, properties and screens')),
         h('div', { class: 'more-grid' }, [['#/calendar', 'bookmark', 'Calendar'], ['#/properties', 'shield', 'Properties'], ['#/knowledge', 'book', 'Knowledge'], ['#/insights', 'eye', 'Insights'], ['#/scheduled', 'clock', 'Scheduled messages'], ['#/extras', 'plus', 'Paid extras']]
           .map(([href, i, label]) => h('a', { class: 'more-tile', href, onclick: () => close() }, h('span', { class: 'more-icon' }, icon(i, 20)), label))),
         h('a', { class: 'more-user', href: '#/settings', onclick: () => close() }, h('span', { class: 'more-icon' }, icon('user', 20)), h('span', null, h('strong', null, session.user.name), h('small', null, 'Settings · notifications · sign out')), icon('chevron', 16))),
@@ -107,6 +110,7 @@ function buildShell() {
     h('div', { class: 'shell' },
       h('nav', { class: 'nav', 'aria-label': 'Main' },
         h('div', { class: 'brand' }, h('img', { src: '/shared/mark-reversed.svg', alt: '', width: 40, height: 40 }), h('span', null, TITLE)),
+        h('button', { type: 'button', class: 'nav-search', onclick: () => openPalette(), 'aria-label': 'Search and commands' }, icon('search', 18), h('span', null, 'Search'), h('kbd', null, /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl K')),
         h('ul', null, links.map((a) => h('li', null, a)), h('li', { class: 'nav-more' }, moreLink)),
         // The signed-in person, at the foot of the menu: their name opens Settings.
         h('a', { class: 'nav-user', href: '#/settings', dataset: { nav: 'settings' }, 'aria-label': `${session.user.name}: settings` }, icon('user', 20), h('span', { class: 'nav-user-name' }, session.user.name), icon('sliders', 16))),
@@ -116,6 +120,13 @@ function buildShell() {
     main.focus();
   });
   shell = { main, links, badges, offline };
+  // The first time the app opens in this tab, the screen comes into focus from a blur.
+  if (getLook().opening && !sessionStorage.getItem('concierge-opened')) {
+    const el = root.querySelector('.shell');
+    el.classList.add('opening');
+    el.addEventListener('animationend', () => el.classList.remove('opening'), { once: true });
+    try { sessionStorage.setItem('concierge-opened', '1'); } catch { /* plays again next time */ }
+  }
 }
 
 function renderBadge() {
@@ -171,7 +182,7 @@ function route(user = false) {
 /** Events arrive in bursts (message, typing, draft...). Collect them briefly, then refetch once. */
 function onStreamEvent(type, data) {
   if (type === 'alert' && data.alert) showAlert(data.alert);
-  if (type === 'typing') return;
+  if (type === 'typing') { current?.view.onTyping?.(data); return; }
   if (!pendingEvents.size) setTimeout(flushEvents, 200);
   pendingEvents.set(type, data);
 }
@@ -328,6 +339,8 @@ checkVersion();
 setInterval(checkVersion, 5 * 60_000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkVersion(); });
 
+applyLook();
+watchPaletteKey(() => !!shell);
 fill(root, loading('Starting'));
 registerServiceWorker();
 start();

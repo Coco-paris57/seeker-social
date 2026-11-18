@@ -160,3 +160,27 @@ test('the dashboard adds up what needs attention, today and the last days; a dec
   const o = (await team('GET', '/api/admin/insights')).json.offers;
   assert.deepEqual([o.sent, o.accepted, o.revenue, o.open.length], [1, 0, 0, 1]);
 });
+
+test('the dashboard lists tonight\'s guests, today\'s agenda and who wrote the replies; the offers chart adds up per period', async () => {
+  q.run('DELETE FROM reservations'); q.run('DELETE FROM tasks'); q.run('DELETE FROM offers_sent');
+  res(901, addDays(ctx.today, -1), addDays(ctx.today, 2), 'Stay');
+  res(902, ctx.today, addDays(ctx.today, 3), 'Arrive');
+  res(903, addDays(ctx.today, -3), ctx.today, 'Leave');
+  q.run("UPDATE reservations SET check_out = '10:00', check_in = '16:00'");
+  q.run("INSERT INTO tasks(reservation_id, type, body, send_at, status) VALUES(901, 'upsell_late', 'x', ?, 'scheduled')", new Date(Date.parse(`${ctx.today}T12:00:00Z`)).toISOString());
+  const d = (await team('GET', '/api/admin/dashboard')).json;
+  assert.deepEqual(d.guests.map((g) => g.initials).sort(), ['AX', 'SX']); // sleeping there tonight; the guest leaving today is not
+  assert.deepEqual(d.agenda.map((a) => [a.time, a.kind]), [['10:00', 'out'], ['12:00', 'message'], ['16:00', 'in']]);
+  assert.match(d.agenda[1].title, /Message goes out · Stay X/);
+  assert.equal(typeof d.answers.approved, 'number');
+
+  q.run("INSERT INTO offers_sent(reservation_id, property_id, guest_name, type, sent_at, accepted_at, amount) VALUES(901, ?, 'A', 'upsell_late', datetime('now', '-2 days'), datetime('now', '-1 days'), 30)", ctx.propertyId);
+  q.run("INSERT INTO offers_sent(reservation_id, property_id, guest_name, type, sent_at, accepted_at, amount) VALUES(902, ?, 'B', 'upsell_night', datetime('now', '-40 days'), datetime('now', '-39 days'), 120)", ctx.propertyId);
+  q.run("INSERT INTO offers_sent(reservation_id, property_id, guest_name, type, sent_at) VALUES(903, ?, 'C', 'upsell_early', datetime('now', '-3 days'))", ctx.propertyId);
+  const week = (await team('GET', '/api/admin/dashboard/offers?days=7')).json;
+  assert.deepEqual([week.buckets.length, week.sent, week.accepted, week.revenue], [7, 2, 1, 30]);
+  const quarter = (await team('GET', '/api/admin/dashboard/offers?days=90')).json;
+  assert.deepEqual([quarter.buckets.length, quarter.sent, quarter.accepted, quarter.revenue], [13, 3, 2, 150]);
+  assert.equal((await team('GET', '/api/admin/dashboard/offers?days=5')).json.days, 30); // only the three periods offered
+  assert.equal((await client(srv.base)('GET', '/api/admin/dashboard/offers')).status, 401);
+});

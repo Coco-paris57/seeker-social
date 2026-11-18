@@ -763,7 +763,66 @@ admin.get('/dashboard', (req, res) => {
     arrivalsByDay: Array.from({ length: 7 }, (_, i) => { const d = addDays(today, i); return { date: d, arrivals: count('SELECT COUNT(*) AS n FROM reservations WHERE cancelled = 0 AND arrival = ?', d), departures: count('SELECT COUNT(*) AS n FROM reservations WHERE cancelled = 0 AND departure = ?', d) }; }),
     moods: { positive: moods.positive || 0, neutral: moods.neutral || 0, unhappy: moods.unhappy || 0 },
     offers: { sent: offers.sent, accepted: offers.accepted, revenue: offers.revenue, currency: offers.currency },
+    // Tonight's guests, for the ring: initials, mood, and the chat to open.
+    guests: q.all('SELECT * FROM reservations WHERE cancelled = 0 AND arrival <= ? AND departure > ? AND property_id IN (SELECT id FROM properties WHERE active = 1) ORDER BY arrival DESC LIMIT 8', today, today).map((r) => {
+      const b = bookingOut(r);
+      return { id: r.id, name: b.guestName, initials: b.guestName.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || 'G', mood: b.mood, unread: b.unread, conversationId: b.conversationId, channel: b.channel };
+    }),
+    agenda: agendaToday(today),
+    answers: answersSplit('-30 days'),
   });
+});
+
+/** Who wrote the replies sent in a period. */
+function answersSplit(since) {
+  const s = q.get(
+    `SELECT
+       SUM(CASE WHEN role = 'bot' AND json_extract(meta, '$.auto') = 1 AND kind IN ('answer', 'checkin') THEN 1 ELSE 0 END) AS automatic,
+       SUM(CASE WHEN role = 'bot' AND json_extract(meta, '$.approvedBy') IS NOT NULL AND json_extract(meta, '$.edited') = 0 THEN 1 ELSE 0 END) AS approved,
+       SUM(CASE WHEN role = 'bot' AND json_extract(meta, '$.edited') = 1 THEN 1 ELSE 0 END) AS edited,
+       SUM(CASE WHEN role = 'team' OR kind = 'relay' THEN 1 ELSE 0 END) AS written
+     FROM messages WHERE status = 'sent' AND role != 'guest' AND kind NOT IN ('holding', 'scheduled') AND sent_at > datetime('now', ?)`, since);
+  return { automatic: s.automatic || 0, approved: s.approved || 0, edited: s.edited || 0, written: s.written || 0 };
+}
+
+/** Today in time order: who leaves, who arrives, and the messages scheduled to go out. */
+function agendaToday(today) {
+  const name = (id) => { const p = q.get('SELECT name FROM properties WHERE id = ?', id); return p ? p.name : ''; };
+  const guest = (r) => r.guest_name || `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Guest';
+  const items = [
+    ...q.all('SELECT * FROM reservations WHERE cancelled = 0 AND departure = ?', today).map((r) => ({ time: r.check_out || '11:00', kind: 'out', title: `Out · ${guest(r)}`, detail: name(r.property_id), reservationId: r.id })),
+    ...q.all('SELECT * FROM reservations WHERE cancelled = 0 AND arrival = ?', today).map((r) => ({ time: r.check_in || '15:00', kind: 'in', title: `In · ${guest(r)}`, detail: `${name(r.property_id)}${r.checkin_link && !r.checkin_done ? ' · form not done' : ''}`, reservationId: r.id })),
+  ];
+  const clock = (iso) => new Intl.DateTimeFormat('en-GB', { timeZone: config.timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso));
+  for (const t of q.all("SELECT * FROM tasks WHERE status = 'scheduled'")) {
+    if (londonDate(new Date(t.send_at)) !== today) continue;
+    const r = q.get('SELECT * FROM reservations WHERE id = ?', t.reservation_id);
+    items.push({ time: clock(t.send_at), kind: 'message', title: `Message goes out · ${r ? guest(r) : 'Guest'}`, detail: TASK_TYPES[t.type]?.label || 'Scheduled message', reservationId: t.reservation_id });
+  }
+  for (const f of q.all("SELECT f.*, c.guest_name FROM followups f JOIN conversations c ON c.id = f.conversation_id WHERE f.status = 'scheduled'")) {
+    if (londonDate(new Date(f.send_at)) !== today) continue;
+    items.push({ time: clock(f.send_at), kind: 'message', title: `Check-in goes out · ${f.guest_name || 'Guest'}`, detail: 'Message to an unhappy guest', conversationId: f.conversation_id });
+  }
+  return items.sort((a, b) => a.time.localeCompare(b.time)).slice(0, 12);
+}
+
+/** Money from offers over time, for the dashboard chart: one point per day (or per week for 90 days). */
+admin.get('/dashboard/offers', (req, res) => {
+  const days = [7, 30, 90].includes(Number(req.query.days)) ? Number(req.query.days) : 30;
+  const step = days === 90 ? 7 : 1;
+  const today = londonDate();
+  const count = Math.ceil(days / step); // the last point always ends today
+  const rows = q.all("SELECT sent_at, accepted_at, amount FROM offers_sent WHERE sent_at > datetime('now', ?) OR accepted_at > datetime('now', ?)", `-${count * step + 1} days`, `-${count * step + 1} days`);
+  const day = (stamp) => londonDate(new Date(`${stamp.replace(' ', 'T')}Z`));
+  const buckets = [];
+  for (let k = 0; k < count; k++) {
+    const to = addDays(today, -(count - 1 - k) * step);
+    const from = addDays(to, -step + 1);
+    const inside = (stamp) => stamp && day(stamp) >= from && day(stamp) <= to;
+    const accepted = rows.filter((o) => inside(o.accepted_at));
+    buckets.push({ from, to, sent: rows.filter((o) => inside(o.sent_at)).length, accepted: accepted.length, revenue: Math.round(accepted.reduce((n, o) => n + (o.amount || 0), 0) * 100) / 100 });
+  }
+  res.json({ days, buckets, sent: buckets.reduce((n, b) => n + b.sent, 0), accepted: buckets.reduce((n, b) => n + b.accepted, 0), revenue: Math.round(buckets.reduce((n, b) => n + b.revenue, 0) * 100) / 100, currency: '£' });
 });
 
 /** Numbers for the Insights page: how fast guests are answered, by whom, about what, and where the gaps are. */
