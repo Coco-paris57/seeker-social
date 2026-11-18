@@ -355,7 +355,7 @@ function styleSection() {
     });
     // Past conversations in Smoobu: read once, in the background.
     const hist = s.history || {};
-    const past = button(hist.running ? `Reading past conversations (${hist.done} of ${hist.total || '…'})` : hist.finishedAt ? 'Read new past conversations' : 'Learn from all past Smoobu messages', { icon: 'book', disabled: !admin || hist.running || !hist.available });
+    const past = button(hist.running ? (hist.total && hist.done >= hist.total ? `Studying the replies (${hist.studied || 0} of ${hist.total})` : `Reading past conversations (${hist.done} of ${hist.total || '…'})`) : hist.finishedAt ? 'Read new past conversations' : 'Learn from all past Smoobu messages', { icon: 'book', disabled: !admin || hist.running || !hist.available });
     past.addEventListener('click', () => act(past, () => api('/style/history', { method: 'POST', body: {} }), 'Started. It runs in the background and can take a while; you can leave this page.'));
     if (hist.running) setTimeout(() => { if (body.isConnected) load(); }, 4000);
     learn.addEventListener('click', () => act(learn, () => api('/style/learn', { method: 'POST', body: {} }), 'Learned from the team\'s latest messages.'));
@@ -364,11 +364,11 @@ function styleSection() {
       h('p', { class: 'muted' }, 'The assistant studies the replies your team writes themselves (in the app, when correcting a draft, or directly on Airbnb, Booking.com or in Smoobu) and writes the same way: greeting, sign-off, length, tone and favourite phrases. Style only, never facts about a guest or a property.'),
       field('How the team writes', text, { hint: s.updatedAt
         ? `${s.edited ? 'Edited by hand' : 'Learned'} ${fullTime(s.updatedAt)} from ${s.samples} ${s.samples === 1 ? 'message' : 'messages'}. ${s.edited ? 'It stays as written until you press "Learn again".' : `It is studied again after every ${s.needed} new replies written by the team (${s.waiting} so far).`}`
-        : `${s.samples} ${s.samples === 1 ? 'reply' : 'replies'} written by the team so far. The first guide is written after ${s.needed}.` }),
+        : s.samples >= 3 ? `${s.samples} replies written by the team so far. Press "Learn again from recent replies" to write the guide now.` : `${s.samples} ${s.samples === 1 ? 'reply' : 'replies'} written by the team so far. The first guide is written after ${s.needed}.` }),
       h('div', { class: 'actions' }, save, learn),
       h('h3', null, 'Past conversations'),
       h('p', { class: 'muted' }, 'Reads the conversations already in Smoobu (Airbnb, Booking.com and direct, the last 18 months) once. Real answers your team gave are kept for each property, and hand-written replies shape the style above. Automatic templates are skipped, and any message containing a door code or a password is left out completely. Nothing is added to a chat or sent to a guest.'),
-      h('p', { class: 'hint' }, hist.running ? `Working: ${hist.done} of ${hist.total || '…'} conversations read, ${hist.learned} answers learned so far.`
+      h('p', { class: 'hint' }, hist.running ? (hist.total && hist.done >= hist.total ? `Step 2 of 2: studying the replies, ${hist.studied || 0} of ${hist.total} conversations done, ${hist.learned} answers learned so far. The style guide is written when this finishes.` : `Step 1 of 2: ${hist.done} of ${hist.total || '…'} conversations read.`)
         : hist.error ? `The last run stopped: ${hist.error}`
         : hist.finishedAt ? `Last run ${fullTime(hist.finishedAt)}: ${hist.lastRead} conversations read in total, ${hist.lastLearned} answers learned. Running it again only reads conversations that are new since then.`
         : hist.available ? 'Not run yet.' : 'Smoobu is not connected.'),

@@ -31,11 +31,11 @@ export function carriesSecret(text, property) {
   return text.split(/\n|(?<=[.!?])\s/).some((line) => CODE_WORDS.test(line) && (/\d{3,}/.test(line) || /\b(?=\w*\d)(?=\w*[a-z])\w{6,}\b/i.test(line)));
 }
 
-const state = { running: false, done: 0, total: 0, learned: 0, error: '' };
+const state = { running: false, done: 0, total: 0, studied: 0, learned: 0, error: '' };
 
 export function historyStatus() {
   return {
-    running: state.running, done: state.done, total: state.total, learned: state.learned, error: state.error,
+    running: state.running, done: state.done, total: state.total, studied: state.studied, learned: state.learned, error: state.error,
     finishedAt: getRaw('history_at') || null, lastLearned: Number(getRaw('history_learned')) || 0, lastRead: Number(getRaw('history_read')) || 0,
     available: !!smoobu(),
   };
@@ -44,7 +44,7 @@ export function historyStatus() {
 /** Start reading the past conversations, in the background. Returns straight away. */
 export function startHistory() {
   if (state.running || !smoobu()) return historyStatus();
-  Object.assign(state, { running: true, done: 0, total: 0, learned: 0, error: '' });
+  Object.assign(state, { running: true, done: 0, total: 0, studied: 0, learned: 0, error: '' });
   learnHistory()
     .catch((e) => { state.error = e.message; console.error(`Learning from past messages: ${e.message}`); })
     .finally(() => { state.running = false; });
@@ -54,7 +54,7 @@ export function startHistory() {
 /** Read every past thread once. Bookings already read are skipped, so it can be run again later for the new ones. */
 export async function learnHistory(now = Date.now()) {
   const api = smoobu();
-  Object.assign(state, { done: 0, total: 0, learned: 0, error: '' });
+  Object.assign(state, { done: 0, total: 0, studied: 0, learned: 0, error: '' });
   const today = londonDate(new Date(now));
   const properties = new Map(q.all('SELECT * FROM properties WHERE smoobu_id IS NOT NULL').map((p) => [p.smoobu_id, p]));
   const bookings = (await api.reservations(addDays(today, -MONTHS_BACK * 30), today))
@@ -105,6 +105,7 @@ export async function learnHistory(now = Date.now()) {
       }
     }
     q.run('INSERT OR IGNORE INTO history_read(reservation_id) VALUES(?)', b.id);
+    state.studied++;
   }
   setRaw('history_at', new Date().toISOString());
   setRaw('history_learned', String((Number(getRaw('history_learned')) || 0) + state.learned));
