@@ -1,6 +1,6 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { startServer, seed, signIn, q } from './helpers.js';
+import { startServer, seed, signIn, client, q } from './helpers.js';
 import { config } from '../src/config.js';
 import { useSmoobuClient } from '../src/smoobu.js';
 import { handleSmoobuEvent } from '../src/routes/webhooks.js';
@@ -249,4 +249,59 @@ test('a reply sent directly on Airbnb or in Smoobu appears in the chat and settl
   thread = [...thread, { id: 9207, type: 1, message: 'Hello? Is anyone there?' }];
   await syncThread(7100, { importGuest: importGuestMessage, force: true });
   assert.ok(q.get("SELECT 1 FROM messages WHERE conversation_id = ? AND role = 'guest' AND body = 'Hello? Is anyone there?'", c().id));
+});
+
+test('outside replies teach the assistant: real answers are kept for the property, and the team\'s way of writing is learned', async () => {
+  const { syncThread } = await import('../src/thread-sync.js');
+  const { importGuestMessage } = await import('../src/routes/webhooks.js');
+  const { learnStyle, styleStatus } = await import('../src/style.js');
+  const { buildContext } = await import('../src/bot.js');
+  const { systemPrompt } = await import('../src/llm.js');
+  q.run("INSERT INTO reservations(id, property_id, first_name, last_name, guest_name, arrival, departure, channel) VALUES(7200, ?, 'Ada', 'West', 'Ada West', date('now'), date('now', '+3 days'), 'Airbnb')", ctx.propertyId);
+  let thread = [{ id: 9301, type: 1, message: 'Is there an iron and ironing board in the flat?' }];
+  fake.messages = async (id) => (id === 7200 ? thread : []);
+  await handleSmoobuEvent({ action: 'newMessage', data: { id: 9301, sender: 'guest', booking: { id: 7200 } } });
+  const c = q.get('SELECT * FROM conversations WHERE reservation_id = 7200');
+  const say = async (id, message) => { thread = [...thread, { id, type: 2, message }]; await syncThread(7200, { importGuest: importGuestMessage, force: true }); };
+
+  // A colleague answers in the Airbnb app, in the team's own voice.
+  await say(9302, 'Hi Ada,\nYes, the iron and ironing board are in the tall hallway cupboard, bottom shelf.\nKind regards,\nThe Seeker Team');
+  const kept = q.get("SELECT * FROM examples WHERE property_id = ? AND answer LIKE '%tall hallway cupboard%'", ctx.propertyId);
+  assert.equal(kept.question, 'Is there an iron and ironing board in the flat');
+  assert.equal(kept.edited, 1); // team-written: the pattern to follow
+  const team = await signIn(srv.base);
+  const shown = (await team('GET', `/api/admin/conversations/${c.id}`)).json.messages.find((m) => m.external);
+  assert.equal(shown.learned, true);
+  // The next guest asking the same thing is answered from it.
+  assert.ok(buildContext(c, { latest: 'Do you have an iron?' }).examples.some((e) => /tall hallway cupboard/.test(e.approved_reply)));
+  // The weekly tidy-up can then propose it as a knowledge entry.
+  assert.ok((await team('POST', '/api/admin/suggestions/run', {})).json.suggestions.some((s) => /tall hallway cupboard/.test(s.answer)));
+
+  // An automatic template is not learned from, either as an answer or as the team's style.
+  await say(9303, 'Reminder: quiet hours are from 22:00 to 08:00 for all our guests in the building.');
+  assert.ok(!q.get("SELECT 1 FROM examples WHERE answer LIKE '%quiet hours are from 22:00%'"));
+  assert.equal(JSON.parse(q.get("SELECT meta FROM messages WHERE body LIKE 'Reminder: quiet hours%'").meta).automatic, 1);
+
+  // Style: nothing until there are a few team-written replies, then a guide the assistant follows.
+  q.run("DELETE FROM settings WHERE key LIKE 'house_style%'");
+  assert.equal(styleStatus().style, '');
+  for (let i = 0; i < 8; i++) q.run("INSERT INTO messages(conversation_id, role, body, status, sent_at) VALUES(?, 'team', ?, 'sent', datetime('now'))", c.id, `Hi Ada,\nThank you for letting us know about item ${i}, we are on it and will update you shortly.\nKind regards,\nThe Seeker Team`);
+  assert.ok(await learnStyle());
+  const s = (await team('GET', '/api/admin/style')).json;
+  assert.match(s.style, /Greeting: opens with "Hi"/);
+  assert.match(s.style, /Sign-off: ends with "The Seeker Team"/);
+  assert.ok(!s.style.includes('quiet hours')); // the template was left out
+  assert.match(systemPrompt(buildContext(c)), /How this team writes[\s\S]*Greeting: opens with "Hi"/);
+  assert.equal(await learnStyle(), null); // nothing new: not studied again
+
+  // A person can rewrite the guide; it then stays theirs until they ask for it to be learned again.
+  assert.equal((await client(srv.base)('PUT', '/api/admin/style', { style: 'x' })).status, 401);
+  await team('PUT', '/api/admin/style', { style: 'Always open with "Good day".' });
+  for (let i = 0; i < 9; i++) q.run("INSERT INTO messages(conversation_id, role, body, status, sent_at) VALUES(?, 'team', ?, 'sent', datetime('now'))", c.id, `Hello Ada, another note number ${i} from the team about your stay with us this week.`);
+  assert.equal(await learnStyle(), null);
+  assert.equal(styleStatus().style, 'Always open with "Good day".');
+  assert.match((await team('POST', '/api/admin/style/learn', {})).json.style, /Greeting: opens with/);
+  // Cleared: the assistant goes back to its standard voice.
+  await team('PUT', '/api/admin/style', { style: '' });
+  assert.ok(!systemPrompt(buildContext(c)).includes('How this team writes'));
 });

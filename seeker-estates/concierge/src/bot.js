@@ -1,7 +1,7 @@
 // The concierge pipeline: guest message in, decision, then either a reply, a draft for the
 // team to approve, or a request to the team. Also the team-side actions that close the loop.
 import { config } from './config.js';
-import { q, getSettings, audit, parseJson } from './db.js';
+import { q, getSettings, audit, parseJson, getRaw } from './db.js';
 import * as llm from './llm.js';
 import { emitAdmin, emitConversation, notifyTeam } from './notify.js';
 import { smoobu } from './smoobu.js';
@@ -179,6 +179,7 @@ export function buildContext(conversation, { latest = '', uptoMessageId = null }
     emergencyContact: settings.emergencyContact,
     accessHours: settings.accessInfoHours,
     checkinPortalNote: settings.checkinPortalNote,
+    houseStyle: getRaw('house_style') || undefined, // how the team writes, learned from their own messages
     today: londonDate(now),
     time: new Intl.DateTimeFormat('en-GB', { timeZone: config.timezone, hour: '2-digit', minute: '2-digit', weekday: 'long' }).format(now),
     verified: !!conversation.verified,

@@ -15,6 +15,7 @@ import { addDays, clip, failureLimiter, HttpError, londonDate, newToken, rateLim
 import { taskOut } from './journey.js';
 import { brand, BRAND_DEFAULTS, brandText, resetBrand, saveBrand, saveBrandFile } from '../brand.js';
 import { syncThread } from '../thread-sync.js';
+import { learnStyle, setStyle, styleStatus } from '../style.js';
 import { importGuestMessage } from './webhooks.js';
 import { createTask, refreshTasks, TASK_TYPES } from '../tasks.js';
 import { offersFor } from '../bot.js';
@@ -50,7 +51,7 @@ function messageOut(m, names = userNames()) {
     status: m.status, kind: m.kind, at: iso(m.created_at), sentAt: iso(m.sent_at),
     confidence: meta.confidence || null, category: meta.category || null, summary: meta.summary || null,
     automatic: !!meta.auto, edited: !!meta.edited, original: meta.original || null, ticketId: meta.ticketId || null,
-    deliveryError: meta.deliveryError || null, external: !!meta.external, withheldReason: meta.withheldReason || null, checkNote: meta.checkNote || null,
+    deliveryError: meta.deliveryError || null, external: !!meta.external, learned: !!meta.learned, withheldReason: meta.withheldReason || null, checkNote: meta.checkNote || null,
     attachments: (m.role === 'guest' ? q.all('SELECT token, kind FROM files WHERE message_id = ?', m.id) : meta.attachments || []).map((a) => adminFile(a)), links: meta.links || [],
     authorName: names[m.created_by] || names[meta.approvedBy] || names[meta.answeredBy] || null,
   };
@@ -981,6 +982,25 @@ admin.delete('/knowledge/:id', (req, res) => {
 // --- settings, team, audit --------------------------------------------------------------
 
 admin.get('/settings', (req, res) => res.json({ settings: getSettings(), channelUnmatched: parseJson(getRaw('channel_unmatched') || 'null', null) }));
+
+// --- how the team writes ------------------------------------------------------------------
+
+admin.get('/style', (req, res) => res.json(styleStatus()));
+
+/** Study the team's own messages again now. */
+admin.post('/style/learn', requireAdmin, async (req, res) => {
+  const style = await learnStyle({ force: true });
+  if (style == null) throw new HttpError(409, 'There are not enough messages written by the team yet. It needs at least three.');
+  audit(req.user.id, 'style.learn');
+  res.json(styleStatus());
+});
+
+/** Set the guide by hand, or clear it. */
+admin.put('/style', requireAdmin, (req, res) => {
+  setStyle(req.body?.style);
+  audit(req.user.id, 'style.edit');
+  res.json(styleStatus());
+});
 
 // --- branding: this agency's name, colours and logo ---------------------------------------
 

@@ -329,6 +329,44 @@ function auditSection() {
   return section('Audit log', h('p', { class: 'muted' }, 'Who approved, edited, answered and changed what.'), details);
 }
 
+/** How the team writes, learned from their own messages; the assistant writes the same way. */
+function styleSection() {
+  const body = h('div', null, loading('Loading'));
+  async function load() {
+    let s;
+    try {
+      s = await api('/style');
+    } catch (err) {
+      if (err.status !== 401) fill(body, loadError(err, load));
+      return;
+    }
+    const admin = isAdmin();
+    const text = h('textarea', { rows: 8, value: s.style, disabled: !admin, placeholder: 'Nothing learned yet. It appears once the team has written a few replies themselves.' });
+    const learn = button('Learn again from recent replies', { icon: 'refresh', disabled: !admin });
+    const save = button('Save my changes', { variant: 'primary', icon: 'check', disabled: !admin });
+    const act = (btn, call, message) => busy(btn, async () => {
+      try {
+        await call();
+        toast(message, { kind: 'ok' });
+        load();
+      } catch (err) {
+        showError(err);
+      }
+    });
+    learn.addEventListener('click', () => act(learn, () => api('/style/learn', { method: 'POST', body: {} }), 'Learned from the team\'s latest messages.'));
+    save.addEventListener('click', () => act(save, () => api('/style', { method: 'PUT', body: { style: text.value } }), text.value.trim() ? 'Saved. The assistant follows this until you ask it to learn again.' : 'Cleared. The assistant uses its standard voice.'));
+    fill(body,
+      h('p', { class: 'muted' }, 'The assistant studies the replies your team writes themselves (in the app, when correcting a draft, or directly on Airbnb, Booking.com or in Smoobu) and writes the same way: greeting, sign-off, length, tone and favourite phrases. Style only, never facts about a guest or a property.'),
+      field('How the team writes', text, { hint: s.updatedAt
+        ? `${s.edited ? 'Edited by hand' : 'Learned'} ${fullTime(s.updatedAt)} from ${s.samples} ${s.samples === 1 ? 'message' : 'messages'}. ${s.edited ? 'It stays as written until you press "Learn again".' : `It is studied again after every ${s.needed} new replies written by the team (${s.waiting} so far).`}`
+        : `${s.samples} ${s.samples === 1 ? 'reply' : 'replies'} written by the team so far. The first guide is written after ${s.needed}.` }),
+      h('div', { class: 'actions' }, save, learn),
+      !admin && h('p', { class: 'note' }, icon('lock', 16), 'Only administrators can change this.'));
+  }
+  load();
+  return section('How the team writes', body);
+}
+
 /** How the app looks and moves on this device. The brand colours are not changed here. */
 function appearanceSection() {
   const look = getLook();
@@ -441,6 +479,7 @@ export function settingsView({ onSignOut }) {
     notificationsSection(),
     appearanceSection(),
     assistantSection(),
+    styleSection(),
     channelSection(),
     isAdmin() && brandSection(),
     section('Through the stay',

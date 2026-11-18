@@ -7,6 +7,8 @@ import { checkStillNeeded, reassess, recheckScheduled, rememberApproval } from '
 import { emitAdmin, emitConversation } from './notify.js';
 import { smoobu } from './smoobu.js';
 import { htmlToText } from './util.js';
+import * as llm from './llm.js';
+import { learnStyle } from './style.js';
 
 const norm = (s) => String(s || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 const textOf = (m) => String(m.message || '').trim() || htmlToText(m.htmlMessage);
@@ -50,7 +52,7 @@ export async function syncThread(bookingId, { importGuest, force = false } = {})
     emitConversation(conversation.id, 'message', { messageId: id });
     ours.push(key);
     added++;
-    await afterOutsideReply(conversation, text);
+    await afterOutsideReply(conversation, text, id);
     conversation = q.get('SELECT * FROM conversations WHERE id = ?', conversation.id);
   }
   return added;
@@ -61,7 +63,22 @@ export async function syncThread(bookingId, { importGuest, force = false } = {})
  * reply: withdrawn if the reply covers it, flagged if unsure, kept if the reply was about something
  * else (an automatic message from Smoobu, for example).
  */
-async function afterOutsideReply(conversation, text) {
+async function afterOutsideReply(conversation, text, messageId) {
+  // Learn from it: if a person answered the guest, keep it as an approved reply for this property
+  // (the weekly tidy-up turns those into knowledge), and count it towards how the team writes.
+  try {
+    const asked = q.all("SELECT body FROM messages WHERE conversation_id = ? AND role = 'guest' ORDER BY id DESC LIMIT 4", conversation.id).map((m) => m.body).reverse();
+    const what = await llm.outsideReply({ guestMessages: asked, reply: text });
+    if (what.kind === 'answer' && what.guestWanted) {
+      rememberApproval(conversation, { summary: what.guestWanted }, text, { id: null }, true);
+      q.run("UPDATE messages SET meta = json_set(meta, '$.learned', 1) WHERE id = ?", messageId);
+    } else if (what.kind === 'automatic') {
+      q.run("UPDATE messages SET meta = json_set(meta, '$.automatic', 1) WHERE id = ?", messageId); // a template: not how the team writes by hand
+    }
+  } catch (e) {
+    console.error(`Learning from an outside reply: ${e.message}`);
+  }
+  learnStyle().catch((e) => console.error(`Team style: ${e.message}`));
   const drafts = q.all("SELECT * FROM messages WHERE conversation_id = ? AND status = 'pending' AND kind != 'scheduled'", conversation.id);
   let answered = drafts.length === 0 && !q.get("SELECT 1 FROM tickets WHERE conversation_id = ? AND status = 'open'", conversation.id);
   for (const d of drafts) {
@@ -70,8 +87,6 @@ async function afterOutsideReply(conversation, text) {
       q.run("UPDATE messages SET status = 'superseded' WHERE id = ? AND status = 'pending'", d.id);
       // The guest messages it covered are answered; they are not picked up again.
       for (const gid of JSON.parse(d.meta || '{}').covers || []) q.run("UPDATE messages SET meta = json_set(meta, '$.handled', 1) WHERE id = ? AND conversation_id = ?", gid, conversation.id);
-      // What the team wrote themselves is the pattern to learn from.
-      try { rememberApproval(conversation, JSON.parse(d.meta || '{}'), text, { id: null }, true); } catch { /* learning is a bonus */ }
       emitConversation(conversation.id, 'draft', { messageId: d.id });
       answered = true;
     } else if (v.verdict === 'ask_team') {
