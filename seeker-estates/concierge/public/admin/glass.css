@@ -190,3 +190,20 @@ html[data-look-compact="on"] .conv-item { padding: 8px 14px; }
   html[data-look="glass"] .thread-side :is(.thread-details, .read-bar) { background: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
   html[data-look="glass"] .thread-side .takeover { background: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
+
+/* Calendar: the guest card pinned beside the grid (computer) */
+.cal-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: start; }
+.cal-side { display: none; }
+@media (min-width: 900px) {
+  .cal-layout.has-side { grid-template-columns: minmax(0, 1fr) 392px; }
+  .cal-side:not([hidden]) { display: block; position: sticky; top: 0; max-height: calc(100dvh - 150px); overflow-y: auto; padding: 14px 16px 16px; }
+  .cal-side-head { position: sticky; top: -14px; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -14px -16px 8px; padding: 12px 10px 8px 16px; background: rgba(255, 255, 255, .9); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-radius: 16px 16px 0 0; }
+  .cal-side-head h2 { margin: 0; font-size: 19px; }
+  .cal-side .facts div { grid-template-columns: 112px minmax(0, 1fr); }
+  .cal-side .mini-thread { max-height: 260px; }
+  .cal-booking.is-selected, .sheet-stay.is-selected { outline: 3px solid var(--white); box-shadow: 0 0 0 5px var(--brand), 0 10px 22px color-mix(in srgb, var(--brand) 30%, transparent); z-index: 2; }
+}
+@media (min-width: 900px) and (prefers-reduced-motion: no-preference) {
+  html[data-look-motion="on"] .cal-side:not([hidden]) { animation: sideIn .35s cubic-bezier(.2, .8, .2, 1); }
+}
+@keyframes sideIn { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }

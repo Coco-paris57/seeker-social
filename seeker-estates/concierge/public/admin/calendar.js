@@ -26,6 +26,11 @@ function signs(r, size = 14) {
   ];
 }
 
+// On a computer the guest card is pinned beside the calendar, which stays usable; the calendar
+// screen sets this while it is open. On a phone the card opens as a window.
+let pinned = null;
+let selectedId = null;
+
 /** The guest card: the stay, what can be offered, proposed messages, and the message thread. */
 async function openCard(id, onChange) {
   let d;
@@ -36,11 +41,13 @@ async function openCard(id, onChange) {
     return;
   }
   const r = d.reservation;
-  await openDialog({
+  const host = pinned || ((opts) => openDialog({ ...opts, wide: true }));
+  await host({
     title: r.guestName,
-    wide: true,
+    id,
     build: (close) => {
-      const again = () => { close(); onChange(); openCard(id, onChange); };
+      // After an action the card is drawn again in place, so the panel beside the calendar does not jump.
+      const again = () => { if (!pinned) close(); onChange(); openCard(id, onChange); };
       const act = (p, message) => p.then(() => { toast(message, { kind: 'ok' }); again(); }, showError);
       const row = (label, value) => value && h('div', null, h('dt', null, label), h('dd', null, value));
       return h('div', { class: 'guest-card' },
@@ -126,11 +133,40 @@ export function calendarView() {
   const tabAgenda = h('button', { type: 'button', role: 'tab', 'aria-selected': 'true' }, 'Agenda');
   const tabProperty = h('button', { type: 'button', role: 'tab', 'aria-selected': 'false' }, 'By property');
   const modeTabs = h('div', { class: 'seg', role: 'tablist', 'aria-label': 'Calendar view' }, tabAgenda, tabProperty);
+  const side = h('aside', { class: 'card cal-side', 'aria-label': 'Guest card', hidden: true });
+  const layout = h('div', { class: 'cal-layout' }, body, side);
+  side.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSide(); });
   const bar = h('div', { class: 'cal-bar' }, h('div', { class: 'actions' }, prev, now, next, label), h('div', { class: 'actions' }, picker, range));
   const el = h('div', { class: 'page page-wide' },
     pageHeader('Calendar', { sub: narrow ? 'Bookings come from Smoobu. Tap a guest for their stay and messages.' : 'Bookings come from Smoobu and are changed there. Tap a booking for the guest, their messages and what to offer.' }),
-    narrow && modeTabs, bar, body);
+    narrow && modeTabs, bar, layout);
+  if (narrow) pinned = null;
+  else {
+    pinned = ({ title, id, build }) => {
+      selectedId = id;
+      fill(side,
+        h('div', { class: 'cal-side-head' }, h('h2', { tabIndex: -1 }, title), h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Close the guest card', onclick: closeSide }, icon('x'))),
+        build(closeSide));
+      side.hidden = false;
+      layout.classList.add('has-side');
+      side.scrollTop = 0;
+      markSelected();
+      return Promise.resolve();
+    };
+  }
   let filled = false;
+  function markSelected() {
+    for (const b of el.querySelectorAll('[data-booking]')) b.classList.toggle('is-selected', Number(b.dataset.booking) === selectedId);
+  }
+  function closeSide() {
+    const was = selectedId;
+    selectedId = null;
+    side.hidden = true;
+    layout.classList.remove('has-side');
+    fill(side);
+    markSelected();
+    el.querySelector(`[data-booking="${was}"]`)?.focus(); // back to the booking it came from
+  }
   const setMode = (next) => {
     mode = next;
     tabAgenda.setAttribute('aria-selected', String(mode === 'agenda'));
@@ -245,7 +281,7 @@ export function calendarView() {
         if (n) track.append(n);
       }
       for (const r of mine) {
-        const n = place(h('button', { type: 'button', class: `cal-booking ${channelClass(r.channel)}`, 'aria-label': `${r.guestName}, ${stayDate(r.arrival)} to ${stayDate(r.departure)}`, onclick: () => open(r.id) },
+        const n = place(h('button', { type: 'button', class: `cal-booking ${channelClass(r.channel)}${r.id === selectedId ? ' is-selected' : ''}`, dataset: { booking: r.id }, 'aria-label': `${r.guestName}, ${stayDate(r.arrival)} to ${stayDate(r.departure)}`, onclick: () => open(r.id) },
           h('span', { class: 'cal-guest' }, r.guestName), h('span', { class: 'signs' }, signs(r))), x(r.arrival), x(r.departure));
         if (n) track.append(n);
         // The day a suggested or scheduled message is due.
@@ -285,7 +321,7 @@ export function calendarView() {
           leaving && arriving && h('span', { class: 'cal-turn in-sheet', title: 'Same-day turnover' }, icon('refresh', 11)),
           due.map(({ r, t }) => h('span', { class: `cal-due in-sheet${t.status === 'scheduled' ? ' is-scheduled' : ''}`, title: `${t.status === 'scheduled' ? 'Message scheduled' : 'Suggested message'} for ${r.guestName}: ${fullTime(t.at)}` }, icon('send', 11)))),
         leaving && h('button', { type: 'button', class: `sheet-stay is-out ${channelClass(leaving.channel)}`, onclick: () => open(leaving.id) }, `Out: ${leaving.guestName}`),
-        staying && h('button', { type: 'button', class: `sheet-stay ${channelClass(staying.channel)}`, onclick: () => open(staying.id) },
+        staying && h('button', { type: 'button', class: `sheet-stay ${channelClass(staying.channel)}${staying.id === selectedId ? ' is-selected' : ''}`, dataset: { booking: staying.id }, onclick: () => open(staying.id) },
           h('span', { class: 'cal-guest' }, staying.arrival === day ? `In: ${staying.guestName}` : staying.guestName), staying.arrival === day && h('span', { class: 'signs' }, signs(staying))),
         !staying && blocked && h('div', { class: 'sheet-stay is-blocked' }, 'Blocked'),
         !staying && !blocked && gap && h('button', { type: 'button', class: 'sheet-stay is-gap', onclick: () => openGap(gap, byId, property.name, load) }, 'Free: offer it'));
