@@ -4,7 +4,7 @@
 //   - (paid extras are settings only; the calendar check lives in bot.js)
 import { q, getRaw, setRaw, audit } from './db.js';
 import * as llm from './llm.js';
-import { checkStillNeeded, queueDraft, saveKnowledge, sendMessage, withholdMessage, CHECKIN_LINK } from './bot.js';
+import { checkStillNeeded, queueDraft, saveKnowledge, sendMessage, toGuestLanguage, withholdMessage, CHECKIN_LINK } from './bot.js';
 import { emitConversation, notifyTeam } from './notify.js';
 import { smoobu } from './smoobu.js';
 import { addDays, clip, londonDate, londonToUtc, HttpError } from './util.js';
@@ -233,7 +233,16 @@ export async function runFollowups(now = Date.now()) {
       await notifyTeam({ title: 'Scheduled check-in needs a look', body: clip(`${conversation.guest_name || 'A guest'}: ${needed.reason || 'the conversation has moved on.'}`, 160), url: `/admin/#/conversations/${conversation.id}`, tag: `followup-${conversation.id}` });
       continue;
     }
-    await sendMessage(conversation, 'team', f.body, { createdBy: f.created_by, meta: { followUp: true } });
+    // Check-in messages are written and agreed in English; the guest gets theirs in their own language.
+    let body = f.body;
+    try {
+      body = await toGuestLanguage(conversation, f.body);
+    } catch (e) {
+      q.run("UPDATE followups SET status = 'suggested', note = ? WHERE id = ?", `Not sent: it could not be translated into ${conversation.language}. Schedule it again to retry.`, f.id);
+      emitConversation(conversation.id, 'conversation');
+      continue;
+    }
+    await sendMessage(conversation, 'team', body, { createdBy: f.created_by, meta: { followUp: true, ...(body !== f.body ? { english: f.body } : {}) } });
     sent++;
   }
   return sent;

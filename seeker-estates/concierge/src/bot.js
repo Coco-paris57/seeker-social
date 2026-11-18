@@ -289,6 +289,32 @@ export async function checkStillNeeded(conversation, text) {
 }
 
 /** Put a message in the Inbox for a team member to approve (used for scheduled stay messages). */
+/** Does the guest write in English (or is the language not known yet)? */
+export const english = (language) => !language || /^(en(glish)?\b|unknown)/i.test(String(language).trim());
+
+/**
+ * A reply the team agreed in English, put into the guest's language to send. Returns the text
+ * to send; the English is returned unchanged for guests who write in English.
+ */
+export async function toGuestLanguage(conversation, text) {
+  if (english(conversation.language)) return text;
+  try {
+    return await llm.translateTo(text, conversation.language);
+  } catch (e) {
+    console.error(`Translating a reply into ${conversation.language}: ${e.message}`);
+    throw new HttpError(502, `The translation into ${conversation.language} is not available just now. Nothing was sent. Try again, or send it in English.`);
+  }
+}
+
+/**
+ * A draft the team will read: in English, whatever the guest writes in. The assistant's own
+ * wording in the guest's language is kept with it and sent if the team changes nothing.
+ */
+function forTeam(decision, meta) {
+  if (english(decision.language) || !decision.replyEnglish || decision.replyEnglish === decision.reply) return { body: decision.reply, meta };
+  return { body: decision.replyEnglish, meta: { ...meta, sendIn: decision.language, translated: decision.reply } };
+}
+
 export function queueDraft(conversation, body, { kind = 'answer', meta = {} } = {}) {
   const draft = insertMessage(conversation.id, 'bot', body, { status: 'pending', kind, meta });
   emitConversation(conversation.id, 'draft', { messageId: draft.id });
@@ -503,6 +529,7 @@ async function processPending(conversationId, reuse) {
     context.unreadable = sent.length > 0 && context.images.length === 0;
     decision = await llm.decide(context);
     decision.reply = withLink(decision.reply, checkinLinkOf(conversation));
+    if (decision.replyEnglish) decision.replyEnglish = withLink(decision.replyEnglish, checkinLinkOf(conversation));
     media = decision.action === 'answer' ? mediaFor(decision.knowledgeIds, new Set(context.knowledge.map((k) => k.id))) : {};
   } catch (e) {
     // The model is unavailable or declined. Never leave a guest without an answer: hand to the team.
@@ -554,7 +581,8 @@ async function processPending(conversationId, reuse) {
       await sendMessage(conversation, 'bot', decision.reply, { meta: { ...meta, auto: true } });
       return;
     }
-    placeDraft(conversation, reuse, decision.reply, { meta });
+    const draft = forTeam(decision, meta);
+    placeDraft(conversation, reuse, draft.body, { meta: draft.meta });
     if (liveChat && !recentHolding(conversation.id, settings.holdingMinutes)) {
       await sendMessage(conversation, 'bot', holdingText('confirming', decision.language), { kind: 'holding' });
     }
@@ -587,7 +615,8 @@ async function processPending(conversationId, reuse) {
   if (!liveChat && learning) {
     // On a booking channel in approval mode even the first reply to a problem waits for a person.
     if (type !== 'question') {
-      placeDraft(conversation, reuse, decision.reply, { kind: type === 'urgent' ? 'urgent' : 'holding', meta: { ...meta, ticketId } });
+      const draft = forTeam(decision, { ...meta, ticketId });
+      placeDraft(conversation, reuse, draft.body, { kind: type === 'urgent' ? 'urgent' : 'holding', meta: draft.meta });
     }
   } else if (!learning || type === 'urgent') {
     // Urgent replies carry safety instructions, so they are marked for the chat to emphasise.
@@ -760,18 +789,23 @@ function examplesFor(conversation, latest, limit = 12) {
 }
 
 /** Approve a drafted reply, optionally edited. remember saves the final text as knowledge. */
-export async function approveDraft(messageId, user, { text, remember = false, scope = 'property', sensitive, attachments } = {}) {
+export async function approveDraft(messageId, user, { text, remember = false, scope = 'property', sensitive, attachments, translate = true } = {}) {
   const draft = q.get("SELECT * FROM messages WHERE id = ? AND status = 'pending'", messageId);
   if (!draft) throw new HttpError(409, 'This draft has already been handled or replaced by a newer one.');
   const conversation = q.get('SELECT * FROM conversations WHERE id = ?', draft.conversation_id);
   const finalText = (text ?? draft.body).trim();
   if (!finalText) throw new HttpError(400, 'The reply cannot be empty.');
   const edited = finalText !== draft.body.trim();
-  const added = teamAttachments(conversation, attachments);
   const before = parseJson(draft.meta);
-  const meta = { ...before, approvedBy: user.id, edited, ...(edited ? { original: draft.body } : {}),
+  // The draft was read in English. It goes to the guest in their language: the assistant's own
+  // wording if nothing was changed, a translation of the agreed text otherwise.
+  const inLanguage = before.sendIn && translate !== false && !english(before.sendIn);
+  const sendText = !inLanguage ? finalText : !edited && before.translated ? before.translated : await toGuestLanguage({ language: before.sendIn }, finalText);
+  const added = teamAttachments(conversation, attachments);
+  delete before.translated;
+  const meta = { ...before, approvedBy: user.id, edited, ...(inLanguage ? { english: finalText } : {}), ...(edited ? { original: draft.body } : {}),
     ...(added.length ? { attachments: [...(before.attachments || []), ...added].slice(0, 8) } : {}) };
-  q.run("UPDATE messages SET body = ?, status = 'sent', meta = ?, sent_at = strftime('%Y-%m-%d %H:%M:%f', 'now') WHERE id = ?", finalText, JSON.stringify(meta), draft.id);
+  q.run("UPDATE messages SET body = ?, status = 'sent', meta = ?, sent_at = strftime('%Y-%m-%d %H:%M:%f', 'now') WHERE id = ?", sendText, JSON.stringify(meta), draft.id);
   q.run("UPDATE conversations SET last_message_at = datetime('now') WHERE id = ?", conversation.id);
   let knowledgeId = null;
   if (remember) {
@@ -790,11 +824,12 @@ export async function approveDraft(messageId, user, { text, remember = false, sc
 }
 
 /** Reject a draft. If the team writes their own reply it is sent in its place. */
-export async function rejectDraft(messageId, user, { replyText, remember = false, scope = 'property', sensitive, attachments } = {}) {
+export async function rejectDraft(messageId, user, { replyText, remember = false, scope = 'property', sensitive, attachments, translate = false } = {}) {
   const draft = q.get("SELECT * FROM messages WHERE id = ? AND status = 'pending'", messageId);
   if (!draft) throw new HttpError(409, 'This draft has already been handled or replaced by a newer one.');
   const conversation = q.get('SELECT * FROM conversations WHERE id = ?', draft.conversation_id);
   const meta = parseJson(draft.meta);
+  const sendText = replyText?.trim() && translate ? await toGuestLanguage(conversation, replyText.trim()) : replyText?.trim(); // before anything changes: if it fails, the draft is still there
   q.run("UPDATE messages SET status = 'rejected', meta = ? WHERE id = ?", JSON.stringify({ ...meta, rejectedBy: user.id }), draft.id);
   audit(user.id, 'draft.reject', `message ${draft.id}`);
   emitConversation(conversation.id, 'draft', { messageId: draft.id });
@@ -802,7 +837,7 @@ export async function rejectDraft(messageId, user, { replyText, remember = false
   let knowledgeId = null;
   if (replyText?.trim()) {
     const added = teamAttachments(conversation, attachments);
-    message = await sendMessage(conversation, 'team', replyText.trim(), { createdBy: user.id, meta: { replaces: draft.id, ...(added.length ? { attachments: added } : {}) } });
+    message = await sendMessage(conversation, 'team', sendText, { createdBy: user.id, meta: { replaces: draft.id, ...(sendText !== replyText.trim() ? { english: replyText.trim() } : {}), ...(added.length ? { attachments: added } : {}) } });
     fileSent(added, message.id);
     if (draft.kind === 'answer') rememberApproval(conversation, meta, replyText, user, true); // the team's own reply is the pattern to follow
     if (remember) {

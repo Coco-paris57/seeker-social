@@ -69,7 +69,10 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
   const textarea = autoGrow(h('textarea', { id: textId, class: 'draft-text', rows: 3, value: original }));
   const remember = rememberControl({ label: property ? `Remember this answer, and any files added, for ${property}` : 'Remember this answer and any files added', propertyName: property, category: draft.category, text: () => textarea.value });
   remember.el.hidden = true;
-  const approve = button('Approve & send', { variant: 'primary', icon: 'check', 'data-primary': true });
+  // The guest writes in another language: the draft is in English for the team, and goes out translated.
+  const lang = draft.sendIn || null;
+  const approve = button(lang ? `Approve & send in ${lang}` : 'Approve & send', { variant: 'primary', icon: 'check', 'data-primary': true });
+  const asIs = lang ? button('Send in English', { small: true }) : null;
   const reject = button('Reject', { icon: 'x' });
   // Photos or a video to send with the reply. Ticking "remember" keeps them for future guests too.
   const attach = attachControl({
@@ -86,7 +89,7 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
     // "Remember" matters once there is something new to keep: changed wording, or files.
     remember.el.hidden = !edited() && !files;
     remember.refresh();
-    approve.lastChild.textContent = edited() ? (files ? 'Send edited reply with files' : 'Send edited reply') : files ? 'Approve & send with files' : 'Approve & send';
+    approve.lastChild.textContent = `${edited() ? 'Send edited reply' : 'Approve & send'}${lang ? ` in ${lang}` : ''}${files ? ' with files' : ''}`;
   };
   textarea.addEventListener('input', sync);
   reset.addEventListener('click', () => {
@@ -133,30 +136,33 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
     news.hidden = false;
   };
 
-  const send = () => busy(approve, async () => {
+  const send = (translate = true) => busy(translate ? approve : asIs, async () => {
     if (!textarea.value.trim()) return toast('The reply cannot be empty.', { kind: 'error' });
     if (!attach.ready()) return undefined;
     const files = attach.tokens();
     // After the draft changed underneath, always send exactly what is on screen.
     const body = edited() || files.length ? { text: textarea.value.trim(), ...remember.value() } : overtaken ? { text: textarea.value.trim() } : {};
     if (files.length) body.attachments = files;
+    if (lang && !translate) body.translate = false;
     sending = true;
     try {
       const out = await api(`/messages/${draft.id}/approve`, { method: 'POST', body });
-      toast(out.knowledgeId ? 'Sent to the guest and saved to the knowledge base.' : 'Sent to the guest.', { kind: 'ok' });
+      const how = lang ? (translate ? ` in ${lang}` : ' in English') : '';
+      toast(out.knowledgeId ? `Sent to the guest${how} and saved to the knowledge base.` : `Sent to the guest${how}.`, { kind: 'ok' });
       removeCard(card);
       onDone();
       inbox.refresh();
     } catch (err) {
-      handleDraftError(err, send);
+      handleDraftError(err, () => send(translate));
     } finally {
       sending = false;
     }
     return undefined;
   });
-  approve.addEventListener('click', send);
+  approve.addEventListener('click', () => send(true));
+  asIs?.addEventListener('click', () => send(false));
   // Ctrl/Cmd+Enter sends from the text box.
-  textarea.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) send(); });
+  textarea.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) send(true); });
 
   reject.addEventListener('click', async () => {
     const done = await rejectDialog(draft, conversation);
@@ -185,18 +191,19 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
       guestFiles),
     h('div', { class: 'draft' },
       h('div', { class: 'draft-head' },
-        h('label', { htmlFor: textId, class: 'label' }, scheduled ? 'Scheduled message (edit if needed)' : 'Drafted reply (edit if needed)'),
+        h('label', { htmlFor: textId, class: 'label' }, scheduled ? 'Scheduled message (edit if needed)' : lang ? 'Drafted reply, in English (edit if needed)' : 'Drafted reply (edit if needed)'),
         scheduled ? chip(String(draft.summary || 'Scheduled').replace(/^Scheduled: /, ''), { icon: 'clock' }) : confidence ? chip(confidence.label, confidence) : null),
       news,
       draft.checkNote && h('p', { class: 'note check-note' }, icon('alert', 16), `The assistant is not sure this is still needed: ${draft.checkNote}`),
       textarea,
       // The draft is written in the guest's language: read it in English before approving.
-      !isEnglish(conversation.language) && translateControl(() => textarea.value, { label: 'Translate this reply to English' }),
+      lang ? h('p', { class: 'hint' }, `The guest writes in ${lang}. Check and edit the reply here in English; it is translated into ${lang} when you send it. Links, times, numbers and codes are sent exactly as written.`)
+        : !isEnglish(conversation.language) && translateControl(() => textarea.value, { label: 'Translate this reply to English' }),
       // Pictures and the video link of the knowledge entry the answer came from.
       attachmentsView(draft.attachments, { links: draft.links, label: 'Picture from the knowledge base', caption: 'Shown to the guest with this reply' }),
       attach.el,
       remember.el),
-    h('div', { class: 'actions' }, approve, reject, reset),
+    h('div', { class: 'actions' }, approve, asIs, reject, reset),
   );
   return card;
 }
@@ -209,17 +216,21 @@ function rejectDialog(draft, conversation) {
       const reply = h('textarea', { rows: 4, id: uid('rej') });
       const remember = rememberControl({ label: conversation.propertyName ? `Remember my reply for ${conversation.propertyName}` : 'Remember my reply', propertyName: conversation.propertyName, category: draft.category, text: () => reply.value });
       remember.el.hidden = true;
+      const foreign = conversation.language && !isEnglish(conversation.language) ? conversation.language : null;
+      const translate = foreign ? check(`Translate my reply into ${foreign} before sending`, { checked: true }) : null;
+      if (translate) translate.wrap.hidden = true;
       const submit = button('Reject draft', { variant: 'danger' });
       reply.addEventListener('input', () => {
         const has = !!reply.value.trim();
         remember.el.hidden = !has;
+        if (translate) translate.wrap.hidden = !has;
         remember.refresh();
         submit.lastChild.textContent = has ? 'Reject and send my reply' : 'Reject draft';
       });
       const go = () => busy(submit, async () => {
         const text = reply.value.trim();
         try {
-          await api(`/messages/${draft.id}/reject`, { method: 'POST', body: text ? { replyText: text, ...remember.value() } : {} });
+          await api(`/messages/${draft.id}/reject`, { method: 'POST', body: text ? { replyText: text, ...remember.value(), ...(translate?.input.checked ? { translate: true } : {}) } : {} });
           toast(text ? 'Draft rejected. Your reply was sent to the guest.' : 'Draft rejected. Nothing was sent to the guest.', { kind: 'ok' });
           close(true);
         } catch (err) {
@@ -231,6 +242,7 @@ function rejectDialog(draft, conversation) {
       return [
         h('p', null, 'The guest will not see the drafted reply. You can write your own reply instead, or leave this empty and answer later from the chat.'),
         h('div', { class: 'field' }, h('label', { htmlFor: reply.id }, 'Your reply to the guest (optional)'), reply),
+        translate?.wrap,
         remember.el,
         h('div', { class: 'dialog-actions' }, button('Cancel', { onclick: () => close(false) }), submit),
       ];
@@ -404,7 +416,7 @@ function answerForm(ticket, { autoMode, card }) {
   const useSuggestion = ticket.suggestion && button('Use this', { variant: 'primary', small: true, icon: 'check' });
   useSuggestion?.addEventListener('click', () => {
     answer.value = ticket.suggestion;
-    verbatim.input.checked = true; // it is already worded for the guest
+    verbatim.input.checked = !ticket.language || isEnglish(ticket.language); // already worded for the guest; in another language the assistant translates it
     answer.dispatchEvent(new Event('input'));
     verbatim.input.dispatchEvent(new Event('change'));
     answer.focus();

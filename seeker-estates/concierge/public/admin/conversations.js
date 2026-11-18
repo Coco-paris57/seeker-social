@@ -41,6 +41,7 @@ function messageEl(m, conversation, onChange) {
     m.text && !isEnglish(conversation.language) && translateControl(m.text),
     attachmentsView(m.attachments, { links: m.links, label: m.role === 'guest' ? 'Photo from the guest' : 'Picture from the knowledge base' }),
     chips.length ? h('p', { class: 'msg-chips' }, chips) : null,
+    m.english && h('details', { class: 'original' }, h('summary', null, 'Show the English version the team agreed'), h('p', { class: 'pre' }, m.english)),
     m.edited && m.original && h('details', { class: 'original' }, h('summary', null, 'Show the original draft'), h('p', { class: 'pre' }, m.original)));
 }
 
@@ -110,11 +111,13 @@ function threadPane(id, { onGone }) {
   const replyBox = autoGrow(h('textarea', { id: replyId, rows: 1, maxLength: 4000, placeholder: 'Write to the guest' }));
   const sendBtn = button('Send', { variant: 'primary', icon: 'send', type: 'submit' });
   const composerNote = h('p', { class: 'hint' });
+  // Shown when the guest writes in another language: type in English, send in theirs.
+  const sendTranslated = button('Send translated', { icon: 'chat', small: true, hidden: true });
   const attachSlot = h('div');
   let attach = null; // built once the chat's channel is known
   const composer = h('form', { class: 'composer' },
     h('label', { htmlFor: replyId, class: 'visually-hidden' }, 'Your message to the guest'),
-    h('div', { class: 'composer-row' }, replyBox, sendBtn), attachSlot, composerNote);
+    h('div', { class: 'composer-row' }, replyBox, sendBtn), h('div', { class: 'actions' }, sendTranslated), attachSlot, composerNote);
 
   // On a phone the messages get the whole screen: one status line under the name, and everything
   // else (chips, summary, check-in, read and take-over actions, stay details) in a sheet behind "i".
@@ -243,6 +246,9 @@ function threadPane(id, { onGone }) {
       h('p', null, h('strong', null, c.botPaused ? 'The team is handling this chat.' : 'The assistant is replying in this chat.'),
         c.botPaused ? ' The assistant is paused and you are notified of each guest message.' : ''),
       btn);
+    const foreign = c.language && !isEnglish(c.language) ? c.language : null;
+    sendTranslated.hidden = !foreign;
+    if (foreign) sendTranslated.lastChild.textContent = `Send translated into ${foreign}`;
     composerNote.textContent = c.botPaused ? '' : 'The assistant is still replying here. Take over if you want it to stay quiet.';
     composerNote.hidden = c.botPaused;
   }
@@ -345,13 +351,13 @@ function threadPane(id, { onGone }) {
     first = false;
   }
 
-  const send = () => busy(sendBtn, async () => {
+  const send = (translate = false) => busy(translate ? sendTranslated : sendBtn, async () => {
     const text = replyBox.value.trim();
     if (attach && !attach.ready()) return;
     const files = attach ? attach.tokens() : [];
     if (!text && !files.length) return;
     try {
-      await api(`/conversations/${id}/reply`, { method: 'POST', body: files.length ? { text, attachments: files } : { text } });
+      await api(`/conversations/${id}/reply`, { method: 'POST', body: { text, ...(files.length ? { attachments: files } : {}), ...(translate && text ? { translate: true } : {}) } });
       attach?.clear();
       replyBox.value = '';
       replyBox.dispatchEvent(new Event('input'));
@@ -359,7 +365,7 @@ function threadPane(id, { onGone }) {
       scroller.scrollTop = scroller.scrollHeight;
       replyBox.focus();
     } catch (err) {
-      showError(err, send);
+      showError(err, () => send(translate));
     }
   });
   composer.addEventListener('submit', (e) => {
@@ -367,6 +373,7 @@ function threadPane(id, { onGone }) {
     send();
   });
   replyBox.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) send(); });
+  sendTranslated.addEventListener('click', () => send(true));
 
   load();
   return { el, reload: load, typing(on) { writing.hidden = !on; if (on) scroller.scrollTop = scroller.scrollHeight; } };

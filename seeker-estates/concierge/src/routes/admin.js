@@ -5,7 +5,7 @@ import QRCode from 'qrcode';
 import { config, SETTING_DEFAULTS } from '../config.js';
 import { q, getRaw, getSettings, setSetting, audit, parseJson } from '../db.js';
 import { createUser, endTeamSession, hashPassword, requireAdmin, requireUser, startTeamSession, currentUser, verifyPassword } from '../auth.js';
-import { reassess, teamAttachments, answerTicket, approvalStats, approveDraft, closeTicket, previewTicketReply, propertyMode, rejectDraft, sendMessage, SENSITIVE_CATEGORIES, stageOf } from '../bot.js';
+import { english, toGuestLanguage, reassess, teamAttachments, answerTicket, approvalStats, approveDraft, closeTicket, previewTicketReply, propertyMode, rejectDraft, sendMessage, SENSITIVE_CATEGORIES, stageOf } from '../bot.js';
 import { CATEGORIES } from '../llm.js';
 import { bus, emitAdmin, emitConversation, notifyTeam, vapidPublicKey } from '../notify.js';
 import { refreshTeamRecords, syncAll } from '../sync.js';
@@ -53,6 +53,8 @@ function messageOut(m, names = userNames()) {
     confidence: meta.confidence || null, category: meta.category || null, summary: meta.summary || null,
     automatic: !!meta.auto, edited: !!meta.edited, original: meta.original || null, ticketId: meta.ticketId || null,
     deliveryError: meta.deliveryError || null, external: !!meta.external, learned: !!meta.learned, withheldReason: meta.withheldReason || null, checkNote: meta.checkNote || null,
+    // A draft read in English that goes out in the guest's language; once sent, the English that was agreed.
+    sendIn: m.status === 'pending' && meta.sendIn && !english(meta.sendIn) ? meta.sendIn : null, english: m.status === 'sent' ? meta.english || null : null,
     attachments: (m.role === 'guest' ? q.all('SELECT token, kind FROM files WHERE message_id = ?', m.id) : meta.attachments || []).map((a) => adminFile(a)), links: meta.links || [],
     authorName: names[m.created_by] || names[meta.approvedBy] || names[meta.answeredBy] || null,
   };
@@ -197,14 +199,14 @@ function inbox() {
 admin.get('/inbox', (req, res) => res.json(inbox()));
 
 admin.post('/messages/:id/approve', async (req, res) => {
-  const { text, remember, scope, sensitive, attachments } = req.body || {};
-  const out = await approveDraft(Number(req.params.id), req.user, { text, remember: !!remember, scope, sensitive: setBool(sensitive), attachments });
+  const { text, remember, scope, sensitive, attachments, translate } = req.body || {};
+  const out = await approveDraft(Number(req.params.id), req.user, { text, remember: !!remember, scope, sensitive: setBool(sensitive), attachments, translate: translate !== false });
   res.json({ message: messageOut(out.message), knowledgeId: out.knowledgeId });
 });
 
 admin.post('/messages/:id/reject', async (req, res) => {
-  const { replyText, remember, scope, sensitive, attachments } = req.body || {};
-  const out = await rejectDraft(Number(req.params.id), req.user, { replyText, remember: !!remember, scope, sensitive: setBool(sensitive), attachments });
+  const { replyText, remember, scope, sensitive, attachments, translate } = req.body || {};
+  const out = await rejectDraft(Number(req.params.id), req.user, { replyText, remember: !!remember, scope, sensitive: setBool(sensitive), attachments, translate: translate === true });
   res.json({ message: out.message ? messageOut(out.message) : null, knowledgeId: out.knowledgeId });
 });
 
@@ -375,7 +377,9 @@ admin.post('/conversations/:id/reply', async (req, res) => {
   const files = teamAttachments(c, req.body?.attachments);
   if (!text && !files.length) throw new HttpError(400, 'Please write a message.');
   if (text.length > 4000) throw new HttpError(400, 'Messages can be up to 4000 characters.');
-  const m = await sendMessage(c, 'team', text, { createdBy: req.user.id, meta: files.length ? { attachments: files } : {} });
+  // Written in English, sent in the guest's language when the team member asks for that.
+  const sendText = req.body?.translate === true && text ? await toGuestLanguage(c, text) : text;
+  const m = await sendMessage(c, 'team', sendText, { createdBy: req.user.id, meta: { ...(files.length ? { attachments: files } : {}), ...(sendText !== text ? { english: text } : {}) } });
   for (const f of files) q.run('UPDATE files SET message_id = COALESCE(message_id, ?) WHERE token = ?', m.id, f.token);
   audit(req.user.id, 'conversation.reply', `conversation ${c.id}`);
   res.status(201).json({ message: messageOut(m) });
