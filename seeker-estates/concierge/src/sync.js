@@ -53,6 +53,17 @@ export function checkinFromNotice(notice) {
   return { link, done: /online check-?in completed/i.test(text) };
 }
 
+/**
+ * 0 = a confirmed booking, 1 = cancelled, 2 = an enquiry: someone asking before they have booked.
+ * Smoobu marks confirmed bookings as "reservation" or "modification of booking"; anything else
+ * that is not a cancellation is treated as an enquiry, so it never counts as a stay.
+ */
+export function bookingState(b) {
+  const type = String(b.type || 'reservation').toLowerCase();
+  if (type === 'cancellation') return 1;
+  return type === 'reservation' || type === 'modification of booking' ? 0 : 2;
+}
+
 export function upsertReservation(b) {
   if (!b?.id || !b.apartment?.id || !b.arrival || !b.departure) return;
   const property = q.get('SELECT id FROM properties WHERE smoobu_id = ?', b.apartment.id);
@@ -79,7 +90,7 @@ export function upsertReservation(b) {
        checkin_done = MAX(checkin_done, excluded.checkin_done), synced_at = excluded.synced_at`,
     b.id, property.id, first, last, b['guest-name'] || `${first} ${last}`.trim(), b.arrival, b.departure,
     b['check-in'] || null, b['check-out'] || null, b.adults ?? null, b.children ?? null,
-    b.channel?.name || null, b.language || null, b.type === 'cancellation' ? 1 : 0, checkin.link, checkin.done ? 1 : 0,
+    b.channel?.name || null, b.language || null, bookingState(b), checkin.link, checkin.done ? 1 : 0,
   );
 }
 

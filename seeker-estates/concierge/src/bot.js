@@ -26,6 +26,7 @@ export function propertyMode(property, settings = getSettings()) {
 
 export function stageOf(reservation, today = londonDate()) {
   if (!reservation) return 'unknown';
+  if (reservation.cancelled === 2) return 'enquiry'; // asking before booking
   if (today < reservation.arrival) return 'before_arrival';
   if (today > reservation.departure) return 'after_stay';
   return 'during_stay';
@@ -33,6 +34,7 @@ export function stageOf(reservation, today = londonDate()) {
 
 /** Access details are released from N hours before check-in until the end of the checkout day. */
 export function accessReleased(conversation, reservation, settings, now = Date.now()) {
+  if (reservation?.cancelled) return false; // cancelled bookings and enquiries never get access details
   if (!conversation.verified || !reservation || reservation.cancelled) return false;
   const opens = londonToUtc(reservation.arrival, reservation.check_in || '15:00') - settings.accessInfoHours * 3600_000;
   const closes = londonToUtc(reservation.departure, reservation.check_out || '11:00') + 3 * 3600_000; // short grace after checkout
@@ -141,6 +143,9 @@ export function buildContext(conversation, { latest = '', uptoMessageId = null }
     conversation = { ...conversation, property_id: reservation.property_id };
   }
   const property = conversation.property_id ? q.get('SELECT * FROM properties WHERE id = ?', conversation.property_id) : null;
+  // Someone asking before booking is linked to an enquiry record, but is not a guest: nothing reserved for verified guests applies.
+  const isEnquiry = reservation?.cancelled === 2;
+  if (isEnquiry) conversation = { ...conversation, verified: 0 };
   const released = accessReleased(conversation, reservation, settings);
   const details = parseJson(property?.details);
 
@@ -182,7 +187,7 @@ export function buildContext(conversation, { latest = '', uptoMessageId = null }
     language: conversation.language,
     channel: conversation.channel, // 'web' (the guest opened our chat) or 'smoobu' (Airbnb, Booking.com, email)
     property: property && {
-      name: property.display_name || property.name,
+      name: isEnquiry ? property.name : property.display_name || property.name, // the guest-facing name is the full address: not for someone who has not booked
       area: property.area,
       postcode: property.postcode,
       // The full street address identifies the flat, so it is kept for verified guests.
@@ -196,7 +201,8 @@ export function buildContext(conversation, { latest = '', uptoMessageId = null }
       max_guests: details.rooms?.maxOccupancy ?? undefined,
       amenities: details.amenities?.length ? details.amenities : undefined,
     },
-    stay: reservation && {
+    enquiry: reservation?.cancelled === 2 ? { dates_asked_about: `${reservation.arrival} to ${reservation.departure}`, guests: [reservation.adults && `${reservation.adults} adults`, reservation.children ? `${reservation.children} children` : null].filter(Boolean).join(', ') || undefined, through: reservation.channel || undefined } : undefined,
+    stay: reservation && reservation.cancelled !== 2 && {
       guest_first_name: reservation.first_name || undefined,
       arrival_date: reservation.arrival,
       departure_date: reservation.departure,
@@ -528,7 +534,9 @@ async function processPending(conversationId, reuse) {
   const liveChat = conversation.channel === 'web'; // holding notes only make sense in a live chat
   // Replies that go out through Airbnb, Booking.com or email wait for approval until the team
   // switches channel replies to automatic; after that they follow the property's mode.
-  const learning = propertyMode(property, settings) !== 'auto' || (!liveChat && !settings.channelAuto);
+  // A reply to someone who has not booked yet is always read by a person first.
+  const enquiry = !!conversation.reservation_id && q.get('SELECT cancelled FROM reservations WHERE id = ?', conversation.reservation_id)?.cancelled === 2;
+  const learning = enquiry || propertyMode(property, settings) !== 'auto' || (!liveChat && !settings.channelAuto);
 
   // Check-in, access and WiFi questions from a guest who has not verified their booking: ask
   // them to verify straight away, with fixed wording, instead of waiting for the team. The

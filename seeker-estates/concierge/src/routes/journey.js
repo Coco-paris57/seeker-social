@@ -7,7 +7,7 @@ import { CATEGORIES } from '../llm.js';
 import { decideSuggestion, PLACEHOLDERS, runTidy, seedTemplates } from '../journey.js';
 import { clip, HttpError } from '../util.js';
 import { checkStillNeeded, upsellType } from '../bot.js';
-import { refreshTasks, TASK_TYPES } from '../tasks.js';
+import { draftReviews, refreshTasks, TASK_TYPES } from '../tasks.js';
 import { iso } from './shared.js';
 
 export const journey = express.Router();
@@ -129,7 +129,7 @@ export function taskOut(t) {
   const r = q.get('SELECT * FROM reservations WHERE id = ?', t.reservation_id);
   const c = q.get('SELECT id FROM conversations WHERE reservation_id = ? ORDER BY channel = \'smoobu\' DESC, id DESC LIMIT 1', t.reservation_id);
   return {
-    id: t.id, type: t.type, label: TASK_TYPES[t.type]?.label || t.type, kind: t.type === 'happy' ? 'happy' : 'upsell',
+    id: t.id, type: t.type, label: TASK_TYPES[t.type]?.label || t.type, kind: t.type === 'happy' ? 'happy' : t.type === 'review' ? 'review' : 'upsell',
     reservationId: t.reservation_id, guestName: r?.guest_name || 'Guest', propertyName: propertyName(r?.property_id), arrival: r?.arrival, departure: r?.departure,
     channel: r?.channel || null, text: t.body, at: t.send_at, why: t.why, status: t.status, note: t.note || null, conversationId: c?.id ?? null,
   };
@@ -138,6 +138,7 @@ export function taskOut(t) {
 /** Everything waiting for a person. An item leaves the list by itself once it is dealt with. */
 journey.get('/todo', (req, res) => {
   refreshTasks();
+  draftReviews().catch((e) => console.error(`Review drafts: ${e.message}`)); // written in the background; the list refreshes when they are ready
   const tasks = q.all("SELECT * FROM tasks WHERE status = 'suggested' ORDER BY send_at").map(taskOut);
   const scheduled = q.all("SELECT * FROM tasks WHERE status = 'scheduled' ORDER BY send_at").map(taskOut);
   const followUps = q.all("SELECT f.*, c.guest_name, c.property_id, c.mood FROM followups f JOIN conversations c ON c.id = f.conversation_id WHERE f.status = 'suggested' ORDER BY f.send_at")
@@ -156,6 +157,7 @@ journey.get('/todo', (req, res) => {
 journey.post('/tasks/:id/schedule', async (req, res) => {
   const t = q.get("SELECT * FROM tasks WHERE id = ? AND status IN ('suggested', 'scheduled')", Number(req.params.id));
   if (!t) throw new HttpError(409, 'This is no longer on the list.');
+  if (t.type === 'review') throw new HttpError(400, 'A review is posted on the booking site, not sent as a message.');
   const text = String(req.body?.text || '').trim().slice(0, 2000);
   const at = Date.parse(req.body?.at);
   if (!text) throw new HttpError(400, 'Write the message to send.');
@@ -174,6 +176,16 @@ journey.post('/tasks/:id/schedule', async (req, res) => {
   q.run("UPDATE tasks SET body = ?, send_at = ?, status = 'scheduled', note = '', created_by = ?, scheduled_at = strftime('%Y-%m-%d %H:%M:%f', 'now') WHERE id = ?", text, new Date(at).toISOString(), req.user.id, t.id);
   audit(req.user.id, 'task.schedule', `${t.type} booking ${t.reservation_id}`);
   res.json({ task: taskOut(q.get('SELECT * FROM tasks WHERE id = ?', t.id)) });
+});
+
+/** A review was posted on the booking site (or another task was done by hand): off the list, and not proposed again. */
+journey.post('/tasks/:id/done', (req, res) => {
+  const t = q.get("SELECT * FROM tasks WHERE id = ? AND status = 'suggested'", Number(req.params.id));
+  if (!t) throw new HttpError(409, 'This is no longer on the list.');
+  const text = String(req.body?.text ?? t.body).trim().slice(0, 2000);
+  q.run("UPDATE tasks SET status = 'done', body = ?, note = '', created_by = ? WHERE id = ?", text || t.body, req.user.id, t.id);
+  audit(req.user.id, 'task.done', `${t.type} booking ${t.reservation_id}`);
+  res.json({ ok: true });
 });
 
 /** Dismiss a proposal, or cancel a scheduled one. It is not proposed again for this booking. */

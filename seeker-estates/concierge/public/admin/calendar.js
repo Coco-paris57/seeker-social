@@ -3,7 +3,7 @@
 // selling, same-day turnovers, and the messages proposed for each stay. Read-only: bookings are
 // made and changed in Smoobu.
 import { api, busy, button, chip, fill, fullTime, guestLabel, h, icon, loadError, loading, MOODS, moodChip, openDialog, pageHeader, showError, stayDate, toast } from './lib.js';
-import { messageCard } from './planner.js';
+import { messageCard, reviewCard } from './planner.js';
 
 const DAY_MS = 86400_000;
 const ymd = (d) => d.toISOString().slice(0, 10);
@@ -66,7 +66,7 @@ async function openCard(id, onChange) {
         d.conversation?.summary && h('p', { class: 'chat-summary' }, h('strong', null, 'Where this stands: '), d.conversation.summary),
         h('h3', null, 'Messages to send'),
         d.tasks.length
-          ? d.tasks.map((t) => (t.status === 'scheduled'
+          ? d.tasks.map((t) => (t.kind === 'review' ? reviewCard(t, { done: (m) => { toast(m, { kind: 'ok' }); again(); }, fail: showError }) : t.status === 'scheduled'
             ? h('div', { class: 'card todo-card' }, h('p', null, icon('clock', 16), ` ${t.label} · scheduled for ${fullTime(t.at)}`), h('p', { class: 'pre muted' }, t.text),
               h('div', { class: 'actions' }, button('Cancel', { small: true, icon: 'x', onclick: (e) => busy(e.currentTarget, () => act(api(`/tasks/${t.id}`, { method: 'DELETE', body: {} }), 'Cancelled')) })))
             : messageCard({

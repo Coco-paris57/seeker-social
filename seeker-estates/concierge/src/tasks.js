@@ -9,6 +9,8 @@ import { emitAdmin, notifyTeam } from './notify.js';
 import { smoobu } from './smoobu.js';
 import { addDays, clip, londonDate, londonToUtc, HttpError } from './util.js';
 import { parseJson } from './db.js';
+import * as llm from './llm.js';
+import { brand } from './brand.js';
 
 export const TASK_TYPES = {
   upsell_early: { label: 'Offer early check-in', offer: 'Early check-in', extra: 'early_checkin' },
@@ -19,9 +21,13 @@ export const TASK_TYPES = {
   upsell_departure: { label: 'Offer late checkout or an extra night', parts: ['upsell_late', 'upsell_night'] },
   upsell_arrival: { label: 'Offer an earlier arrival or early check-in', parts: ['upsell_before', 'upsell_early'] },
   happy: { label: 'Thank a happy guest' },
+  // Not a message: the host's review of the guest, drafted after checkout for a person to post on the booking site.
+  review: { label: 'Review the guest' },
 };
 
 const LOOK_AHEAD = 10; // days before arrival from which offers are proposed
+const REVIEW_SITES = /airbnb|vrbo/i; // Booking.com does not let hosts review guests
+const REVIEW_DAYS = 13; // Airbnb closes reviews 14 days after checkout
 
 /** The moment to send, and why. Null when it is too late to be useful. */
 function bestTime(type, r, now, manual = false) {
@@ -160,6 +166,11 @@ function candidates(r, now, rows = {}) {
     const when = bestTime('happy', r, now);
     if (when) out.happy = { ...when, body: bodyFor('happy', r, property) };
   }
+  // After checkout, a review of the guest for the sites where hosts review guests. The text is
+  // written afterwards from the conversation (draftReviews); here it is only put on the list.
+  if (REVIEW_SITES.test(r.channel || '') && r.departure <= londonDate(new Date(now)) && r.departure >= addDays(londonDate(new Date(now)), -REVIEW_DAYS)) {
+    out.review = { at: new Date(Math.max(londonToUtc(r.departure, '12:00'), 0)).toISOString(), why: rows.review?.why || '', body: rows.review?.body || '' };
+  }
   if (moods.includes('unhappy')) return out; // never sell to a guest with an open complaint
   const offers = {};
   const added = (type) => !!rows[type]?.manual || Object.entries(TASK_TYPES).some(([combo, t]) => t.parts?.includes(type) && rows[combo]?.manual);
@@ -193,7 +204,7 @@ function candidates(r, now, rows = {}) {
 export function refreshTasks(now = Date.now()) {
   const today = londonDate(new Date(now));
   let changed = 0;
-  const bookings = q.all('SELECT * FROM reservations WHERE cancelled = 0 AND departure >= ? AND (arrival <= ? OR id IN (SELECT reservation_id FROM tasks WHERE manual = 1))', addDays(today, -3), addDays(today, LOOK_AHEAD));
+  const bookings = q.all('SELECT * FROM reservations WHERE cancelled = 0 AND departure >= ? AND (arrival <= ? OR id IN (SELECT reservation_id FROM tasks WHERE manual = 1))', addDays(today, -REVIEW_DAYS), addDays(today, LOOK_AHEAD));
   const live = new Set();
   for (const r of bookings) {
     live.add(r.id);
@@ -208,7 +219,7 @@ export function refreshTasks(now = Date.now()) {
       } else if (row?.status === 'suggested' && !c) {
         q.run('DELETE FROM tasks WHERE id = ?', row.id); // no longer possible, already bought, too late, or now part of a combined message
         changed++;
-      } else if (row?.status === 'suggested' && !row.note && Date.parse(row.send_at) < now) {
+      } else if (row?.status === 'suggested' && type !== 'review' && !row.note && Date.parse(row.send_at) < now) {
         q.run('UPDATE tasks SET send_at = ?, why = ? WHERE id = ?', c.at, c.why, row.id); // the proposed moment has passed: propose the next good one
         changed++;
       }
@@ -220,6 +231,37 @@ export function refreshTasks(now = Date.now()) {
   }
   if (changed) emitAdmin('todo');
   return changed;
+}
+
+let drafting = false;
+/** Write the review text for guests who have checked out, from their conversation. Call this every minute. */
+export async function draftReviews(limit = 5) {
+  if (drafting) return 0;
+  drafting = true;
+  let done = 0;
+  try {
+    for (const t of q.all("SELECT * FROM tasks WHERE type = 'review' AND status = 'suggested' AND body = '' LIMIT ?", limit)) {
+      const r = q.get('SELECT * FROM reservations WHERE id = ?', t.reservation_id);
+      if (!r) continue;
+      const chats = q.all('SELECT id FROM conversations WHERE reservation_id = ?', r.id).map((c) => c.id);
+      const marks = chats.map(() => '?').join(',') || 'NULL';
+      const history = chats.length ? q.all(`SELECT role, body FROM messages WHERE conversation_id IN (${marks}) AND (role = 'guest' OR status = 'sent') AND kind NOT IN ('holding', 'scheduled', 'verify') ORDER BY COALESCE(sent_at, created_at), id LIMIT 80`, ...chats)
+        .map((m) => ({ role: m.role === 'guest' ? 'guest' : 'team', text: clip(r.checkin_link ? m.body.split(r.checkin_link).join('[link]') : m.body, 700) })) : [];
+      const requests = chats.length ? q.all(`SELECT type, summary FROM tickets WHERE conversation_id IN (${marks})`, ...chats).map((x) => `${x.type}: ${x.summary}`) : [];
+      try {
+        const out = await llm.guestReview({ company: brand().company, guestFirstName: r.first_name, nights: Math.max(1, Math.round((Date.parse(r.departure) - Date.parse(r.arrival)) / 86400_000)), channel: r.channel, history, requests });
+        if (!out.review) continue;
+        q.run("UPDATE tasks SET body = ?, why = ? WHERE id = ? AND body = ''", out.review, `Suggested rating: ${out.stars} out of 5.${out.note ? ` ${out.note}` : ''}`, t.id);
+        done++;
+      } catch (e) {
+        console.error(`Review draft for booking ${r.id}: ${e.message}`); // tried again on the next run
+      }
+    }
+  } finally {
+    drafting = false;
+  }
+  if (done) emitAdmin('todo');
+  return done;
 }
 
 let sending = false;

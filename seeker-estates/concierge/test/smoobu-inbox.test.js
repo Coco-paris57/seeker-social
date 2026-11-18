@@ -157,3 +157,33 @@ test('booking-channel replies speak as the team ("we"); the web chat speaks as t
   const me = await say(guest, 'Is there a cot available?');
   assert.match(me.messages.at(-1).text, /\bI\b/);
 });
+
+test('an enquiry from a booking channel is answered as an enquiry: never a stay, never automatic, no access details', async () => {
+  const { upsertReservation, bookingState } = await import('../src/sync.js');
+  const { buildContext } = await import('../src/bot.js');
+  const { addDays, londonDate } = await import('./helpers.js');
+  assert.deepEqual(['reservation', 'modification of booking', 'cancellation', 'inquiry', 'Request to book'].map((type) => bookingState({ type })), [0, 0, 1, 2, 2]);
+  q.run('UPDATE properties SET smoobu_id = 77 WHERE id = ?', ctx.propertyId);
+  const today = londonDate();
+  upsertReservation({ id: 7001, type: 'inquiry', apartment: { id: 77 }, arrival: today, departure: addDays(today, 3), firstname: 'Ella', lastname: 'Ask', adults: 2, channel: { name: 'Airbnb' } });
+  // Not a stay: not on the calendar, nothing to sell, no scheduled messages.
+  const team = await signIn(srv.base);
+  assert.ok(!(await team('GET', '/api/admin/calendar')).json.reservations.some((r) => r.id === 7001));
+  assert.ok(!(await team('GET', '/api/admin/todo')).json.tasks.some((t) => t.reservationId === 7001));
+  fake.messages = async (id) => (id === 7001 ? [{ id: 9101, type: 1, message: 'How do I use the washing machine? And what is the door code?' }] : []);
+  const before = outbox.length;
+  await handleSmoobuEvent({ action: 'newMessage', data: { id: 9101, sender: 'guest', booking: { id: 7001 } } });
+  const c = q.get('SELECT * FROM conversations WHERE reservation_id = 7001');
+  assert.ok(c);
+  assert.equal(outbox.length, before); // auto mode and channel auto are on in this file, yet nothing went out by itself
+  assert.equal(q.get("SELECT COUNT(*) AS n FROM messages WHERE conversation_id = ? AND status = 'pending'", c.id).n, 1);
+  const context = buildContext(c);
+  assert.equal(context.stage, 'enquiry');
+  assert.ok(!context.stay); // no booking facts for someone who has not booked
+  assert.equal(context.verified, false);
+  assert.equal(context.accessReleased, false);
+  assert.match(context.enquiry.dates_asked_about, /^\d{4}-\d{2}-\d{2} to /);
+  assert.ok(!context.knowledge.some((k) => /door code/i.test(k.question))); // verified-only knowledge is held back
+  assert.equal(context.property.address, undefined);
+  assert.equal((await team('GET', `/api/admin/conversations/${c.id}`)).json.conversation.stage, 'enquiry');
+});

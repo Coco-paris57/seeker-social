@@ -245,3 +245,36 @@ test('once a person has scheduled an offer after the warning, it is sent unless 
   assert.equal(outbox.length, before + 1);
   assert.ok(!(await todo()).tasks.some((t) => t.id === late.id));
 });
+
+test('after checkout a review of the guest is drafted from the conversation, for the sites where hosts review guests', async () => {
+  const { draftReviews } = await import('../src/tasks.js');
+  q.run('DELETE FROM tasks'); q.run('DELETE FROM reservations'); q.run('DELETE FROM messages'); q.run('DELETE FROM conversations'); q.run('DELETE FROM offers');
+  const add = (id, channel, out, name) => q.run("INSERT INTO reservations(id, property_id, first_name, last_name, guest_name, arrival, departure, channel) VALUES(?, ?, ?, 'X', ?, ?, ?, ?)", id, ctx.propertyId, name, `${name} X`, addDays(ctx.today, out - 4), addDays(ctx.today, out), channel);
+  add(801, 'Airbnb', -1, 'Nina');       // left yesterday
+  add(802, 'Booking.com', -1, 'Bo');    // hosts cannot review guests there
+  add(803, 'Airbnb', -20, 'Old');       // the review window has closed
+  add(804, 'Airbnb', 2, 'Stay');        // still in the flat
+  add(805, 'Vrbo', 0, 'Quiet');         // left today, never wrote
+  const cid = q.insert("INSERT INTO conversations(property_id, reservation_id, channel, guest_name, verified, mood) VALUES(?, 801, 'smoobu', 'Nina X', 1, 'positive')", ctx.propertyId);
+  q.run("INSERT INTO messages(conversation_id, role, body, sent_at) VALUES(?, 'guest', 'Thank you, the flat was lovely and check-in was easy.', datetime('now', '-2 days'))", cid);
+  let reviews = (await todo()).tasks.filter((t) => t.kind === 'review');
+  assert.deepEqual(reviews.map((t) => t.reservationId).sort(), [801, 805]);
+  await draftReviews();
+  reviews = (await todo()).tasks.filter((t) => t.kind === 'review');
+  const nina = reviews.find((t) => t.reservationId === 801);
+  assert.match(nina.text, /^Nina was a lovely guest/);
+  assert.match(nina.why, /^Suggested rating: 5 out of 5\./);
+  assert.equal(nina.label, 'Review the guest');
+  const quiet = reviews.find((t) => t.reservationId === 805);
+  assert.match(quiet.why, /No messages were exchanged.*Check the cleaning report/);
+  // It is posted by a person on the booking site: it cannot be scheduled as a message, and nothing is sent.
+  const before = outbox.length;
+  assert.equal((await team('POST', `/api/admin/tasks/${nina.id}/schedule`, { text: nina.text, at: new Date(Date.now() + 3600_000).toISOString() })).status, 400);
+  assert.equal(await runTasks(Date.now() + 30 * 86400_000), 0);
+  assert.equal(outbox.length, before);
+  // Marked as posted: off the list, with the wording that was used, and not drafted again.
+  assert.equal((await team('POST', `/api/admin/tasks/${nina.id}/done`, { text: 'Nina was a wonderful guest.' })).status, 200);
+  await draftReviews();
+  assert.ok(!(await todo()).tasks.some((t) => t.reservationId === 801 && t.kind === 'review'));
+  assert.equal(q.get('SELECT body, status FROM tasks WHERE id = ?', nina.id).body, 'Nina was a wonderful guest.');
+});

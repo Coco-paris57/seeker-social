@@ -4,7 +4,7 @@ import { approvalCard, ticketCard } from './inbox.js';
 import { inbox } from './state.js';
 import { attachControl, CHANNEL_TEXT_ONLY } from './attach.js';
 
-const STAGES = { before_arrival: 'Before arrival', during_stay: 'During stay', after_stay: 'After stay' };
+const STAGES = { enquiry: 'Enquiry · not booked', before_arrival: 'Before arrival', during_stay: 'During stay', after_stay: 'After stay' };
 const CHANNELS = { web: 'Web chat', smoobu: 'Booking channel message' };
 const ROLE_LABELS = { guest: 'Guest', assistant: 'Assistant', team: 'Team' };
 

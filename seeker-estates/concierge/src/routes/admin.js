@@ -3,7 +3,7 @@
 import express from 'express';
 import QRCode from 'qrcode';
 import { config, SETTING_DEFAULTS } from '../config.js';
-import { q, getSettings, setSetting, audit, parseJson } from '../db.js';
+import { q, getRaw, getSettings, setSetting, audit, parseJson } from '../db.js';
 import { createUser, endTeamSession, hashPassword, requireAdmin, requireUser, startTeamSession, currentUser, verifyPassword } from '../auth.js';
 import { reassess, teamAttachments, answerTicket, approvalStats, approveDraft, closeTicket, previewTicketReply, propertyMode, rejectDraft, sendMessage, SENSITIVE_CATEGORIES, stageOf } from '../bot.js';
 import { CATEGORIES } from '../llm.js';
@@ -976,7 +976,7 @@ admin.delete('/knowledge/:id', (req, res) => {
 
 // --- settings, team, audit --------------------------------------------------------------
 
-admin.get('/settings', (req, res) => res.json({ settings: getSettings() }));
+admin.get('/settings', (req, res) => res.json({ settings: getSettings(), channelUnmatched: parseJson(getRaw('channel_unmatched') || 'null', null) }));
 
 // --- branding: this agency's name, colours and logo ---------------------------------------
 

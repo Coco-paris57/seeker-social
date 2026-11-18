@@ -128,13 +128,15 @@ export async function importGuestMessage(bookingId, messageId) {
   let fromGuest = false;
   try {
     if (!q.get('SELECT 1 FROM reservations WHERE id = ?', bookingId)) await syncReservation(bookingId);
-    reservation = q.get('SELECT * FROM reservations WHERE id = ? AND cancelled = 0', bookingId);
+    reservation = q.get('SELECT * FROM reservations WHERE id = ? AND cancelled != 1', bookingId); // a booking, or an enquiry before one
     const message = reservation && (await api.messages(bookingId)).find((m) => m.id === messageId);
     // Type 1 is a message from the guest; type 2 is one we sent. The webhook's own "sender" is not trusted.
     fromGuest = message?.type === 1;
     text = fromGuest ? String(message.message || '').trim() || plain(message.htmlMessage) : '';
   } catch (e) {
     q.run('DELETE FROM smoobu_seen WHERE message_id = ?', messageId); // let a retry try again
+    // Kept so the team can see when a channel message arrives that Smoobu will not give us the booking for (an enquiry, for example).
+    setRaw('channel_unmatched', JSON.stringify({ at: new Date().toISOString(), reason: String(e.message).slice(0, 160) }));
     throw e;
   }
   if (!reservation || !fromGuest) return;
