@@ -172,7 +172,7 @@ The 18 Nov 12:15Z refresh changed the twins. The only logged edits are Reyhan's 
 - So yesterday's min-1 fix for both orphans is done, at double the price.
 
 **The refresh (12:20Z):**
-- 20-24 Nov: 317/331/278/274 -> **334/282/292/284**. The 20-24 Nov total is unchanged at about £1,192, but 21 Nov is down 15%. Min stay is 3/3/2/2.
+- 20-24 Nov: 317/331/278/274 -> **334/282/292/284**. The 20-24 Nov total is £1,192 vs £1,200, but 21 Nov is down 15%. Min stay is 3/3/2/2.
 - 14-18 Dec: 297/300/302/332/311 -> 299/302/303/332/314 (±1%).
 
 Column key: "Line" = comp median x 0.85. PriceLabs vs market uses the 1-3 BR compset (mkt 19 Nov), which understates a 2-bed P50.
