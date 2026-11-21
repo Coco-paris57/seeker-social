@@ -123,7 +123,7 @@ These are market bands, not comps. "Ours" = PriceLabs room (`final_price`, or th
 | 1455876748739910219 | 22-24 Nov | £443 | 221.50 | bookable |
 | 1455876748739910219 | 24-26 Nov, 25-28 Nov, 28 Nov-2 Dec, 3-6 Dec, 27 Dec-4 Jan | n/a | n/a | not returned (closed on the other booked nights) |
 | 1455876748739910219 | 18-20 Dec | £451 | 225.50 | bookable (the synced listing is closed there by min 3) |
-| 1455876748739910219 | 6-19 Dec stays | £553-608 | 184.43-202.67 | bookable (open on the synced listing too) |
+| 1455876748739910219 | 6-19 Dec stays | 3-night £578-608; 6-13 Dec £1,291 | 184.43-202.67 | bookable (open on the synced listing too) |
 | 1657859794156786222 (synced) | 21-24 Nov | n/a | n/a | not returned (booked) |
 | Smoobu (`reservations.csv`) | 20-24 Nov | £489.59 room + £142 cleaning | | Airbnb, confirmed, booked 14 Nov |
 
