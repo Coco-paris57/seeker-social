@@ -109,7 +109,7 @@ Darts schedule (search summary of the PDC/Ally Pally schedule, checked today): R
 - **27 Nov (Finals Fri, double-header), the only open night 22–30 Nov:** **266** (270), min 1, unc 299, +25% override. Market P50 239 / P75 296, occ 68.6%, **Δ +6.1**. That is £33.2 over the fortnight (232.8) and £30 under P75. 28–29 Nov are Booked (Δ +6.0 / 0.0).
 - **1 Dec:** 226 (229), twin 158 (161), min 1. Market P50 228 / P75 289, Δ +2.9. The live override is +25% against the policy +50% (already with Corentin).
 - **13–21 Dec (9 open nights): 3064856 209 / 205 / 203 / 207 / 215 / 228 / 234 / 217 / 227 = £1,945 (yday £2,170, −£225); twin £1,845 (£1,914, −£69).** Market P50 £2,112 / P75 £2,658; est. matched ≈ £2,028. Occ Δ +9.9 / +6.5 / −1.3 / +4.3 / +6.9 / +9.2 / **+15.9 / +12.8 / +14.0** (24–49%).
-  - **We were £58 over the mixed P50 yesterday and are £167 under it today.** The change came from Reyhan's 10–26 Dec −2% replacing a higher setting on 13–19 Dec, on the most compressed open nights we have (19–21 Dec Δ +13 to +16). Confirm or revert.
+  - **Against today's market, yesterday's prices were £58 over the mixed P50 (yesterday's pull: +£67). Today's prices are £167 under it.** The change came from Reyhan's 10–26 Dec −2% replacing a higher setting on 13–19 Dec, on the most compressed open nights we have (19–21 Dec Δ +13 to +16). Confirm or revert.
   - 19–21 Dec: 234 / 217 / 227 = **£678 vs P50 £738 / P75 £951 (−£60)**; yday −£17.
 - **Twins:** identical on 21 Dec (227 / 227) and 1 £ apart on 22 Dec. 20 Dec now differs (217 vs 205). The policy is to keep slightly different prices (fact for the PriceLabs/channel sections).
 - 22–31 Dec are Booked or linked-Blocked; 2–12 Dec are Booked or Blocked.
