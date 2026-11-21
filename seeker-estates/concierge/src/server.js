@@ -6,6 +6,7 @@ import { backfillMoods } from './bot.js';
 import { draftReviews, refreshTasks, runTasks } from './tasks.js';
 import { pollThreads } from './thread-sync.js';
 import { learnStyle } from './style.js';
+import { stayCare } from './care.js';
 import { importGuestMessage } from './routes/webhooks.js';
 import { channelInboxOn } from './channel.js';
 import express from 'express';
@@ -147,7 +148,7 @@ async function main() {
   // Scheduled stay messages every five minutes; the knowledge tidy-up on Monday mornings.
   setInterval(() => runScheduled().catch((e) => console.error(`Scheduled messages: ${e.message}`)), 5 * 60_000).unref();
   setInterval(() => runFollowups().catch((e) => console.error(`Follow-ups: ${e.message}`)), 60_000).unref();
-  setInterval(() => { try { refreshTasks(); } catch (e) { console.error(`To-do list: ${e.message}`); } runTasks().catch((e) => console.error(`To-do messages: ${e.message}`)); draftReviews().catch((e) => console.error(`Review drafts: ${e.message}`)); }, 60_000).unref();
+  setInterval(() => { try { refreshTasks(); stayCare(); } catch (e) { console.error(`To-do list: ${e.message}`); } runTasks().catch((e) => console.error(`To-do messages: ${e.message}`)); draftReviews().catch((e) => console.error(`Review drafts: ${e.message}`)); }, 60_000).unref();
   // Replies sent directly on Airbnb, Booking.com or in Smoobu: checked every three minutes for chats that are waiting.
   setInterval(() => { if (channelInboxOn()) pollThreads(importGuestMessage).catch((e) => console.error(`Thread check: ${e.message}`)); }, 3 * 60_000).unref();
   // How the team writes: studied again once enough new messages written by the team have come in.

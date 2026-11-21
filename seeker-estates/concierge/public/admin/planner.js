@@ -3,6 +3,7 @@
 // An item leaves the list by itself once it is dealt with.
 import { api, autoGrow, busy, button, chip, fill, fullTime, h, icon, loadError, loading, pageHeader, showError, stayDate, timeEl, toast, TICKET_TYPES } from './lib.js';
 import { inbox } from './state.js';
+import { careCard } from './care.js';
 
 const localInput = (iso) => { let d = new Date(iso); if (Number.isNaN(d.getTime())) d = new Date(Date.now() + 3600_000); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
 
@@ -78,7 +79,7 @@ export function todoView() {
       return;
     }
     editing = true;
-    inbox.setTodo(d.badge ?? d.tasks.length + d.followUps.length); // the number on the tab is this list
+    inbox.setTodo(d.badge ?? d.tasks.length + d.followUps.length + (d.care?.length || 0)); // the number on the tab is this list
     const done = (message) => { toast(message, { kind: 'ok' }); editing = false; inbox.refresh(); load(); };
     const fail = (err) => { showError(err); editing = false; load(); };
     const stay = (t) => `${t.propertyName || 'No property'} · ${stayDate(t.arrival)} to ${stayDate(t.departure)}${t.channel ? ` · ${t.channel}` : ''}`;
@@ -99,7 +100,8 @@ export function todoView() {
       d.tidy > 0 && linkRow('bolt', `${d.tidy} knowledge ${d.tidy === 1 ? 'suggestion' : 'suggestions'} to review`, '#/tidy'),
     ].filter(Boolean);
     const section = (title, hint, items) => items.length > 0 && h('section', { class: 'todo-section' }, h('h2', null, `${title} (${items.length})`), hint && h('p', { class: 'hint' }, hint), items);
-    const empty = !d.tasks.length && !d.followUps.length && !d.unhappy.length && !waiting.length;
+    const care = d.care || [];
+    const empty = !d.tasks.length && !d.followUps.length && !d.unhappy.length && !waiting.length && !care.length;
     fill(body,
       empty && h('div', { class: 'card section empty' }, icon('check', 28), h('p', null, h('strong', null, 'Nothing to do.')), h('p', { class: 'muted' }, 'New items appear here as guests write and stays approach.')),
       section('Unhappy guests', 'A check-in message the assistant suggests, with a time. Nothing is sent unless you schedule it.', [
@@ -112,6 +114,7 @@ export function todoView() {
           h('header', { class: 'card-head' }, h('div', { class: 'card-title' }, chip('Unhappy', { tone: 'danger', icon: 'frown' }), h('strong', null, u.guestName)), h('div', { class: 'card-meta' }, h('a', { href: `#/conversations/${u.conversationId}` }, 'Open chat'))),
           h('p', { class: 'muted' }, [u.propertyName, u.summary ? ` · ${u.summary}` : '']))),
       ]),
+      section('Guest care', 'Small things that turn a stay into a five-star review: a gift, a favour or a note the assistant suggests from the conversation. Do it and mark it done, or dismiss it.', care.map(safely((a) => careCard(a, { showGuest: true, after: () => { editing = false; inbox.refresh(); load(); } })))),
       section('Offers to send', 'Extras that are switched on and free in the calendar for these stays. The time is when guests are most likely to say yes.', upsells.map(safely((t) => taskCard(t, 'brand', 'plus')))),
       section('Happy guests', 'A thank-you and review request for guests who sounded pleased.', happy.map(safely((t) => taskCard(t, 'ok', 'smile')))),
       section('Reviews to write', 'Your review of each guest who has checked out, drafted from their conversation. Copy it, post it on Airbnb or Vrbo, then mark it posted. Airbnb closes reviews 14 days after checkout.', reviews.map(safely((t) => reviewCard(t, { done, fail })))),

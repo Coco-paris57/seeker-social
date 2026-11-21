@@ -17,6 +17,7 @@ import { brand, BRAND_DEFAULTS, brandText, resetBrand, saveBrand, saveBrandFile 
 import { syncThread } from '../thread-sync.js';
 import { learnStyle, setStyle, styleStatus } from '../style.js';
 import { historyStatus, startHistory } from '../history.js';
+import { careFor, stayCare } from '../care.js';
 import { importGuestMessage } from './webhooks.js';
 import { createTask, refreshTasks, todoCount, TASK_TYPES } from '../tasks.js';
 import { offersFor } from '../bot.js';
@@ -275,6 +276,7 @@ function reservationOr404(id) {
 admin.get('/reservations/:id', (req, res) => {
   const r = reservationOr404(req.params.id);
   refreshTasks();
+  stayCare();
   const names = userNames();
   const chats = q.all('SELECT * FROM conversations WHERE reservation_id = ? ORDER BY last_message_at DESC', r.id);
   const main = chats[0] || null;
@@ -283,6 +285,7 @@ admin.get('/reservations/:id', (req, res) => {
     reservation: { ...bookingOut(r), propertyName: property ? property.name || property.display_name : null, cancelled: !!r.cancelled },
     offers: (offersFor(r) || []).map((o) => ({ extra: o.extra, price: o.price || o.last_price_on_checkin_page || null, conditions: o.conditions || null, possible: o.calendar ? o.calendar === 'possible' : true })),
     tasks: q.all("SELECT * FROM tasks WHERE reservation_id = ? AND status IN ('suggested', 'scheduled') ORDER BY send_at", r.id).map(taskOut),
+    care: careFor({ reservationId: r.id, conversationId: main?.id ?? null }),
     conversation: main ? conversationOut(main) : null,
     otherConversations: chats.slice(1).map((c) => ({ id: c.id, channel: c.channel })),
     messages: main ? q.all("SELECT * FROM (SELECT * FROM messages WHERE conversation_id = ? AND (role = 'guest' OR status = 'sent') ORDER BY COALESCE(sent_at, created_at) DESC, id DESC LIMIT 30) ORDER BY COALESCE(sent_at, created_at), id", main.id).map((m) => messageOut(m, names)) : [],
@@ -365,6 +368,7 @@ admin.get('/conversations/:id', (req, res) => {
   const names = userNames();
   res.json({
     conversation: conversationOut(c),
+    care: careFor({ reservationId: c.reservation_id, conversationId: c.id }),
     messages: q.all("SELECT * FROM messages WHERE conversation_id = ? AND status != 'superseded' ORDER BY sent_at IS NULL, COALESCE(sent_at, created_at), id", c.id).map((m) => messageOut(m, names)),
     tickets: q.all('SELECT * FROM tickets WHERE conversation_id = ? ORDER BY id', c.id).map((t) => ticketOut(t, names)),
   });

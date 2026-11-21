@@ -2,6 +2,7 @@
 // Upsell offers (early check-in, late checkout, an extra night) are only proposed when the
 // team has switched the extra on and the calendar allows it; a thank-you is proposed for a guest
 // who sounded happy. Nothing is sent unless a team member schedules it.
+import { openCareCount } from './care.js';
 import { q } from './db.js';
 import { checkStillNeeded, followUpTime, offersFor, sendMessage, upsellType, withholdMessage } from './bot.js';
 import { channelConversation, fillTemplate } from './journey.js';
@@ -239,7 +240,7 @@ export function refreshTasks(now = Date.now()) {
  */
 export function todoCount() {
   return q.get(`SELECT (SELECT COUNT(*) FROM tasks t JOIN reservations r ON r.id = t.reservation_id WHERE t.status = 'suggested' AND r.cancelled = 0)
-    + (SELECT COUNT(*) FROM followups f JOIN conversations c ON c.id = f.conversation_id WHERE f.status = 'suggested') AS n`).n;
+    + (SELECT COUNT(*) FROM followups f JOIN conversations c ON c.id = f.conversation_id WHERE f.status = 'suggested') AS n`).n + openCareCount();
 }
 
 let drafting = false;

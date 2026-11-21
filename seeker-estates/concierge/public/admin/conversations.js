@@ -2,6 +2,7 @@
 import { api, attachmentsView, autoGrow, busy, button, chip, confirmDialog, fill, guestLabel, h, icon, isEnglish, loadError, loading, reconcile, showError, stayDate, fullTime, timeEl, toast, translateControl, uid, moodChip, MOODS } from './lib.js';
 import { approvalCard, ticketCard } from './inbox.js';
 import { inbox } from './state.js';
+import { careSection } from './care.js';
 import { attachControl, CHANNEL_TEXT_ONLY } from './attach.js';
 
 const STAGES = { enquiry: 'Enquiry · not booked', before_arrival: 'Before arrival', during_stay: 'During stay', after_stay: 'After stay' };
@@ -59,6 +60,16 @@ function threadPane(id, { onGone }) {
   const summaryBox = h('div', { class: 'chat-summary', hidden: true });
   // A check-in message for an unhappy guest: proposed by the assistant, sent only if the team schedules it.
   const followBox = h('div', { class: 'follow-up', hidden: true });
+  // Gifts, favours and notes the assistant suggests for this guest.
+  const careBox = h('div', { class: 'care-box', hidden: true });
+  let careShown = null;
+  function renderCare(list = []) {
+    const signature = list.map((a) => `${a.id}|${a.title}|${a.why}`).join('\n');
+    if (signature === careShown || (careShown && careBox.contains(document.activeElement))) return; // do not disturb someone editing
+    careShown = signature;
+    careBox.hidden = !list.length;
+    fill(careBox, careSection(list, { after: () => { careShown = null; inbox.refresh(); load(); } }));
+  }
   let followShown = null;
   const wide = () => innerWidth >= 900; // on a phone it starts folded, so the messages stay in view
   const localInput = (iso) => { const d = new Date(iso); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
@@ -136,14 +147,14 @@ function threadPane(id, { onGone }) {
       backdrop,
       h('div', { class: 'chat-sheet', id: detailsId, role: 'dialog', 'aria-label': 'Guest and stay' },
         h('div', { class: 'chat-sheet-head' }, h('strong', null, 'Guest and stay'), closeSheet),
-        headChips, sub, summaryBox, followBox, readBar, takeover, details))
+        headChips, sub, summaryBox, careBox, followBox, readBar, takeover, details))
     : h('section', { class: 'thread', 'aria-label': 'Conversation' },
       h('header', { class: 'thread-head' },
         h('a', { class: 'back-link', href: '#/conversations' }, icon('back', 18), 'All conversations'),
         h('div', { class: 'thread-head-row' }, h('div', null, title, headChips), detailsBtn),
         sub, summaryBox),
       // The messages get the height; the suggested check-in, the chat actions and the stay sit in the column beside them.
-      h('div', { class: 'thread-main' }, scroller, h('div', { class: 'thread-side' }, followBox, readBar, takeover, details)),
+      h('div', { class: 'thread-main' }, scroller, h('div', { class: 'thread-side' }, careBox, followBox, readBar, takeover, details)),
       composer);
   if (narrow) { details.removeAttribute('id'); detailsBtn.setAttribute('aria-label', 'Guest and stay'); }
 
@@ -336,6 +347,7 @@ function threadPane(id, { onGone }) {
     const nearBottom = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 80;
     scroller.querySelector('.loading')?.remove();
     renderHead(data.conversation);
+    renderCare(data.care);
     renderTakeover(data.conversation);
     renderDetails(data.conversation, data.tickets);
     // Rejected suggestions were never sent: hidden so the thread shows only what the guest and the team said.

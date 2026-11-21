@@ -4,9 +4,11 @@ import express from 'express';
 import { q, getRaw, audit, parseJson } from '../db.js';
 import { requireAdmin } from '../auth.js';
 import { CATEGORIES } from '../llm.js';
-import { decideSuggestion, PLACEHOLDERS, runTidy, seedTemplates } from '../journey.js';
+import { channelConversation, decideSuggestion, PLACEHOLDERS, runTidy, seedTemplates } from '../journey.js';
+import { careOut, openCare, stayCare } from '../care.js';
+import { emitAdmin } from '../notify.js';
 import { clip, HttpError } from '../util.js';
-import { checkStillNeeded, upsellType } from '../bot.js';
+import { checkStillNeeded, sendMessage, toGuestLanguage, upsellType } from '../bot.js';
 import { draftReviews, refreshTasks, todoCount, TASK_TYPES } from '../tasks.js';
 import { iso } from './shared.js';
 
@@ -138,6 +140,7 @@ export function taskOut(t) {
 /** Everything waiting for a person. An item leaves the list by itself once it is dealt with. */
 journey.get('/todo', (req, res) => {
   refreshTasks();
+  stayCare();
   draftReviews().catch((e) => console.error(`Review drafts: ${e.message}`)); // written in the background; the list refreshes when they are ready
   const tasks = q.all("SELECT t.* FROM tasks t JOIN reservations r ON r.id = t.reservation_id WHERE t.status = 'suggested' AND r.cancelled = 0 ORDER BY t.send_at").map(taskOut);
   const scheduled = q.all("SELECT * FROM tasks WHERE status = 'scheduled' ORDER BY send_at").map(taskOut);
@@ -150,8 +153,47 @@ journey.get('/todo', (req, res) => {
   const approvals = q.get("SELECT COUNT(*) AS n FROM messages WHERE status = 'pending'").n;
   const unread = q.get('SELECT COUNT(*) AS n FROM conversations WHERE needs_reply = 1 AND archived = 0').n;
   const tidy = q.get("SELECT COUNT(*) AS n FROM suggestions WHERE status = 'open'").n;
-  res.json({ tasks, scheduled, followUps, unhappy, tickets, approvals, unread, tidy, badge: todoCount(),
+  res.json({ tasks, scheduled, followUps, unhappy, tickets, approvals, unread, tidy, care: openCare(), badge: todoCount(),
     count: tasks.length + followUps.length + unhappy.length + tickets.length + approvals + (tidy ? 1 : 0) });
+});
+
+// --- guest care: gifts, favours and notes the assistant suggests ---------------------------
+
+const careOr409 = (id) => {
+  const a = q.get("SELECT * FROM care WHERE id = ? AND status = 'suggested'", Number(id));
+  if (!a) throw new HttpError(409, 'This suggestion is no longer on the list.');
+  return a;
+};
+const settleCare = (a, status, user) => {
+  q.run("UPDATE care SET status = ?, done_by = ?, done_at = datetime('now') WHERE id = ?", status, user.id, a.id);
+  audit(user.id, `care.${status}`, `${a.kind}: ${clip(a.title, 80)}`);
+  emitAdmin('todo');
+};
+
+journey.post('/care/:id/done', (req, res) => {
+  settleCare(careOr409(req.params.id), 'done', req.user);
+  res.json({ ok: true });
+});
+
+/** Not for this guest. It is remembered, so the assistant does not propose it again. */
+journey.delete('/care/:id', (req, res) => {
+  settleCare(careOr409(req.params.id), 'dismissed', req.user);
+  res.json({ ok: true });
+});
+
+/** Send the suggested note, as edited, in the guest's language. */
+journey.post('/care/:id/send', async (req, res) => {
+  const a = careOr409(req.params.id);
+  const text = String(req.body?.text || '').trim().slice(0, 2000);
+  if (!text) throw new HttpError(400, 'Write the message to send.');
+  const r = a.reservation_id ? q.get('SELECT * FROM reservations WHERE id = ? AND cancelled = 0', a.reservation_id) : null;
+  const conversation = (a.conversation_id && q.get('SELECT * FROM conversations WHERE id = ?', a.conversation_id)) || (r && channelConversation(r));
+  if (!conversation) throw new HttpError(409, 'There is no conversation with this guest to send it in.');
+  const body = req.body?.translate === false ? text : await toGuestLanguage(conversation, text);
+  await sendMessage(conversation, 'team', body, { createdBy: req.user.id, meta: { care: a.kind, ...(body !== text ? { english: text } : {}) } });
+  q.run('UPDATE care SET body = ? WHERE id = ?', text, a.id);
+  settleCare(a, 'done', req.user);
+  res.json({ ok: true });
 });
 
 journey.post('/tasks/:id/schedule', async (req, res) => {

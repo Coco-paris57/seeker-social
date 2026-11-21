@@ -3,6 +3,7 @@
 import { config } from './config.js';
 import { q, getSettings, audit, parseJson, getRaw } from './db.js';
 import * as llm from './llm.js';
+import { careHandled, storeCare } from './care.js';
 import { emitAdmin, emitConversation, notifyTeam } from './notify.js';
 import { smoobu } from './smoobu.js';
 import { addDays, clip, londonDate, londonToUtc, HttpError } from './util.js';
@@ -179,7 +180,8 @@ export function buildContext(conversation, { latest = '', uptoMessageId = null }
     emergencyContact: settings.emergencyContact,
     accessHours: settings.accessInfoHours,
     checkinPortalNote: settings.checkinPortalNote,
-    houseStyle: getRaw('house_style') || undefined, // how the team writes, learned from their own messages
+    houseStyle: getRaw('house_style') || undefined,
+    careHandled: careHandled(conversation), // how the team writes, learned from their own messages
     today: londonDate(now),
     time: new Intl.DateTimeFormat('en-GB', { timeZone: config.timezone, hour: '2-digit', minute: '2-digit', weekday: 'long' }).format(now),
     verified: !!conversation.verified,
@@ -337,6 +339,9 @@ export function followUpTime(hours, now = Date.now()) {
 async function applyAssessment(conversation, a, { guestWrote = false } = {}) {
   if (!a || (!a.chatSummary && !a.mood)) return;
   q.run("UPDATE conversations SET summary = COALESCE(NULLIF(?, ''), summary), mood = ? WHERE id = ?", clip(a.chatSummary || '', 400), a.mood || 'neutral', conversation.id);
+  // Things worth doing for this guest. Never for someone who has not booked.
+  const booked = !conversation.reservation_id || q.get('SELECT cancelled FROM reservations WHERE id = ?', conversation.reservation_id)?.cancelled === 0;
+  storeCare(conversation, booked ? a.care : []);
   const current = q.get('SELECT * FROM followups WHERE conversation_id = ?', conversation.id);
   if (guestWrote && current?.status === 'dismissed') q.run('DELETE FROM followups WHERE id = ?', current.id);
   // A scheduled check-in is left alone here: it is checked against the whole conversation when it is due.

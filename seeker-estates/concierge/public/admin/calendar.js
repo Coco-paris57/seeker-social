@@ -4,6 +4,7 @@
 // made and changed in Smoobu.
 import { api, busy, button, chip, fill, fullTime, guestLabel, h, icon, loadError, loading, MOODS, moodChip, openDialog, pageHeader, showError, stayDate, toast } from './lib.js';
 import { messageCard, reviewCard } from './planner.js';
+import { careSection } from './care.js';
 
 const DAY_MS = 86400_000;
 const ymd = (d) => d.toISOString().slice(0, 10);
@@ -64,6 +65,7 @@ async function openCard(id, onChange) {
           row('Extras bought', r.extras.length ? r.extras.map((x) => `${x.title} (${x.status})`).join(', ') : null),
           row('Can be offered', d.offers.length ? d.offers.map((o) => `${o.extra}${o.price ? ` ${o.price}` : ''}${o.possible ? '' : ' (not free for these dates)'}`).join(' · ') : 'No extras are switched on (Settings, Paid extras)')),
         d.conversation?.summary && h('p', { class: 'chat-summary' }, h('strong', null, 'Where this stands: '), d.conversation.summary),
+        careSection(d.care, { after: again }),
         h('h3', null, 'Messages to send'),
         d.tasks.length
           ? d.tasks.map((t) => (t.kind === 'review' ? reviewCard(t, { done: (m) => { toast(m, { kind: 'ok' }); again(); }, fail: showError }) : t.status === 'scheduled'

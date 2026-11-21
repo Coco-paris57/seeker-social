@@ -736,3 +736,8 @@ table.data thead th { font-size: 13px; color: var(--text-2); font-weight: 600; }
 .brand-preview-mark { width: 64px; height: 64px; }
 .brand-picture .hint { margin: 0 0 6px; }
 input[type="color"] { width: 64px; height: 44px; padding: 3px; border: 1.5px solid var(--control-line); border-radius: var(--radius-s); background: var(--surface); cursor: pointer; }
+
+/* Guest care: gifts, favours and notes suggested for a guest */
+.care > h3 { margin: 14px 0 8px; }
+.care-box { margin-top: 10px; }
+.care-card .card-title { flex-wrap: wrap; }

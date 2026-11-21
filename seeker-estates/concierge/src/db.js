@@ -121,6 +121,21 @@ CREATE TABLE IF NOT EXISTS audit (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE TABLE IF NOT EXISTS smoobu_seen (message_id INTEGER PRIMARY KEY);
+CREATE TABLE IF NOT EXISTS care (          -- things worth doing for a guest (a gift, a favour, a note), proposed for a person to act on
+  id INTEGER PRIMARY KEY,
+  conversation_id INTEGER REFERENCES conversations(id) ON DELETE CASCADE,
+  reservation_id INTEGER,
+  kind TEXT NOT NULL,              -- 'gift' | 'gesture' | 'message' | 'fix'
+  title TEXT NOT NULL,
+  why TEXT NOT NULL DEFAULT '',
+  body TEXT NOT NULL DEFAULT '',   -- for a message: the text to send, in English
+  status TEXT NOT NULL DEFAULT 'suggested',   -- 'suggested' | 'done' | 'dismissed'
+  source TEXT NOT NULL DEFAULT 'assistant',   -- 'assistant' | 'long_stay'
+  done_by INTEGER,
+  done_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS care_open ON care(status, reservation_id);
 CREATE TABLE IF NOT EXISTS history_read (reservation_id INTEGER PRIMARY KEY);   -- past Smoobu threads already studied
 CREATE TABLE IF NOT EXISTS history_samples (message_id INTEGER PRIMARY KEY, body TEXT NOT NULL);   -- replies the team wrote by hand in the past: for the writing style
 CREATE TABLE IF NOT EXISTS examples (   -- replies a team member approved, kept so the assistant learns each property
