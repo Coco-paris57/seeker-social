@@ -118,3 +118,158 @@ Every market P25/P50/P75/P90 and market occupancy below ("mkt 22 Nov") comes fro
 | Wider 2-bed sample median (n) | | | | | 355.00 (27) | 382.00 (15) | 435.00 (14) | 299.00 (35) | 500.50 (17) | 693.00 (12) | 269.67 (45) | 279.70 (54) | 308.33 (51) | 390.00 (39) | 530.00 (18) | 422.50 (41) |
 | **Ours 3547481 (Airbnb 1791529331262420081) 5 (2)** | | 6 | | | **314.00** | not returned | not returned | not returned | not returned | **548.00** | **280.33** | **268.40** | **293.67** | not returned | **636.00** | not returned |
 
+## P13 Shepherd's Bush, 2-bed sleeps 6 (3064856 + 3090701 = one flat, per policy)
+
+### What changed since 21 Nov: the twins are now identical on every open December night and on every Airbnb stay checked
+**PriceLabs 13-21 Dec after the 21 Nov 09:45Z refresh.** Both twins are now **195/194/191/194/202/215/221/205/213**, the same on all 9 open nights.
+- 3064856 was 209/205/203/207/215/228/234/217/227 (-5% to -7%).
+- 3090701 was 197/193/191/195/202/215/220/205/227 (-1% to +0.5%; 21 Dec -6%).
+
+**Cause.** No user edit since Reyhan's 20 Nov 22:50Z -2% (logs and overrides, calls 1-2). Both twins' `uncustomized_price` is now identical on 13-21 Dec (202/196/188/195/210/235/247/214/230); for 3064856 it was 213/203/194/... yesterday. Both carry the same -2%, so the outputs match. The algorithm-side reason for the converged uncustomised price is NOT CHECKED (PriceLabs auditor).
+
+**On Airbnb the twins are identical on every stay checked:**
+- 13-16 Dec £198.00, 16-19 £206.00, 17-20 £213.00, 18-21 £213.67, 19-22 £222.67 and 18-22 £208.25 on both.
+- 13-22 Dec (9 n): strike £1,797 -> **£1,550 on both**. That is (1,797 - 150) x 0.85 + 150 = £1,549.95, so the weekly -15% is per policy.
+- January: 5-8 Jan £202.33 and 14-17 Jan £200.33 on both, as yesterday. PriceLabs `price` is identical on all 17 nights 3-19 Jan.
+
+**Twin rule.** This breaks policy `listing_facts.P13.twin_listings` ("slightly different photos and prices or Airbnb blocks them as duplicates"). Yesterday the gap was 6% in PriceLabs and 3.0-4.7% on Airbnb; today it is **0%**. Which twin is cheaper does not matter (policy `deprioritised.p13_twin_price_order`).
+
+**Reyhan's 20 Nov -2% on 10-26 Dec** (both twins) is still **confirm or revert for Corentin**. It conflicts with "cut PriceLabs discounts". It is not a new proposal.
+
+**Airbnb factor** vs PriceLabs `price`:
+- 0.766 on nights 28 days out or less (now up to 19 Dec).
+- 0.80-0.81 on stays that straddle day 28.
+- 0.90 beyond 28 days.
+- These are unchanged. The Smoobu/Airbnb rule behind them is NOT CHECKED.
+
+**27 Nov / 1 Dec** (Reyhan +25% min 1): 3064856 264 / 225, 3090701 185 / 158. These are single nights, so no comps were priced. The 1 Dec +25% vs the policy +50% stays confirm or revert.
+
+### 13-21 Dec (9 open nights): +10% on 3090701 13-17 Dec, +5% on 18-21 Dec; 3064856 hold
+| Stay | Ours, both twins (21 Nov 3090701 / 3064856) | Comp median (n) | Comp pctl / vs median | vs line 3090701 / 3064856 | Wider pctl (n, median) | PL avg vs mkt P50 (mkt occ) | Factor | `recommend` (30 d, +16 pts) |
+|---|---|---|---|---|---|---|---|---|
+| 13-15 Dec (2 n) | below min 3 | 240.5 (3) | comps only | | (38, 258.75) | 194.5 vs 222.0 (33%) | | |
+| **13-16 Dec** | **198.00** (198.67 / 207.33) | 232.17 (4) | **P0 / -14.7%** | **-12.6%** / +0.3% | P11 (47, 240.33) | 193.3 vs 222.3 (-13.0%; 31%) | 0.766 | raise +10% |
+| **16-19 Dec** | **206.00** (206.33 / 216.00) | 236.83 (6) | **P0 / -13.0%** | **-10.9%** / +2.3% | P13 (47, 249.67) | 203.7 vs 235.0 (-13.3%; 35%) | 0.766 | raise +10% |
+| 17-20 Dec | 213.00 (213.00 / 222.67) | 304.5 (4, incl. lift/skyline comps at 456.67 / 363.67) | P0 / -30.0% | -28.3% / -17.7% | P13 (46, 271.5) | 212.7 vs 242.7 (42%) | 0.766 | raise +10% |
+| **18-21 Dec** | **213.67** (223.00 / 233.00) | 238.0 (3) | **P0 / -10.2%** | **-8.0%** / +5.6% | P10 (42, 280.83) | 213.7 vs 244.0 (-12.4%; 46%) | 0.766 | raise +10% |
+| 19-21 Dec (2 n) | below min 3 | 251.0 (4) | comps only | | (20, 297) | 213.0 vs 245.0 (49%) | | |
+| 19-22 Dec | 222.67 (236.00 / 243.00) | 230.67 (2) | P50 / -3.5% | -1.1% / +13.6% | P13 (39, 300) | 213.0 vs 246.3 (49%) | 0.811 | raise +10% |
+| 20-22 Dec (2 n) | below min 3 | 260.0 (3) | comps only | | (29, 275) | 209.0 vs 245.0 (48%) | | |
+| 18-22 Dec | 208.25 (218.25 / 226.00) | 219.5 (2) | P50 / -5.1% | -2.8% / +11.6% | P9 (47, 282) | 213.5 vs 245.2 (47%) | 0.800 | raise +10% |
+| 13-22 Dec (9 n, weekly -15%) | 172.22 on both (strike £1,797 -> £1,550) | 163.89 (1) | n=1 | | P3 (37, 264.33) | 203.3 vs 234.6 (38%) | 0.765 | numbers only |
+| 22-24 Dec (30-day default) | booked | 242.75 (2) | comps only | | (22, 283.5) | | | |
+
+**3090701 13-17 Dec: +10% supported.** PriceLabs would go 195/194/191/194/202 -> about **215/213/210/213/222**.
+- It is P0 on 13-16 Dec (-14.7%, n=4) and on 16-19 Dec (-13.0%, n=6), and 11-13% under its rating line.
+- The comps moved within ±6%, so the gap comes from our own falls, not from the market.
+- PriceLabs is 13% under market P50 at 31-35% market occupancy.
+- With +10%, 13-16 Dec is about **£212.90 on Airbnb (-8.3% vs median, -6.0% vs line)** and 16-19 Dec about £221.58 (-6.4%, -4.1%). It stays below the line.
+
+**3090701 18-21 Dec: +5% supported** (215/221/205/213 -> about 226/232/215/224).
+- 18-21 Dec is P0, 8.0% under the line.
+- 19-22 Dec (n=2) is 1.1% under it, so +5% puts 19-22 Dec about 3-4% over the line. That is why the step is +5% and not +10%.
+
+**3064856 13-21 Dec: hold.**
+- It is P0-P50, 3.5-14.7% under the comp median, but +0.3% to +13.6% over its 4.31 rating line.
+- Reverting Reyhan's -2% on 3064856 alone (about +2%) is within the evidence. Anything beyond about +3% on 13-18 Dec would leave the evidence.
+
+**Twin gap.** These moves put 3090701 about 10% dearer on 13-17 Dec and about 5% dearer on 18-21 Dec. The twins are no longer identical, and the higher-rated twin carries the premium.
+- If Corentin prefers a narrower gap, the floor the twin rule needs is any non-zero difference. The smallest evidence-backed option is 3090701 +5% with 3064856 held: still under 3090701's line on 13-19 Dec.
+
+`recommend` says +10% on the 30-day lead (63.3% vs 47%). The like-for-like evidence supports +10% on 3090701 only.
+
+### January twins: +3% on 3090701 (3-18 Jan); hold 3064856 (4th day; not applied)
+- **5-8 Jan:** both £202.33 (unchanged). P38 of 8, -4.3% vs median 211.33.
+  - Lines: 3090701 £206.26 (-1.9%); 3064856 £179.63 (+12.6%).
+  - PriceLabs 169.0 vs market P50 205.3 (-17.7%). Market occupancy **17%**.
+- **14-17 Jan:** both £200.33 (21 Nov £201.00). P25 of 8, -7.7% vs median 217.0.
+  - Lines: 3090701 £211.79 (-5.4%); 3064856 £184.45 (+8.6%).
+  - PriceLabs 167.0 vs P50 209.3 (-20.2%). Market occupancy **12%**.
+- **Supported: +3% on 3090701 for 3-18 Jan, 3064856 unchanged.** That puts 3090701 at about its line on 5-8 Jan and 2-3% under it on 14-17 Jan, and gives a 3% twin gap. 14-17 Jan alone would carry up to +5%.
+- With market occupancy at 10-17% I do not argue more than +3%, despite `recommend`'s +10%.
+- 3064856 has a -10% override on 2-21 Jan (from 4 Nov) and still prices identical to 3090701. The twins' uncustomised prices differ (3 Jan 164 vs 170).
+
+## P20 Waterford Court, 2-bed (Airbnb 1791529331262420081, 5.0 from 2 reviews; Airbnb shows 6 guests, see above)
+
+### What changed since 21 Nov
+**22-24 Nov: the Smoobu/PriceLabs mismatch is gone on Airbnb.**
+- Airbnb shows **£628 for 22-24 Nov** = £478 room = **0.850 x (283 + 279)**. Those are today's PriceLabs values: `final_price` 283 for 22 Nov from the neighbourhood pull, and `price` 279 for 23 Nov.
+- That is Airbnb's 15% last-minute discount on the current PriceLabs price (policy `listing_facts.P20.airbnb_discounts_22oct`).
+- Yesterday's guest price was £603 (0.851 x Smoobu 266 + 266). Ours rose **+4.1%** to £314/night.
+
+**Other PriceLabs moves (21 Nov 08:48Z refresh):**
+- 5 Dec 512 -> 520.
+- 26 Dec 543 -> 539.
+- 17 Dec 307 -> **333** (+8.5%); the other 14-18 Dec nights moved -1%.
+- January -1% to -3% (for example 3 Jan 242 -> 235).
+
+**Overrides** are unchanged since 18 Nov (call 3).
+
+**5 Dec** is open again after the 20 Nov sale and cancellation.
+
+Column key: "Line" = comp median x 0.85. "PL vs market" uses the Nearby Listings compset (1-3 BR range), which understates a 2-bed P50. The 2 BR summary median is 253.
+
+| Stay | Ours 22 Nov (21 Nov) | Comp median (n) | Comp pctl / vs median | vs line | Wider pctl (n, median) | PL avg / mkt P50, P75, P90 (mkt occ) | Factor | `recommend` (horizon) |
+|---|---|---|---|---|---|---|---|---|
+| **22-24 Nov (tonight, min 2)** | **314.00** (301.50) | 289.25 (2: 757342335233586120 £288.50, 1343981071946969781 £290.00) | **P100 / +8.6%** | +27.7% | **P37** (27, 355) | 281 / 214, 269, 352 (54%) | **0.850** vs PL 283/279 | **hold** (7 d +9 pts at P100) |
+| 22-23 Nov / 23-24 Nov (1 n) | below min 2 | none returned | | | (15, 382) / (14, 435) | | | |
+| 24-26 Nov (midweek default) | 25 Nov booked | 279.25 (2) | comps only | | (35, 299) | | | |
+| 27-29 Nov (Fri-Sun default) | booked | 310.0 (1) | comps only | | (17, 500.5) | | | |
+| **5 Dec (orphan, 1 n)** | **548.00** (542.00) | none returned (4th day) | n=0 | | **P25** of 1-night 2-beds (12, £693) | **520** / 228, 296, **396** (57%) | 0.765 | numbers only |
+| 14-17 Dec | 280.33 (282.67) | 291.33 (9) | P33 / -3.8% | +13.2% | P53 (45, 269.67) | 301.0 / 215 (26%) | 0.765 | raise +5% |
+| **14-19 Dec (all 5 open nights)** | **268.40** (265.80) | 304.0 (7) | **P14 / -11.7%** | **+3.9%** | P37 (54, 279.7) | 311.4 / 220 (27%) | 0.766 | raise +5% |
+| 16-19 Dec | 293.67 (288.00) | 317.0 (7) | P29 / -7.4% | +9.0% | P41 (51, 308.33) | 318.3 / 223 (28%) | 0.765 | raise +5% |
+| 22-24 Dec (30-day default) | booked | 373.5 (4) | comps only | | (39, 390) | | | |
+| **26 Dec (orphan, 1 n)** | **636.00** (639.00) | **494.0 (1)** | **P100 / +28.7%** | +51.5% | P61 of 1-night 2-beds (18, £530) | **539** / 251, 323, **415** (36%) | 0.902 | hold (7 d lead, P100) |
+| 26-30 Dec (context) | 27 Dec booked | 370.12 (8) | comps only | | (41, 422.5) | | | |
+
+(`recommend` here uses the 7-day lead, +9 pts, for every row. On the 30-day lead, +32 pts, 14-19 Dec would read raise +10%, as yesterday.)
+
+### 22-24 Nov (tonight): supported 0% to +5% vs comp median; we are +8.6%, so about -5% (PriceLabs 283/279 -> about 269/265) is the most the evidence argues
+- At £314 we are P100 of 2 kept comps (both about £289), 27.7% over the line. PriceLabs 281 avg is above market P75 (266-273) at 48-55% market occupancy.
+- A -5% cut gives about **£301.90 all-in (+4.4% vs median)**, the top of yesterday's supported range.
+- Against a cut: `recommend` = hold (7-day lead +9 pts at P100), n=2 is thin, and the wider 2-bed sample puts us at P37 (median £355).
+- Read: the comps support a small cut. It is weak evidence and **for Corentin, not urgent**. Tonight is same-day, so unsold nights earn nothing.
+- If 22-24 Nov does not sell today, 23-25 Nov (2 n) is the only remaining combination (24-26 Nov hits the 25 Nov check-in). 23-25 Nov was not priced today.
+- The min 2 on these nights (Reyhan, vs policy min 3 to 30 Nov) stays **confirm or revert**.
+
+### 5 Dec (Reyhan +100%, min 1): hold; numbers only
+- Airbnb shows £548 (PriceLabs 520 x 0.765 + 150). No kept comp was returned for 5-6 Dec (4th day).
+- £548 is P25 of the 1-night 2-bed sample (n=12, median £693).
+- The 20 Nov sale paid £343.33 room (cancelled the same day). That sits between market P75 (296) and P90 (396).
+- Read: like-for-like comps support no direction (n=0). PriceLabs 520 is at about the market P90 equivalent on Airbnb (396 / 0.765 = 518). **No cut is argued** (judgement, not a function output).
+
+### 14-19 Dec: hold (0%); supported position -4% to -12% vs comp median
+- P14-P33, -3.8% to -11.7% vs median, and +3.9% to +13.2% over the line. The comps moved within ±5%.
+- Ours rose about 1-2% (17 Dec 307 -> 333). Market occupancy is 26-28%.
+- 14-19 Dec is only 3.9% above the line (£258.40). `recommend`'s +5% / +10% rests on the lead, not on these nights. The evidence supports hold.
+
+### 26 Dec (Reyhan +100%, min 1): about -29% supported (539 -> about £381); thin, for Corentin as evidence
+- The only kept comp returned is 1684834789445533643 (lift/balcony, 12th-floor skyline, 4.39 from 18) at **£494** all-in. We are +28.7% above it and 51.5% over the line.
+- PriceLabs 539 is above market **P90 415** (P50 251, occupancy 36%).
+- Matching that comp needs (494 - 150) / 0.902 = **£381**. PriceLabs `uncustomized_price` is 360.
+- Against: n=1, and the wider 1-night sample puts us at P61 (median £530).
+- Reyhan's +100% is not settled by policy, so it is **confirm or revert** for Corentin with this evidence.
+
+## P10 Hanger Lane, 1-bed (3318177)
+Handed back: last night 18 Nov (policy `handbacks.P10`). All 60 nights in `prices.csv` for 22 Nov are unavailable. No positioning and nothing proposed.
+
+## P02 Ladbroke Grove, P03 Bayswater
+Blocked on purpose (policy `intentional_blocks`). All 60 nights in `prices.csv` for 22 Nov are unavailable. No positioning.
+
+## P16 Little Venice, P18 Fulham, P19 Kings Langley
+Not in PriceLabs or Smoobu (no rows in `listings.csv` or `prices.csv` for 22 Nov). Own price, percentile, rating gap and premium: **NOT CHECKED**. No comps built.
+
+## Data gaps:
+1. **Booking.com NOT CHECKED** (AWS WAF challenge, 22 Nov 07:23:21Z; not retried or bypassed). That covers Booking.com comps, our Booking.com displayed prices, P20's Booking.com capacity and whether the twins also match on Booking.com. Comp cancellation terms come only from Airbnb pills.
+2. **Why the P13 twins' `uncustomized_price` converged** on 13-21 Dec at the 21 Nov 09:45Z refresh, with no user edit: NOT CHECKED (PriceLabs auditor).
+3. **The value Reyhan's 20 Nov -2% replaced** on 10-26 Dec: NOT CHECKED (the log window starts 18 Nov).
+4. **P20 tonight's price** comes from `final_price` 283 in the neighbourhood pull, because 22 Nov is not in today's price window. It is consistent with Airbnb (0.850 x 562). 23-25 Nov was not priced.
+5. **P20 Airbnb guest count 6 vs policy 4** (4th day): who changed it is NOT CHECKED.
+6. **Airbnb factors** (0.765 at 28 days or less, 0.85 last-minute on P20, 0.90 beyond 28 days) are inferred from prices. The rule behind them is NOT CHECKED.
+7. **Thin comp coverage:**
+   - P13: n=0-4 on 24-26 Nov, 27-29 Nov, 13-15, 13-16, 17-20 (skewed), 18-21, 19-21, 19-22, 20-22, 18-22, 13-22 and 22-24 Dec.
+   - P20: n=0-2 on 22-24 Nov, 22-23, 23-24, 24-26, 27-29 Nov, 5 Dec (n=0, 4th day) and 26 Dec (n=1).
+   - Only unsold comps can be priced, which biases peak medians.
+8. P20's market percentiles use the 1-3 BR compset. P20 has 2 reviews, so the 0.85 line is judgement.
+9. P13's Airbnb-to-Smoobu id mapping is still "likely" (policy). P16, P18 and P19 have no data; P02, P03 and P10 have no sellable nights.
