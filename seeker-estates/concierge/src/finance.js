@@ -5,6 +5,7 @@ import { q, getRaw, setRaw } from './db.js';
 import { smoobu } from './smoobu.js';
 import { addDays, londonDate, HttpError } from './util.js';
 
+const BOOKING_PAYMENTS_FEE = 0.016; // Booking.com's payments service fee: 1.6% of the booking amount, on top of its commission (Smoobu only holds the commission)
 const VAT = 0.2; // UK VAT, charged to the owner on top of our management commission
 const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
 const round = (n) => Math.round(n * 100) / 100;
@@ -150,10 +151,11 @@ function monthFigures(month) {
       const inMonth = nightsBetween(b.arrival > start ? b.arrival : start, b.departure < end ? b.departure : end);
       if (inMonth <= 0) continue;
       revenue += (b.price * inMonth) / total;
-      fees += (b.commission * inMonth) / total;
+      const siteFee = b.commission + (/booking\.com/i.test(b.channel || '') ? b.price * BOOKING_PAYMENTS_FEE : 0);
+      fees += (siteFee * inMonth) / total;
       nights += inMonth;
       bookings++;
-      if (b.arrival >= start && b.arrival < end) cleans++; // one clean per check-in, in the month the guest arrives
+      if (b.departure >= start && b.departure < end) cleans++; // one clean per checkout: the flat is cleaned when the guest leaves
     }
     const t = termsFor(p.id, month);
     const model = t?.model && t.model !== 'none' ? t.model : null;

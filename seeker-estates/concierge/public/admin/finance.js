@@ -145,8 +145,8 @@ function termsDialog(row, month, others = []) {
       const cost = h('input', { type: 'text', inputMode: 'decimal', value: row.cleaningCostEach || '', placeholder: 'For example 65' });
       const charge = h('input', { type: 'text', inputMode: 'decimal', value: row.cleaningChargeEach || '', placeholder: 'For example 90' });
       const before = check('Take the cleaning charge off before working out our commission (normally off: our commission is on the full net revenue)', { checked: row.cleaningBefore === true });
-      const costField = field('Cleaning cost per check-in (£)', cost, { hint: 'What you pay for one clean. It is counted once for every check-in in the month.' });
-      const chargeField = field('Cleaning charge to the owner per check-in (£, + VAT)', charge, { hint: 'Enter the amount before VAT, for example 125. It is charged once for every check-in in the month, with 20% VAT added, and comes off the owner\'s payout (the guest\'s payment already includes a cleaning fee). The difference between the charge and the cost is ours; the VAT is not.' });
+      const costField = field('Cleaning cost per checkout (£)', cost, { hint: 'What you pay for one clean. It is counted once for every checkout in the month, since the flat is cleaned when a guest leaves.' });
+      const chargeField = field('Cleaning charge to the owner per checkout (£, + VAT)', charge, { hint: 'Enter the amount before VAT, for example 125. It is charged once for every checkout in the month, with 20% VAT added, and comes off the owner\'s payout (the guest\'s payment already includes a cleaning fee). The difference between the charge and the cost is ours; the VAT is not.' });
       const from = h('select', null, h('option', { value: '' }, 'From the start (all months)'), h('option', { value: month }, `From ${monthName(month)} onwards`));
       const rentField = field('Rent we pay each month (£)', rent);
       const percentField = field('Our commission (% of net revenue, + VAT)', percent, { hint: 'Enter the percentage before VAT. Net revenue is what the guest paid minus the booking site\'s fee. VAT at 20% is added on top of the commission and comes off the owner\'s payout; it is not counted in our profit.' });
@@ -180,7 +180,7 @@ function termsDialog(row, month, others = []) {
 /** Cleaning for every flat on one screen: what a clean costs, and on managed flats what the owner is charged. */
 function cleaningDialog(d) {
   return openDialog({
-    title: 'Cleaning per check-in',
+    title: 'Cleaning per checkout',
     wide: true,
     build: (close) => {
       const clean = (v) => v.replace(/[£,\s]/g, '');
@@ -192,7 +192,7 @@ function cleaningDialog(d) {
       const unset = d.rows.filter((r) => !r.model).length;
       const save = button('Save', { variant: 'primary', type: 'submit', icon: 'check' });
       const form = h('form', { class: 'stack' },
-        h('p', { class: 'muted' }, 'Enter the amounts in pounds. Each is counted once for every check-in in the month. The charge to the owner is before VAT; 20% VAT is added.'),
+        h('p', { class: 'muted' }, 'Enter the amounts in pounds. Each is counted once for every checkout in the month. The charge to the owner is before VAT; 20% VAT is added.'),
         rows.length
           ? h('div', { class: 'table-scroll' }, h('table', { class: 'data' },
             h('thead', null, h('tr', null, ['Flat', 'Terms', 'Our cleaning cost (£)', 'Charge to owner (£ + VAT)'].map((x) => h('th', { scope: 'col' }, x)))),
@@ -391,7 +391,7 @@ export function financeView() {
       flatPies(d),
       flatChart(d),
       h('section', { class: 'card section' },
-        h('div', { class: 'section-head' }, h('h2', null, `By flat · ${monthName(d.month)}`), button('Cleaning per check-in', { icon: 'edit', small: true, onclick: async () => { if (await cleaningDialog(d)) load(); } })),
+        h('div', { class: 'section-head' }, h('h2', null, `By flat · ${monthName(d.month)}`), button('Cleaning per checkout', { icon: 'edit', small: true, onclick: async () => { if (await cleaningDialog(d)) load(); } })),
         d.rows.length
           ? h('div', { class: 'table-scroll' }, h('table', { class: 'data fin-table' },
             h('thead', null, h('tr', null, ['Flat', 'Terms', 'Nights', 'Guests paid', 'Site fees', 'Net', 'Rent / our share', 'Cleaning', 'Bills', 'Expenses', 'Owner gets', 'Our profit', ''].map((x) => h('th', { scope: 'col' }, x)))),
@@ -412,7 +412,7 @@ export function financeView() {
               cell(`${money(t.rent, c)} rent · ${money(t.commission, c)} ours + ${money(t.vat, c)} VAT`), cell(t.cleaningCost || t.cleaningCharge ? `${money(t.cleaningCharge, c)} + VAT to owners · ${money(t.cleaningCost, c)} cost` : '–'), cell(money(t.bills, c)), cell(`${money(t.expenses, c)}${t.general ? ` (${money(t.general, c)} general)` : ''}`), cell(money(t.ownerPayout, c)),
               cell(h('strong', null, money(t.profit, c)), t.profit < 0 ? 'fin-neg' : 'fin-pos'), cell('')))))
           : h('p', { class: 'muted' }, 'No flats yet.'),
-        h('p', { class: 'hint' }, 'A booking that runs across two months is shared between them night by night. Cancelled bookings are left out. Future months show what is booked so far.')),
+        h('p', { class: 'hint' }, 'A booking that runs across two months is shared between them night by night. Site fees are the commission Smoobu holds, plus Booking.com's 1.6% payments fee on Booking.com stays. Cancelled bookings are left out. Future months show what is booked so far.')),
       h('section', { class: 'card section' },
         h('div', { class: 'section-head' }, h('h2', null, `Bills for the flats we rent · ${monthName(d.month)}`), rented.length > 0 && button('Add a bill', { variant: 'primary', icon: 'plus', small: true, onclick: async () => { if (await billDialog(d, rented)) load(); } })),
         !rented.length
