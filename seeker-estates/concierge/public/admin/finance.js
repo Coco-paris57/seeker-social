@@ -27,9 +27,9 @@ function termsDialog(row, month, others = []) {
       const percent = h('input', { type: 'text', inputMode: 'decimal', value: row.percent ?? '', placeholder: 'For example 18' });
       const cost = h('input', { type: 'text', inputMode: 'decimal', value: row.cleaningCostEach || '', placeholder: 'For example 65' });
       const charge = h('input', { type: 'text', inputMode: 'decimal', value: row.cleaningChargeEach || '', placeholder: 'For example 90' });
-      const before = check('Take the cleaning charge off before working out our commission', { checked: row.cleaningBefore !== false });
-      const costField = field('Cleaning cost per booking (£)', cost, { hint: 'What you pay for one clean. It is counted once for every booking, in the month the guest leaves.' });
-      const chargeField = field('Cleaning charge to the owner per booking (£)', charge, { hint: 'What the owner is charged for each clean. The guest\'s payment already includes a cleaning fee, so this comes off the owner\'s payout. The difference between the charge and the cost is ours.' });
+      const before = check('Take the cleaning charge off before working out our commission (normally off: our commission is on the full net revenue)', { checked: row.cleaningBefore === true });
+      const costField = field('Cleaning cost per check-in (£)', cost, { hint: 'What you pay for one clean. It is counted once for every check-in in the month.' });
+      const chargeField = field('Cleaning charge to the owner per check-in (£, + VAT)', charge, { hint: 'Enter the amount before VAT, for example 125. It is charged once for every check-in in the month, with 20% VAT added, and comes off the owner\'s payout (the guest\'s payment already includes a cleaning fee). The difference between the charge and the cost is ours; the VAT is not.' });
       const from = h('select', null, h('option', { value: '' }, 'From the start (all months)'), h('option', { value: month }, `From ${monthName(month)} onwards`));
       const rentField = field('Rent we pay each month (£)', rent);
       const percentField = field('Our commission (% of net revenue, + VAT)', percent, { hint: 'Enter the percentage before VAT. Net revenue is what the guest paid minus the booking site\'s fee. VAT at 20% is added on top of the commission and comes off the owner\'s payout; it is not counted in our profit.' });
@@ -169,12 +169,12 @@ export function financeView() {
               cell(r.model ? terms(r) : chip('Not set', { tone: 'warn' })),
               cell(`${r.nights} (${r.occupancy}%)`), cell(money(r.revenue, c)), cell(money(r.fees, c)), cell(money(r.net, c)),
               cell(r.model === 'rent' ? `${money(r.rent, c)} rent` : r.model === 'management' ? `${money(r.commission, c)} ours + ${money(r.vat, c)} VAT` : '–'),
-              cell(!r.cleans || (!r.cleaningCost && !r.cleaningCharge) ? '–' : r.model === 'management' ? `${r.cleans} × · ${money(r.cleaningCharge, c)} to owner · ${money(r.cleaningCost, c)} cost` : `${r.cleans} × · ${money(r.cleaningCost, c)} cost`),
+              cell(!r.cleans || (!r.cleaningCost && !r.cleaningCharge) ? '–' : r.model === 'management' ? `${r.cleans} × · ${money(r.cleaningCharge, c)} + VAT to owner · ${money(r.cleaningCost, c)} cost` : `${r.cleans} × · ${money(r.cleaningCost, c)} cost`),
               cell(r.expenses || r.ownerExpenses ? `${money(r.expenses, c)}${r.ownerExpenses ? ` + ${money(r.ownerExpenses, c)} owner` : ''}` : '–'),
               cell(r.ownerPayout == null ? '–' : money(r.ownerPayout, c)),
               cell(h('strong', null, money(r.profit, c)), r.profit < 0 ? 'fin-neg' : 'fin-pos'), cell(edit(r))))),
             h('tfoot', null, h('tr', null, h('th', { scope: 'row' }, 'Total'), cell(''), cell(`${t.nights} (${t.occupancy}%)`), cell(money(t.revenue, c)), cell(money(t.fees, c)), cell(money(t.net, c)),
-              cell(`${money(t.rent, c)} rent · ${money(t.commission, c)} ours + ${money(t.vat, c)} VAT`), cell(t.cleaningCost || t.cleaningCharge ? `${money(t.cleaningCharge, c)} to owners · ${money(t.cleaningCost, c)} cost` : '–'), cell(`${money(t.expenses, c)}${t.general ? ` (${money(t.general, c)} general)` : ''}`), cell(money(t.ownerPayout, c)),
+              cell(`${money(t.rent, c)} rent · ${money(t.commission, c)} ours + ${money(t.vat, c)} VAT`), cell(t.cleaningCost || t.cleaningCharge ? `${money(t.cleaningCharge, c)} + VAT to owners · ${money(t.cleaningCost, c)} cost` : '–'), cell(`${money(t.expenses, c)}${t.general ? ` (${money(t.general, c)} general)` : ''}`), cell(money(t.ownerPayout, c)),
               cell(h('strong', null, money(t.profit, c)), t.profit < 0 ? 'fin-neg' : 'fin-pos'), cell('')))))
           : h('p', { class: 'muted' }, 'No flats yet.'),
         h('p', { class: 'hint' }, 'A booking that runs across two months is shared between them night by night. Cancelled bookings are left out. Future months show what is booked so far.')),

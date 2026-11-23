@@ -72,7 +72,7 @@ export function setTerms(propertyId, { model, rent, percent, from, sameAs, clean
   if (cost < 0 || cost > 10_000 || charge < 0 || charge > 10_000) throw new HttpError(400, 'Enter the cleaning amounts as numbers.');
   q.run(`INSERT INTO property_terms(property_id, from_month, model, rent, percent, cleaning_cost, cleaning_charge, cleaning_before) VALUES(?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(property_id, from_month) DO UPDATE SET model = excluded.model, rent = excluded.rent, percent = excluded.percent, cleaning_cost = excluded.cleaning_cost, cleaning_charge = excluded.cleaning_charge, cleaning_before = excluded.cleaning_before`,
-    propertyId, fromMonth, model, r, p, cost, charge, cleaningBefore === false ? 0 : 1);
+    propertyId, fromMonth, model, r, p, cost, charge, cleaningBefore === true ? 1 : 0);
 }
 
 export function addExpense({ propertyId, date, amount, category, note, monthly, owner }, userId) {
@@ -115,7 +115,7 @@ function monthFigures(month) {
       fees += (b.commission * inMonth) / total;
       nights += inMonth;
       bookings++;
-      if (b.departure >= start && b.departure < end) cleans++; // one clean per booking, in the month the guest leaves
+      if (b.arrival >= start && b.arrival < end) cleans++; // one clean per check-in, in the month the guest arrives
     }
     const t = termsFor(p.id, month);
     const model = t?.model && t.model !== 'none' ? t.model : null;
@@ -127,9 +127,10 @@ function monthFigures(month) {
     const rent = model === 'rent' ? t.rent : 0;
     const cleaningCost = model ? cleans * t.cleaning_cost : 0; // what we pay the cleaner
     const cleaningCharge = model === 'management' ? cleans * t.cleaning_charge : 0; // what the owner is charged; the guest's payment already includes a cleaning fee
-    // The cleaning charge normally comes off first, so our commission is on the stay itself, not on the cleaning fee.
+    // Our commission is on the full net revenue, before cleaning, unless the flat's terms say the cleaning charge comes off first.
     const commission = model === 'management' ? (Math.max(0, net - (t.cleaning_before ? cleaningCharge : 0)) * t.percent) / 100 : 0;
-    const vat = commission * VAT; // the owner pays it; it is passed on to HMRC, so it is not our profit
+    const cleaningVat = cleaningCharge * VAT;
+    const vat = commission * VAT + cleaningVat; // on our commission and on the cleaning charge: the owner pays it, it goes to HMRC, so it is not our profit
     // Rented by us: we keep the net revenue and pay the rent. Managed: we keep the commission; the rest is the owner's.
     const profit = model === 'management' ? commission + cleaningCharge - cleaningCost - ours : net - rent - cleaningCost - ours;
     rows.push({
@@ -137,7 +138,7 @@ function monthFigures(month) {
       listings: members.filter((x) => x.id !== p.id).map((x) => ({ id: x.id, name: x.name || x.display_name })), percent: model === 'management' ? t.percent : null, termsFrom: t?.from_month && t.from_month !== '2000-01' ? t.from_month : null,
       bookings, nights, occupancy: Math.min(100, Math.round((nights / days) * 100)), revenue: round(revenue), fees: round(fees), net: round(net),
       rent: round(rent), commission: round(commission), vat: round(vat), expenses: round(ours), ownerExpenses: round(owners),
-      cleans, cleaningCost: round(cleaningCost), cleaningCharge: round(cleaningCharge), cleaningCostEach: t?.cleaning_cost || 0, cleaningChargeEach: t?.cleaning_charge || 0, cleaningBefore: t ? !!t.cleaning_before : true,
+      cleans, cleaningCost: round(cleaningCost), cleaningCharge: round(cleaningCharge), cleaningCostEach: t?.cleaning_cost || 0, cleaningChargeEach: t?.cleaning_charge || 0, cleaningVat: round(cleaningVat), cleaningBefore: t ? !!t.cleaning_before : false,
       ownerPayout: model === 'management' ? round(net - commission - vat - cleaningCharge - owners) : null, profit: round(profit),
     });
   }
