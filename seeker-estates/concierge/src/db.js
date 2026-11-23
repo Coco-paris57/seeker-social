@@ -321,6 +321,7 @@ export function openDb(file) {
   }
   if (!has('conversations', 'archived')) db.exec('ALTER TABLE conversations ADD COLUMN archived INTEGER NOT NULL DEFAULT 0');
   // Team-only record per property (WiFi, access code...) and extras a guest bought, from ChargeAutomation.
+  if (!has('property_terms', 'cleaning_cost')) db.exec('ALTER TABLE property_terms ADD COLUMN cleaning_cost REAL NOT NULL DEFAULT 0; ALTER TABLE property_terms ADD COLUMN cleaning_charge REAL NOT NULL DEFAULT 0; ALTER TABLE property_terms ADD COLUMN cleaning_before INTEGER NOT NULL DEFAULT 1;'); // per booking: what a clean costs us, what the owner is charged, and whether it comes off before our commission
   if (!has('properties', 'fin_same_as')) db.exec('ALTER TABLE properties ADD COLUMN fin_same_as INTEGER'); // Finance: a second listing of the same flat is counted with this one
   if (!has('properties', 'team_record')) db.exec("ALTER TABLE properties ADD COLUMN team_record TEXT");
   if (!has('reservations', 'extras')) db.exec("ALTER TABLE reservations ADD COLUMN extras TEXT NOT NULL DEFAULT '[]'");

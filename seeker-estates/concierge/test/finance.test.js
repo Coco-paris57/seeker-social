@@ -96,3 +96,29 @@ test('two Smoobu listings of the same flat are one line: revenue added together,
   await team('PUT', `/api/admin/finance/terms/${second}`, { model: 'none' });
   assert.equal((await month('2026-08')).rows.length, 2);
 });
+
+test('cleaning is counted per booking: a cost on a rented flat; on a managed flat a charge to the owner, taken off before the commission', async () => {
+  const flat = q.insert("INSERT INTO properties(smoobu_id, name, display_name, qr_token) VALUES(902, 'Clean flat', 'Clean flat', 'qr-clean')");
+  const b = (id, a, d, price, fee) => ({ ...booking(id, a, d, price, fee), apartment: { id: 902 } });
+  upsertReservation(b(60, '2027-02-02', '2027-02-06', 600, 100)); // leaves in February
+  upsertReservation(b(61, '2027-02-10', '2027-02-12', 400, 50)); // leaves in February
+  upsertReservation(b(62, '2027-02-27', '2027-03-03', 400, 0)); // 2 nights in February, leaves in March
+  const row = async (m) => (await month(m)).rows.find((r) => r.propertyId === flat);
+
+  await team('PUT', `/api/admin/finance/terms/${flat}`, { model: 'rent', rent: '500', cleaningCost: '60' });
+  let r = await row('2027-02'); // net: 500 + 350 + 200 = 1050
+  assert.deepEqual([r.net, r.cleans, r.cleaningCost, r.cleaningCharge, r.profit], [1050, 2, 120, 0, 430]);
+  assert.equal((await row('2027-03')).cleans, 1);
+
+  await team('PUT', `/api/admin/finance/terms/${flat}`, { model: 'management', percent: '20', cleaningCost: '60', cleaningCharge: '90' });
+  r = await row('2027-02'); // commission on 1050 - 180 = 870
+  assert.deepEqual([r.cleaningCharge, r.cleaningCost, r.commission, r.vat, r.ownerPayout, r.profit], [180, 120, 174, 34.8, 661.2, 234]);
+  const t = (await month('2027-02')).totals;
+  assert.ok(t.cleaningCharge >= 180 && t.cleaningCost >= 120);
+
+  // Commission on the whole net revenue instead, when the box is unticked.
+  await team('PUT', `/api/admin/finance/terms/${flat}`, { model: 'management', percent: '20', cleaningCost: '60', cleaningCharge: '90', cleaningBefore: false });
+  r = await row('2027-02');
+  assert.deepEqual([r.commission, r.ownerPayout, r.profit], [210, 618, 270]);
+  assert.equal((await team('PUT', `/api/admin/finance/terms/${flat}`, { model: 'rent', rent: '1', cleaningCost: '-4' })).status, 400);
+});
