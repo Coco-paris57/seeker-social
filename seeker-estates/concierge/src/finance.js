@@ -47,8 +47,19 @@ function termsFor(propertyId, month) {
 }
 
 /** Set a flat's terms from a month onwards: rented by us (monthly rent), or managed for an owner (a share of net revenue). */
-export function setTerms(propertyId, { model, rent, percent, from }) {
+export function setTerms(propertyId, { model, rent, percent, from, sameAs }) {
   if (!q.get('SELECT 1 FROM properties WHERE id = ?', propertyId)) throw new HttpError(404, 'Property not found.');
+  if (model === 'same') {
+    // A second Smoobu listing of the same flat: its bookings and costs are counted with the main listing.
+    const other = q.get('SELECT id, fin_same_as FROM properties WHERE id = ?', Number(sameAs));
+    if (!other || other.id === propertyId) throw new HttpError(400, 'Choose the other listing of this flat.');
+    const main = other.fin_same_as || other.id; // always point at the main listing itself
+    if (main === propertyId) throw new HttpError(400, 'That listing is already combined with this one.');
+    q.run('UPDATE properties SET fin_same_as = ? WHERE id = ?', main, propertyId);
+    q.run('UPDATE properties SET fin_same_as = ? WHERE fin_same_as = ?', main, propertyId); // listings that pointed here follow
+    return;
+  }
+  q.run('UPDATE properties SET fin_same_as = NULL WHERE id = ?', propertyId);
   if (!['rent', 'management', 'none'].includes(model)) throw new HttpError(400, 'Choose how this flat works: rented by us, or managed for an owner.');
   const fromMonth = validMonth(from) ? from : '2000-01';
   const r = model === 'rent' ? num(rent) : 0;
@@ -79,12 +90,19 @@ function monthFigures(month) {
   const start = `${month}-01`;
   const end = `${nextMonth(month)}-01`;
   const days = nightsBetween(start, end);
-  const properties = q.all('SELECT id, name, display_name, active FROM properties ORDER BY COALESCE(position, 100000), name COLLATE NOCASE');
+  const all = q.all('SELECT id, name, display_name, active, fin_same_as FROM properties ORDER BY COALESCE(position, 100000), name COLLATE NOCASE');
+  const ids = new Set(all.map((p) => p.id));
+  const mainOf = (p) => (p.fin_same_as && ids.has(p.fin_same_as) && p.fin_same_as !== p.id ? p.fin_same_as : p.id);
+  const properties = all.filter((p) => mainOf(p) === p.id);
   const expenses = expensesIn(month);
   const rows = [];
   for (const p of properties) {
     let revenue = 0, fees = 0, nights = 0, bookings = 0;
-    for (const b of q.all('SELECT * FROM booking_money WHERE property_id = ? AND cancelled = 0 AND arrival < ? AND departure > ?', p.id, end, start)) {
+    // Two Smoobu listings of one flat are one line: their bookings and expenses are added together.
+    const members = all.filter((x) => mainOf(x) === p.id);
+    const memberIds = members.map((x) => x.id);
+    const marks = memberIds.map(() => '?').join(',');
+    for (const b of q.all(`SELECT * FROM booking_money WHERE property_id IN (${marks}) AND cancelled = 0 AND arrival < ? AND departure > ?`, ...memberIds, end, start)) {
       const total = Math.max(1, nightsBetween(b.arrival, b.departure));
       const inMonth = nightsBetween(b.arrival > start ? b.arrival : start, b.departure < end ? b.departure : end);
       if (inMonth <= 0) continue;
@@ -95,10 +113,10 @@ function monthFigures(month) {
     }
     const t = termsFor(p.id, month);
     const model = t?.model && t.model !== 'none' ? t.model : null;
-    const mine = expenses.filter((e) => e.property_id === p.id);
+    const mine = expenses.filter((e) => memberIds.includes(e.property_id));
     const ours = mine.filter((e) => !e.owner).reduce((s, e) => s + e.amount, 0);
     const owners = mine.filter((e) => e.owner).reduce((s, e) => s + e.amount, 0);
-    if (!p.active && !bookings && !mine.length) continue;
+    if (!members.some((x) => x.active) && !bookings && !mine.length) continue;
     const net = revenue - fees;
     const rent = model === 'rent' ? t.rent : 0;
     const commission = model === 'management' ? (net * t.percent) / 100 : 0;
@@ -106,7 +124,8 @@ function monthFigures(month) {
     // Rented by us: we keep the net revenue and pay the rent. Managed: we keep the commission; the rest is the owner's.
     const profit = model === 'management' ? commission - ours : net - rent - ours;
     rows.push({
-      propertyId: p.id, name: p.name || p.display_name, model, percent: model === 'management' ? t.percent : null, termsFrom: t?.from_month && t.from_month !== '2000-01' ? t.from_month : null,
+      propertyId: p.id, name: p.name || p.display_name, model,
+      listings: members.filter((x) => x.id !== p.id).map((x) => ({ id: x.id, name: x.name || x.display_name })), percent: model === 'management' ? t.percent : null, termsFrom: t?.from_month && t.from_month !== '2000-01' ? t.from_month : null,
       bookings, nights, occupancy: Math.min(100, Math.round((nights / days) * 100)), revenue: round(revenue), fees: round(fees), net: round(net),
       rent: round(rent), commission: round(commission), vat: round(vat), expenses: round(ours), ownerExpenses: round(owners),
       ownerPayout: model === 'management' ? round(net - commission - vat - owners) : null, profit: round(profit),

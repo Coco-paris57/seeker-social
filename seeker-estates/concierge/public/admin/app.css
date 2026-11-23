@@ -762,3 +762,5 @@ input[type="color"] { width: 64px; height: 44px; padding: 3px; border: 1.5px sol
 .fin-table tfoot th, .fin-table tfoot td { border-top: 2px solid var(--line); font-weight: 600; }
 .section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
 .section-head h2 { margin: 0; }
+.fin-also { font-weight: 400; font-size: 13px; color: var(--muted, #5b665f); white-space: normal; max-width: 34ch; }
+.fin-table th[scope=row] { white-space: normal; max-width: 36ch; }

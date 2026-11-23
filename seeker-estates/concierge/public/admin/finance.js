@@ -12,32 +12,35 @@ function tile(value, label, hint, tone) {
 }
 
 /** How a flat earns: rented by us, or managed for an owner. Applies from the chosen month onwards. */
-function termsDialog(row, month) {
+function termsDialog(row, month, others = []) {
   return openDialog({
     title: `Terms · ${row.name}`,
     build: (close) => {
       const model = h('select', null,
         h('option', { value: 'rent', selected: row.model === 'rent' || !row.model }, 'We rent it (we pay rent and keep the revenue)'),
         h('option', { value: 'management', selected: row.model === 'management' }, 'We manage it for an owner (commission + VAT on net revenue)'),
+        others.length > 0 && h('option', { value: 'same' }, 'Same flat as another listing (combine the two)'),
         h('option', { value: 'none' }, 'Not set'));
+      const sameAs = h('select', null, others.map((o) => h('option', { value: o.propertyId }, o.name)));
+      const sameField = field('The other listing of this flat', sameAs, { hint: 'Bookings and expenses of both listings are added together on that line, with its rent or commission counted once. To separate them again, open the terms of the listing you are combining and choose another option.' });
       const rent = h('input', { type: 'text', inputMode: 'decimal', value: row.rent || '', placeholder: 'For example 2400' });
       const percent = h('input', { type: 'text', inputMode: 'decimal', value: row.percent ?? '', placeholder: 'For example 18' });
       const from = h('select', null, h('option', { value: '' }, 'From the start (all months)'), h('option', { value: month }, `From ${monthName(month)} onwards`));
       const rentField = field('Rent we pay each month (£)', rent);
       const percentField = field('Our commission (% of net revenue, + VAT)', percent, { hint: 'Enter the percentage before VAT. Net revenue is what the guest paid minus the booking site\'s fee. VAT at 20% is added on top of the commission and comes off the owner\'s payout; it is not counted in our profit.' });
-      const sync = () => { rentField.hidden = model.value !== 'rent'; percentField.hidden = model.value !== 'management'; };
+      const applies = field('Applies', from, { hint: 'Choose "from this month" when the rent or the commission has changed, so earlier months keep the old figures.' });
+      const sync = () => { rentField.hidden = model.value !== 'rent'; percentField.hidden = model.value !== 'management'; sameField.hidden = model.value !== 'same'; applies.hidden = model.value === 'same'; };
       model.addEventListener('change', sync);
       sync();
       const save = button('Save', { variant: 'primary', type: 'submit', icon: 'check' });
       const form = h('form', { class: 'stack' },
-        field('How this flat works', model), rentField, percentField,
-        field('Applies', from, { hint: 'Choose "from this month" when the rent or the commission has changed, so earlier months keep the old figures.' }),
+        field('How this flat works', model), rentField, percentField, sameField, applies,
         h('div', { class: 'actions' }, save, button('Cancel', { onclick: () => close() })));
       form.addEventListener('submit', (e) => {
         e.preventDefault();
         busy(save, async () => {
           try {
-            await api(`/finance/terms/${row.propertyId}`, { method: 'PUT', body: { model: model.value, rent: rent.value.replace(/[£,\s]/g, ''), percent: percent.value.replace(/[%\s]/g, ''), from: from.value } });
+            await api(`/finance/terms/${row.propertyId}`, { method: 'PUT', body: { model: model.value, rent: rent.value.replace(/[£,\s]/g, ''), percent: percent.value.replace(/[%\s]/g, ''), from: from.value, sameAs: sameAs.value || null } });
             toast('Saved', { kind: 'ok' });
             close(true);
           } catch (err) {
@@ -115,7 +118,7 @@ export function financeView() {
     const peak = Math.max(1, ...d.series.map((s) => Math.abs(s.profit)), ...d.series.map((s) => s.net));
     const bar = (value, cls) => { const b = h('span', { class: `fin-bar ${cls}` }); b.style.height = `${Math.max(2, Math.round((Math.abs(value) / peak) * 100))}%`; return b; };
     const terms = (r) => (r.model === 'rent' ? 'Rented' : r.model === 'management' ? `Managed · ${r.percent}% + VAT` : 'Not set');
-    const edit = (r) => button(r.model ? 'Edit' : 'Set terms', { small: true, variant: r.model ? 'ghost' : 'primary', icon: 'edit', onclick: async () => { if (await termsDialog(r, d.month)) load(); } });
+    const edit = (r) => button(r.model ? 'Edit' : 'Set terms', { small: true, variant: r.model ? 'ghost' : 'primary', icon: 'edit', onclick: async () => { if (await termsDialog(r, d.month, d.rows.filter((x) => x.propertyId !== r.propertyId))) load(); } });
     const cell = (v, cls) => h('td', { class: cls || null }, v);
     const removeBtn = (e) => {
       const btn = button(e.monthly ? 'Stop' : 'Remove', { small: true, variant: 'ghost', icon: 'x' });
@@ -152,7 +155,10 @@ export function financeView() {
           ? h('div', { class: 'table-scroll' }, h('table', { class: 'data fin-table' },
             h('thead', null, h('tr', null, ['Flat', 'Terms', 'Nights', 'Guests paid', 'Site fees', 'Net', 'Rent / our share', 'Expenses', 'Owner gets', 'Our profit', ''].map((x) => h('th', { scope: 'col' }, x)))),
             h('tbody', null, d.rows.map((r) => h('tr', null,
-              h('th', { scope: 'row' }, h('a', { href: `#/properties/${r.propertyId}` }, r.name)),
+              h('th', { scope: 'row' }, h('a', { href: `#/properties/${r.propertyId}` }, r.name),
+                r.listings.map((l) => h('div', { class: 'fin-also' }, `+ ${l.name} `, h('button', { type: 'button', class: 'link-button', onclick: async () => {
+                  try { await api(`/finance/terms/${l.id}`, { method: 'PUT', body: { model: 'none' } }); toast('Separated. Set its terms if it is a different flat.', { kind: 'ok' }); load(); } catch (err) { showError(err); }
+                } }, 'separate')))),
               cell(r.model ? terms(r) : chip('Not set', { tone: 'warn' })),
               cell(`${r.nights} (${r.occupancy}%)`), cell(money(r.revenue, c)), cell(money(r.fees, c)), cell(money(r.net, c)),
               cell(r.model === 'rent' ? `${money(r.rent, c)} rent` : r.model === 'management' ? `${money(r.commission, c)} ours + ${money(r.vat, c)} VAT` : '–'),

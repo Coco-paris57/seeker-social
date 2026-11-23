@@ -70,3 +70,29 @@ test('finance is for administrators only, and bad input is refused', async () =>
   assert.equal((await team('PUT', `/api/admin/finance/terms/${ctx.propertyId}`, { model: 'management', percent: '140' })).status, 400);
   assert.equal((await team('PUT', '/api/admin/finance/terms/99999', { model: 'rent', rent: '1' })).status, 404);
 });
+
+test('two Smoobu listings of the same flat are one line: revenue added together, rent counted once', async () => {
+  const second = q.insert("INSERT INTO properties(smoobu_id, name, display_name, qr_token) VALUES(901, 'Second listing', 'Second listing', 'qr-second')");
+  upsertReservation(booking(40, '2026-08-03', '2026-08-07', 600, 90));
+  upsertReservation({ ...booking(41, '2026-08-10', '2026-08-12', 300, 45), apartment: { id: 901 } });
+  await team('PUT', `/api/admin/finance/terms/${ctx.propertyId}`, { model: 'rent', rent: '1000', from: '2026-08' });
+  await team('PUT', `/api/admin/finance/terms/${second}`, { model: 'rent', rent: '1000' });
+  await team('POST', '/api/admin/finance/expenses', { propertyId: second, date: '2026-08-05', amount: '50', category: 'Cleaning' });
+  let d = await month('2026-08');
+  assert.equal(d.rows.length, 2);
+  assert.equal(d.totals.rent, 2000); // counted twice until they are combined
+
+  assert.equal((await team('PUT', `/api/admin/finance/terms/${second}`, { model: 'same', sameAs: second })).status, 400);
+  assert.equal((await team('PUT', `/api/admin/finance/terms/${second}`, { model: 'same', sameAs: ctx.propertyId })).status, 200);
+  d = await month('2026-08');
+  assert.equal(d.rows.length, 1);
+  const r = d.rows[0];
+  assert.deepEqual([r.propertyId, r.bookings, r.nights, r.revenue, r.fees, r.net, r.rent, r.expenses, r.profit], [ctx.propertyId, 2, 6, 900, 135, 765, 1000, 50, -285]);
+  assert.deepEqual(r.listings.map((l) => l.name), ['Second listing']);
+  assert.equal(d.totals.rent, 1000);
+  assert.equal((await team('PUT', `/api/admin/finance/terms/${ctx.propertyId}`, { model: 'same', sameAs: second })).status, 400); // not in a circle
+
+  // Separated again.
+  await team('PUT', `/api/admin/finance/terms/${second}`, { model: 'none' });
+  assert.equal((await month('2026-08')).rows.length, 2);
+});
