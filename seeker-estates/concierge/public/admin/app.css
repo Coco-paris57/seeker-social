@@ -764,3 +764,25 @@ input[type="color"] { width: 64px; height: 44px; padding: 3px; border: 1.5px sol
 .section-head h2 { margin: 0; }
 .fin-also { font-weight: 400; font-size: 13px; color: var(--muted, #5b665f); white-space: normal; max-width: 34ch; }
 .fin-table th[scope=row] { white-space: normal; max-width: 36ch; }
+
+/* Finance: income against costs, one line per flat */
+.fin-flats { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 14px; }
+.fin-flats li { display: grid; grid-template-columns: minmax(150px, 26%) 1fr 96px; gap: 6px 14px; align-items: center; }
+.fin-flat-name { font-weight: 600; font-size: 14.5px; min-width: 0; overflow-wrap: anywhere; }
+.fin-flat-name .muted { font-weight: 400; white-space: nowrap; }
+.fin-flat-bars { display: grid; gap: 4px; min-width: 0; }
+.fin-track { display: flex; align-items: center; height: 16px; min-width: 0; }
+.fin-seg { display: block; height: 100%; min-width: 2px; }
+.fin-seg:first-child { border-radius: 4px 0 0 4px; }
+.fin-seg + .fin-amount, .fin-amount:first-child { margin-left: 8px; }
+.fin-track .fin-seg:nth-last-child(2) { border-top-right-radius: 4px; border-bottom-right-radius: 4px; }
+.fin-amount { font-size: 12.5px; color: var(--muted, #5b665f); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.fin-income { background: #1f5a45; }
+.fin-rent { background: #c2674a; }
+.fin-clean { background: #e0a458; }
+.fin-exp { background: #8a8f98; }
+.fin-flat-profit { text-align: right; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.fin-flat-profit strong { display: block; font-size: 16px; }
+.fin-flat-profit span { font-size: 12px; }
+.fin-pos { color: #1f5a45; }
+@media (max-width: 700px) { .fin-flats li { grid-template-columns: 1fr auto; } .fin-flat-name { grid-column: 1 / -1; } }

@@ -100,6 +100,34 @@ function cleaningDialog(d) {
   });
 }
 
+/**
+ * One line per flat: what it brought us (top bar) against what it cost us (bottom bar, split into
+ * rent, cleaning and other expenses), with the profit at the end. On a managed flat our income is
+ * the commission and the cleaning charge, not the guest's payment.
+ */
+function flatChart(d) {
+  const c = d.currency;
+  const flats = d.rows.map((r) => {
+    const income = r.model === 'management' ? r.commission + r.cleaningCharge : r.net;
+    const parts = [['fin-rent', 'Rent', r.rent], ['fin-clean', 'Cleaning', r.cleaningCost], ['fin-exp', 'Other expenses', r.expenses]].filter((p) => p[2] > 0);
+    return { r, income, parts, costs: parts.reduce((s, p) => s + p[2], 0) };
+  }).sort((a, b) => b.r.profit - a.r.profit);
+  if (!flats.length) return null;
+  const peak = Math.max(1, ...flats.map((f) => Math.max(f.income, f.costs)));
+  const seg = (cls, value, label) => { const el = h('span', { class: `fin-seg ${cls}`, title: `${label}: ${money(value, c)}` }); el.style.width = `${(value / peak) * 100}%`; return el; };
+  const key = (cls, label) => [h('span', { class: `fin-key ${cls}` }), `${label} `];
+  return h('section', { class: 'card section' },
+    h('h2', null, `Income, costs and profit by flat · ${monthName(d.month)}`),
+    h('p', { class: 'hint fin-legend' }, key('fin-income', 'Our income'), key('fin-rent', 'Rent'), key('fin-clean', 'Cleaning'), key('fin-exp', 'Other expenses'), '· best profit first'),
+    h('ul', { class: 'fin-flats' }, flats.map((f) => h('li', null,
+      h('div', { class: 'fin-flat-name' }, h('a', { href: `#/properties/${f.r.propertyId}` }, f.r.name), h('span', { class: 'muted' }, f.r.model === 'management' ? ` · managed ${f.r.percent}%` : f.r.model === 'rent' ? ' · rented' : ' · terms not set')),
+      h('div', { class: 'fin-flat-bars', role: 'img', 'aria-label': `${f.r.name}: income ${money(f.income, c)}, costs ${money(f.costs, c)}, profit ${money(f.r.profit, c)}` },
+        h('div', { class: 'fin-track' }, f.income > 0 && seg('fin-income', f.income, f.r.model === 'management' ? 'Our commission and cleaning charge' : 'Net revenue'), h('span', { class: 'fin-amount' }, `${money(f.income, c)} income`)),
+        h('div', { class: 'fin-track' }, f.parts.map(([cls, label, value]) => seg(cls, value, label)), h('span', { class: 'fin-amount' }, f.costs ? `${money(f.costs, c)} costs` : 'No costs entered'))),
+      h('div', { class: `fin-flat-profit ${f.r.profit < 0 ? 'fin-neg' : 'fin-pos'}` }, h('strong', null, money(f.r.profit, c)), h('span', null, f.r.profit < 0 ? 'loss' : 'profit'))))),
+    h('p', { class: 'hint' }, 'Income is what the flat brings to us: net revenue on a rented flat; our commission and the cleaning charge on a managed one. VAT is left out, as it is passed on.'));
+}
+
 function expenseDialog(d) {
   return openDialog({
     title: 'Add an expense',
@@ -196,6 +224,7 @@ export function financeView() {
             h('span', { class: 'fin-bars' }, bar(s.net, 'fin-net'), bar(s.profit, s.profit < 0 ? 'fin-loss' : 'fin-profit')),
             h('span', { class: 'fin-label' }, monthName(s.month, true))))),
         h('p', { class: 'hint fin-legend' }, h('span', { class: 'fin-key fin-net' }), 'Net revenue ', h('span', { class: 'fin-key fin-profit' }), 'Our profit ', h('span', { class: 'fin-key fin-loss' }), 'Loss · click a month to open it')),
+      flatChart(d),
       h('section', { class: 'card section' },
         h('div', { class: 'section-head' }, h('h2', null, `By flat · ${monthName(d.month)}`), button('Cleaning per check-in', { icon: 'edit', small: true, onclick: async () => { if (await cleaningDialog(d)) load(); } })),
         d.rows.length
