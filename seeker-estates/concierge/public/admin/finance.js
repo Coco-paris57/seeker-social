@@ -412,7 +412,7 @@ export function financeView() {
               cell(`${money(t.rent, c)} rent · ${money(t.commission, c)} ours + ${money(t.vat, c)} VAT`), cell(t.cleaningCost || t.cleaningCharge ? `${money(t.cleaningCharge, c)} + VAT to owners · ${money(t.cleaningCost, c)} cost` : '–'), cell(money(t.bills, c)), cell(`${money(t.expenses, c)}${t.general ? ` (${money(t.general, c)} general)` : ''}`), cell(money(t.ownerPayout, c)),
               cell(h('strong', null, money(t.profit, c)), t.profit < 0 ? 'fin-neg' : 'fin-pos'), cell('')))))
           : h('p', { class: 'muted' }, 'No flats yet.'),
-        h('p', { class: 'hint' }, 'A booking that runs across two months is shared between them night by night. Site fees are the commission Smoobu holds, plus Booking.com's 1.6% payments fee on Booking.com stays. Cancelled bookings are left out. Future months show what is booked so far.')),
+        h('p', { class: 'hint' }, 'A booking that runs across two months is shared between them night by night. Site fees are the commission Smoobu holds, plus the 1.6% payments fee Booking.com charges on Booking.com stays. Cancelled bookings are left out. Future months show what is booked so far.')),
       h('section', { class: 'card section' },
         h('div', { class: 'section-head' }, h('h2', null, `Bills for the flats we rent · ${monthName(d.month)}`), rented.length > 0 && button('Add a bill', { variant: 'primary', icon: 'plus', small: true, onclick: async () => { if (await billDialog(d, rented)) load(); } })),
         !rented.length
