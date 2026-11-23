@@ -1,7 +1,7 @@
 // Seeker Concierge team app service worker: push notifications, and a small cache of the
 // app shell so the installed app opens without a connection. API calls are never cached.
 
-const CACHE = 'concierge-admin-v51';
+const CACHE = 'concierge-admin-v52';
 const SHELL = [
   '/admin/index.html', '/admin/app.css', '/admin/app.js', '/admin/lib.js', '/admin/state.js', '/admin/auth.js', '/admin/inbox.js',
   '/admin/conversations.js', '/admin/properties.js', '/admin/knowledge.js', '/admin/settings.js', '/admin/push.js', '/admin/attach.js', '/admin/insights.js', '/admin/journey.js', '/admin/planner.js', '/admin/care.js', '/admin/finance.js', '/admin/calendar.js', '/admin/dashboard.js', '/admin/glass.css', '/admin/look.js', '/admin/palette.js',

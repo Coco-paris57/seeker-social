@@ -60,6 +60,46 @@ function termsDialog(row, month, others = []) {
   });
 }
 
+/** Cleaning for every flat on one screen: what a clean costs, and on managed flats what the owner is charged. */
+function cleaningDialog(d) {
+  return openDialog({
+    title: 'Cleaning per check-in',
+    wide: true,
+    build: (close) => {
+      const clean = (v) => v.replace(/[£,\s]/g, '');
+      const rows = d.rows.filter((r) => r.model).map((r) => ({
+        r,
+        cost: h('input', { type: 'text', inputMode: 'decimal', value: r.cleaningCostEach || '', placeholder: '0', 'aria-label': `Cleaning cost for ${r.name}` }),
+        charge: r.model === 'management' ? h('input', { type: 'text', inputMode: 'decimal', value: r.cleaningChargeEach || '', placeholder: '0', 'aria-label': `Cleaning charge to the owner for ${r.name}` }) : null,
+      }));
+      const unset = d.rows.filter((r) => !r.model).length;
+      const save = button('Save', { variant: 'primary', type: 'submit', icon: 'check' });
+      const form = h('form', { class: 'stack' },
+        h('p', { class: 'muted' }, 'Enter the amounts in pounds. Each is counted once for every check-in in the month. The charge to the owner is before VAT; 20% VAT is added.'),
+        rows.length
+          ? h('div', { class: 'table-scroll' }, h('table', { class: 'data' },
+            h('thead', null, h('tr', null, ['Flat', 'Terms', 'Our cleaning cost (£)', 'Charge to owner (£ + VAT)'].map((x) => h('th', { scope: 'col' }, x)))),
+            h('tbody', null, rows.map((x) => h('tr', null, h('th', { scope: 'row' }, x.r.name), h('td', null, x.r.model === 'rent' ? 'Rented' : 'Managed'), h('td', null, x.cost), h('td', null, x.charge || '–'))))))
+          : h('p', { class: 'muted' }, 'Set the terms of a flat first (rented or managed), then its cleaning can be entered here.'),
+        unset > 0 && rows.length > 0 && h('p', { class: 'hint' }, `${unset} ${unset === 1 ? 'flat is' : 'flats are'} not listed because ${unset === 1 ? 'its' : 'their'} terms are not set yet.`),
+        h('div', { class: 'actions' }, rows.length > 0 && save, button('Cancel', { onclick: () => close() })));
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        busy(save, async () => {
+          try {
+            await api('/finance/cleaning', { method: 'PUT', body: { month: d.month, flats: rows.map((x) => ({ propertyId: x.r.propertyId, cost: clean(x.cost.value), charge: x.charge ? clean(x.charge.value) : 0 })) } });
+            toast('Cleaning saved', { kind: 'ok' });
+            close(true);
+          } catch (err) {
+            showError(err);
+          }
+        });
+      });
+      return form;
+    },
+  });
+}
+
 function expenseDialog(d) {
   return openDialog({
     title: 'Add an expense',
@@ -157,7 +197,7 @@ export function financeView() {
             h('span', { class: 'fin-label' }, monthName(s.month, true))))),
         h('p', { class: 'hint fin-legend' }, h('span', { class: 'fin-key fin-net' }), 'Net revenue ', h('span', { class: 'fin-key fin-profit' }), 'Our profit ', h('span', { class: 'fin-key fin-loss' }), 'Loss · click a month to open it')),
       h('section', { class: 'card section' },
-        h('h2', null, `By flat · ${monthName(d.month)}`),
+        h('div', { class: 'section-head' }, h('h2', null, `By flat · ${monthName(d.month)}`), button('Cleaning per check-in', { icon: 'edit', small: true, onclick: async () => { if (await cleaningDialog(d)) load(); } })),
         d.rows.length
           ? h('div', { class: 'table-scroll' }, h('table', { class: 'data fin-table' },
             h('thead', null, h('tr', null, ['Flat', 'Terms', 'Nights', 'Guests paid', 'Site fees', 'Net', 'Rent / our share', 'Cleaning', 'Expenses', 'Owner gets', 'Our profit', ''].map((x) => h('th', { scope: 'col' }, x)))),

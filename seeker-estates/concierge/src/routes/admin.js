@@ -18,7 +18,7 @@ import { syncThread } from '../thread-sync.js';
 import { learnStyle, setStyle, styleStatus } from '../style.js';
 import { historyStatus, startHistory } from '../history.js';
 import { careFor, stayCare } from '../care.js';
-import { addExpense, finance, removeExpense, setTerms } from '../finance.js';
+import { addExpense, finance, removeExpense, setCleaning, setTerms } from '../finance.js';
 import { importGuestMessage } from './webhooks.js';
 import { createTask, refreshTasks, todoCount, TASK_TYPES } from '../tasks.js';
 import { offersFor } from '../bot.js';
@@ -1027,6 +1027,12 @@ admin.put('/finance/terms/:propertyId', requireAdmin, (req, res) => {
   setTerms(Number(req.params.propertyId), req.body || {});
   audit(req.user.id, 'finance.terms', `property ${req.params.propertyId}: ${req.body?.model}`);
   res.json({ ok: true });
+});
+
+admin.put('/finance/cleaning', requireAdmin, (req, res) => {
+  const saved = setCleaning(req.body?.flats, String(req.body?.month || ''));
+  audit(req.user.id, 'finance.cleaning', `${saved} flats`);
+  res.json({ saved });
 });
 
 admin.post('/finance/expenses', requireAdmin, (req, res) => {

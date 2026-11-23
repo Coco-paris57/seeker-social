@@ -75,6 +75,25 @@ export function setTerms(propertyId, { model, rent, percent, from, sameAs, clean
     propertyId, fromMonth, model, r, p, cost, charge, cleaningBefore === true ? 1 : 0);
 }
 
+/**
+ * Cleaning amounts for several flats at once, from the Finance table. Each is saved on the terms
+ * in force for that month, leaving the rent or commission as it is.
+ */
+export function setCleaning(list, month) {
+  const m = validMonth(month) ? month : londonDate().slice(0, 7);
+  let saved = 0;
+  for (const x of Array.isArray(list) ? list : []) {
+    const t = termsFor(Number(x.propertyId), m);
+    if (!t || t.model === 'none') continue; // no terms yet: nothing to attach it to
+    const cost = num(x.cost);
+    const charge = t.model === 'management' ? num(x.charge) : 0;
+    if (cost < 0 || cost > 10_000 || charge < 0 || charge > 10_000) throw new HttpError(400, 'Enter the cleaning amounts as numbers.');
+    q.run('UPDATE property_terms SET cleaning_cost = ?, cleaning_charge = ? WHERE id = ?', cost, charge, t.id);
+    saved++;
+  }
+  return saved;
+}
+
 export function addExpense({ propertyId, date, amount, category, note, monthly, owner }, userId) {
   const a = num(amount);
   if (!(a > 0) || a > 10_000_000) throw new HttpError(400, 'Enter the amount as a number above zero.');

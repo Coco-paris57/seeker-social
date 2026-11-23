@@ -122,3 +122,14 @@ test('cleaning is counted per check-in: a cost on a rented flat; on a managed fl
   assert.deepEqual([r.commission, r.vat, r.ownerPayout, r.profit], [160, 82, 558, 290]);
   assert.equal((await team('PUT', `/api/admin/finance/terms/${flat}`, { model: 'rent', rent: '1', cleaningCost: '-4' })).status, 400);
 });
+
+test('cleaning amounts can be entered for several flats at once, without touching rent or commission', async () => {
+  const flat = q.get("SELECT id FROM properties WHERE name = 'Clean flat'").id;
+  await team('PUT', `/api/admin/finance/terms/${flat}`, { model: 'management', percent: '20' });
+  const out = await team('PUT', '/api/admin/finance/cleaning', { month: '2027-02', flats: [{ propertyId: flat, cost: '70', charge: '125' }, { propertyId: 99999, cost: '5' }] });
+  assert.equal(out.json.saved, 1);
+  const r = (await month('2027-02')).rows.find((x) => x.propertyId === flat);
+  assert.deepEqual([r.percent, r.cleaningCostEach, r.cleaningChargeEach, r.cleaningCost, r.cleaningCharge], [20, 70, 125, 140, 250]);
+  assert.equal((await team('PUT', '/api/admin/finance/cleaning', { flats: [{ propertyId: flat, cost: 'lots' }] })).json.saved, 1); // not a number counts as nothing
+  assert.equal((await client(srv.base)('PUT', '/api/admin/finance/cleaning', { flats: [] })).status, 401);
+});
