@@ -59,6 +59,37 @@ function portfolio(d) {
         losers.length > 0 && h('p', { class: 'hint fin-neg' }, `Making a loss: ${losers.map((r) => `${r.name} (${money(r.profit, c)})`).join(', ')}.`))));
 }
 
+/**
+ * One small pie per flat (two listings of the same flat are one pie). A managed flat: what we keep,
+ * split into commission and cleaning margin. A flat we rent: its net revenue, split into what it
+ * pays for (rent, bills, cleaning, other expenses) and the profit left.
+ */
+function flatPies(d) {
+  const c = d.currency;
+  const G = '#1f5a45', AMBER = '#e0a458', CLAY = '#c2674a', BLUE = '#5b8fb0', GREY = '#8a8f98';
+  const cards = d.rows.filter((r) => r.model).map((r) => {
+    const all = r.model === 'management'
+      ? [['Commission', r.commission, G], ['Cleaning margin', r.cleaningMargin, AMBER]]
+      : [['Profit', r.profit, G], ['Rent', r.rent, CLAY], ['Bills', r.bills, BLUE], ['Cleaning', r.cleaningCost, AMBER], ['Other expenses', r.expenses, GREY]];
+    const slices = all.filter((x) => x[1] > 0);
+    const chart = pie(slices.map(([label, value]) => ({ label, value })), c, { colours: slices.map((x) => x[2]), label: r.name });
+    const notes = r.model === 'management'
+      ? [r.cleaningMargin < 0 && `Cleaning cost ${money(-r.cleaningMargin, c)} more than was charged.`, r.expenses > 0 && `Less ${money(r.expenses, c)} of our own expenses.`]
+      : [r.profit < 0 && `Costs were ${money(-r.profit, c)} more than the net revenue of ${money(r.net, c)}.`];
+    return h('article', { class: 'fin-flat-pie' },
+      h('h3', null, h('a', { href: `#/properties/${r.propertyId}` }, r.name)),
+      h('p', { class: 'muted' }, `${r.model === 'management' ? `Managed · ${r.percent}% + VAT` : 'Rented by us'}${r.listings.length ? ` · ${r.listings.length + 1} listings combined` : ''}`),
+      chart || h('p', { class: 'muted fin-empty' }, r.bookings ? 'Nothing to show for this month.' : 'No bookings this month.'),
+      h('p', { class: `fin-flat-total ${r.profit < 0 ? 'fin-neg' : 'fin-pos'}` }, h('strong', null, money(r.profit, c)), r.profit < 0 ? ' loss' : ' profit'),
+      notes.filter(Boolean).map((n) => h('p', { class: 'hint' }, n)));
+  });
+  if (!cards.length) return null;
+  return h('section', { class: 'card section' },
+    h('h2', null, `Where the profit comes from, flat by flat · ${monthName(d.month)}`),
+    h('p', { class: 'hint' }, 'Managed flats: what we keep, split between commission and the margin on cleaning. Flats we rent: the net revenue, split between what it pays for and the profit left.'),
+    h('div', { class: 'fin-flat-pies' }, cards));
+}
+
 /** A household bill for a flat we rent. */
 function billDialog(d, rented) {
   return openDialog({
@@ -316,6 +347,7 @@ export function financeView() {
             h('span', { class: 'fin-label' }, monthName(s.month, true))))),
         h('p', { class: 'hint fin-legend' }, h('span', { class: 'fin-key fin-net' }), 'Net revenue ', h('span', { class: 'fin-key fin-profit' }), 'Our profit ', h('span', { class: 'fin-key fin-loss' }), 'Loss · click a month to open it')),
       portfolio(d),
+      flatPies(d),
       flatChart(d),
       h('section', { class: 'card section' },
         h('div', { class: 'section-head' }, h('h2', null, `By flat · ${monthName(d.month)}`), button('Cleaning per check-in', { icon: 'edit', small: true, onclick: async () => { if (await cleaningDialog(d)) load(); } })),
