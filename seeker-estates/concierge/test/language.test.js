@@ -67,3 +67,34 @@ test('a guest writing in English is unaffected, and a translation that loses som
   // Numbers, times and links are put back exactly.
   assert.equal(await translateTo('Code 4821#, at 3pm: https://x.test/a', 'French'), '[French] Code 4821#, at 3pm: https://x.test/a');
 });
+
+test('a draft can be rewritten by the assistant from what the team says; nothing is sent until it is approved', async () => {
+  const anon = (await import('./helpers.js')).client(srv.base);
+  let guest = await openChat(srv.base);
+  let id = (await say(guest, 'How do I use the washing machine?')).conversation.id;
+  let draft = await draftFor(id);
+  assert.equal(draft.redrafted, 0);
+  assert.equal((await anon('POST', `/api/admin/messages/${draft.id}/redraft`, { instruction: 'x' })).status, 401);
+  assert.equal((await team('POST', `/api/admin/messages/${draft.id}/redraft`, { instruction: ' ' })).status, 400);
+  const out = await team('POST', `/api/admin/messages/${draft.id}/redraft`, { instruction: 'Use the Eco 30 programme, not Cotton 40.' });
+  assert.equal(out.status, 200);
+  assert.equal(out.json.draft.id, draft.id);
+  assert.match(out.json.draft.text, /Eco 30 programme/);
+  assert.equal(out.json.draft.redrafted, 1);
+  assert.equal(out.json.draft.status, 'pending');
+  assert.ok(!lastSent(id)); // still waiting
+  await team('POST', `/api/admin/messages/${draft.id}/approve`, {});
+  assert.match(lastSent(id).body, /Eco 30 programme/);
+  assert.equal(JSON.parse(lastSent(id).meta).edited, true); // counts as corrected by the team, so it is the pattern to follow
+  assert.equal((await team('POST', `/api/admin/messages/${draft.id}/redraft`, { instruction: 'again' })).status, 409); // already sent
+
+  // For a guest writing in another language the rewrite is in English, and what is sent is translated from it.
+  guest = await openChat(srv.base);
+  id = (await say(guest, 'Bom dia, How do I use the washing machine?')).conversation.id;
+  draft = await draftFor(id);
+  const next = (await team('POST', `/api/admin/messages/${draft.id}/redraft`, { instruction: 'Add that the powder is under the sink.' })).json.draft;
+  assert.equal(next.sendIn, 'Portuguese');
+  assert.ok(!next.text.includes('[Portuguese]'));
+  await team('POST', `/api/admin/messages/${draft.id}/approve`, {});
+  assert.equal(lastSent(id).body, `[Portuguese] ${next.text}`);
+});

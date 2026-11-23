@@ -415,6 +415,28 @@ Choose the section (category) that fits best. Write "question" as a short topic 
   return { category: CATEGORIES.includes(out.category) ? out.category : 'other', question: String(out.question || question).trim(), answer: String(out.answer || answer).trim() };
 }
 
+/** A draft waiting for approval, written again from what a team member said about it. */
+export async function redraft(ctx, draft, instruction) {
+  if (config.llmMode === 'mock') return `${draft.trim()}\n\n${instruction.trim()}`;
+  const system = `${systemPrompt(ctx)}
+
+For this request only: you drafted the reply below for the team to approve, and a team member has told you what to change, or given you information you did not have. Write the reply again. What the team member says is fact: keep every time, price, code and instruction exactly as they gave it, and follow what they ask for (shorter, warmer, a different answer). Keep the parts of the draft they did not object to, add nothing that is in neither the draft nor their note, and leave out anything addressed to you rather than the guest. Write in the same language as the current draft.`;
+  const user = `${userPrompt(ctx)}
+
+<current_draft>
+${draft}
+</current_draft>
+
+<team_member_says>
+${instruction}
+</team_member_says>
+
+Write the reply again.`;
+  const out = await structured(system, user, COMPOSE_SCHEMA);
+  if (!out?.reply?.trim()) throw new Error('The model returned an empty reply');
+  return out.reply.trim();
+}
+
 export async function compose(ctx, ticket, teamAnswer) {
   if (config.llmMode === 'mock') return teamAnswer.trim();
   const system = `${systemPrompt(ctx)}

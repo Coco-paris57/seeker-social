@@ -800,8 +800,8 @@ export async function approveDraft(messageId, user, { text, remember = false, sc
   const conversation = q.get('SELECT * FROM conversations WHERE id = ?', draft.conversation_id);
   const finalText = (text ?? draft.body).trim();
   if (!finalText) throw new HttpError(400, 'The reply cannot be empty.');
-  const edited = finalText !== draft.body.trim();
   const before = parseJson(draft.meta);
+  const edited = finalText !== draft.body.trim() || !!before.redrafted; // rewritten on the team's say-so counts as corrected: it is the pattern to follow
   // The draft was read in English. It goes to the guest in their language: the assistant's own
   // wording if nothing was changed, a translation of the agreed text otherwise.
   const inLanguage = before.sendIn && translate !== false && !english(before.sendIn);
@@ -826,6 +826,35 @@ export async function approveDraft(messageId, user, { text, remember = false, sc
   const message = q.get('SELECT * FROM messages WHERE id = ?', draft.id);
   await deliver(conversation, message);
   return { message, knowledgeId };
+}
+
+/**
+ * A team member tells the assistant what to change in a draft (or gives it the missing fact), and
+ * the assistant writes it again. `text` is the draft as it stands on their screen, if they edited it.
+ * Nothing is sent: the new draft waits for approval like the first.
+ */
+export async function redraftDraft(messageId, user, { instruction, text } = {}) {
+  const draft = q.get("SELECT * FROM messages WHERE id = ? AND status = 'pending'", messageId);
+  if (!draft) throw new HttpError(409, 'This draft has already been handled or replaced by a newer one.');
+  const note = String(instruction || '').trim().slice(0, 2000);
+  if (!note) throw new HttpError(400, 'Tell the assistant what to change.');
+  const conversation = q.get('SELECT * FROM conversations WHERE id = ?', draft.conversation_id);
+  const link = checkinLinkOf(conversation);
+  const current = String(text || '').trim() || draft.body;
+  let body;
+  try {
+    body = withLink(await llm.redraft(buildContext(conversation, { latest: '' }), withoutLink(current, link), withoutLink(note, link)), link);
+  } catch (e) {
+    console.error(`Redraft of message ${draft.id}: ${e.message}`);
+    throw new HttpError(502, 'The assistant could not rewrite it just now. Try again, or edit the reply yourself.');
+  }
+  const meta = parseJson(draft.meta);
+  delete meta.translated; // the wording in the guest's language no longer matches: it is translated again on sending
+  meta.redrafted = (meta.redrafted || 0) + 1;
+  if (q.run("UPDATE messages SET body = ?, meta = ? WHERE id = ? AND status = 'pending'", body.slice(0, 4000), JSON.stringify(meta), draft.id).changes === 0) throw new HttpError(409, 'This draft has already been handled or replaced by a newer one.');
+  audit(user.id, 'draft.redraft', `message ${draft.id}`);
+  emitConversation(conversation.id, 'draft', { messageId: draft.id });
+  return q.get('SELECT * FROM messages WHERE id = ?', draft.id);
 }
 
 /** Reject a draft. If the team writes their own reply it is sent in its place. */

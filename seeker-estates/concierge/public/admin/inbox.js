@@ -66,7 +66,21 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
   const asked = item.recentGuestMessages?.length ? item.recentGuestMessages : item.guestMessage ? [item.guestMessage] : [];
 
   const textId = uid('draft');
-  const textarea = autoGrow(h('textarea', { id: textId, class: 'draft-text', rows: 3, value: original }));
+  const textarea = autoGrow(h('textarea', { id: textId, class: 'draft-text', rows: 3, value: original, hidden: true }));
+  // The suggestion is shown to read first. To change it: edit the text, or tell the assistant what to change.
+  const preview = h('p', { class: 'pre draft-preview' }, original);
+  const editBtn = button('Edit', { icon: 'edit' });
+  const redraftBtn = draft.kind === 'scheduled' ? null : button('Ask the assistant to redraft', { icon: 'bot' });
+  const startEdit = () => { textarea.hidden = false; preview.hidden = true; editBtn.hidden = true; textarea.dispatchEvent(new Event('input')); textarea.focus(); };
+  editBtn.addEventListener('click', startEdit);
+  const note = autoGrow(h('textarea', { rows: 2, 'aria-label': 'What the assistant should change', placeholder: 'For example: "checkout is 10am, not 11" or "shorter, and offer to hold their luggage"' }));
+  const redo = button('Redraft', { variant: 'primary', icon: 'refresh', small: true });
+  const redraftBox = h('div', { class: 'redraft', hidden: true },
+    h('p', { class: 'label' }, icon('bot', 16), 'Tell the assistant what to change, or give it the missing information'),
+    note,
+    h('p', { class: 'hint' }, 'It writes the reply again for you to check. Nothing is sent until you approve.'),
+    h('div', { class: 'actions' }, redo, button('Cancel', { variant: 'ghost', small: true, onclick: () => { redraftBox.hidden = true; } })));
+  redraftBtn?.addEventListener('click', () => { redraftBox.hidden = false; note.focus(); });
   const remember = rememberControl({ label: property ? `Remember this answer, and any files added, for ${property}` : 'Remember this answer and any files added', propertyName: property, category: draft.category, text: () => textarea.value });
   remember.el.hidden = true;
   // The guest writes in another language: the draft is in English for the team, and goes out translated.
@@ -93,6 +107,7 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
   };
   textarea.addEventListener('input', sync);
   reset.addEventListener('click', () => {
+    textarea.hidden = true; preview.hidden = false; editBtn.hidden = false;
     textarea.value = original;
     textarea.dispatchEvent(new Event('input'));
     textarea.focus();
@@ -159,6 +174,22 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
     }
     return undefined;
   });
+  redo.addEventListener('click', () => busy(redo, async () => {
+    if (!note.value.trim()) return toast('Tell the assistant what to change.', { kind: 'error' });
+    try {
+      const out = await api(`/messages/${draft.id}/redraft`, { method: 'POST', body: { instruction: note.value.trim(), ...(edited() ? { text: textarea.value.trim() } : {}) } });
+      const fresh = approvalCard({ ...item, draft: out.draft }, { inThread, onDone });
+      fresh.dataset.key = card.dataset.key;
+      fresh.dataset.sig = card.dataset.sig;
+      card.replaceWith(fresh);
+      toast('Rewritten. Check it, then approve.', { kind: 'ok' });
+      inbox.refresh();
+    } catch (err) {
+      handleDraftError(err);
+    }
+    return undefined;
+  }));
+  note.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) redo.click(); });
   approve.addEventListener('click', () => send(true));
   asIs?.addEventListener('click', () => send(false));
   // Ctrl/Cmd+Enter sends from the text box.
@@ -191,19 +222,21 @@ export function approvalCard(item, { inThread = false, onDone = () => {} } = {})
       guestFiles),
     h('div', { class: 'draft' },
       h('div', { class: 'draft-head' },
-        h('label', { htmlFor: textId, class: 'label' }, scheduled ? 'Scheduled message (edit if needed)' : lang ? 'Drafted reply, in English (edit if needed)' : 'Drafted reply (edit if needed)'),
+        h('label', { htmlFor: textId, class: 'label' }, scheduled ? 'Scheduled message' : lang ? `Suggested reply, in English${draft.redrafted ? ' · rewritten' : ''}` : `Suggested reply${draft.redrafted ? ' · rewritten' : ''}`),
         scheduled ? chip(String(draft.summary || 'Scheduled').replace(/^Scheduled: /, ''), { icon: 'clock' }) : confidence ? chip(confidence.label, confidence) : null),
       news,
       draft.checkNote && h('p', { class: 'note check-note' }, icon('alert', 16), `The assistant is not sure this is still needed: ${draft.checkNote}`),
+      preview,
       textarea,
+      redraftBox,
       // The draft is written in the guest's language: read it in English before approving.
-      lang ? h('p', { class: 'hint' }, `The guest writes in ${lang}. Check and edit the reply here in English; it is translated into ${lang} when you send it. Links, times, numbers and codes are sent exactly as written.`)
+      lang ? h('p', { class: 'hint' }, `The guest writes in ${lang}. The reply is shown and changed here in English; it is translated into ${lang} when you send it. Links, times, numbers and codes are sent exactly as written.`)
         : !isEnglish(conversation.language) && translateControl(() => textarea.value, { label: 'Translate this reply to English' }),
       // Pictures and the video link of the knowledge entry the answer came from.
       attachmentsView(draft.attachments, { links: draft.links, label: 'Picture from the knowledge base', caption: 'Shown to the guest with this reply' }),
       attach.el,
       remember.el),
-    h('div', { class: 'actions' }, approve, asIs, reject, reset),
+    h('div', { class: 'actions' }, approve, editBtn, redraftBtn, reject, asIs, reset),
   );
   return card;
 }

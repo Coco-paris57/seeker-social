@@ -5,7 +5,7 @@ import QRCode from 'qrcode';
 import { config, SETTING_DEFAULTS } from '../config.js';
 import { q, getRaw, getSettings, setSetting, audit, parseJson } from '../db.js';
 import { createUser, endTeamSession, hashPassword, requireAdmin, requireUser, startTeamSession, currentUser, verifyPassword } from '../auth.js';
-import { english, toGuestLanguage, reassess, teamAttachments, answerTicket, approvalStats, approveDraft, closeTicket, previewTicketReply, propertyMode, rejectDraft, sendMessage, SENSITIVE_CATEGORIES, stageOf } from '../bot.js';
+import { english, toGuestLanguage, redraftDraft, reassess, teamAttachments, answerTicket, approvalStats, approveDraft, closeTicket, previewTicketReply, propertyMode, rejectDraft, sendMessage, SENSITIVE_CATEGORIES, stageOf } from '../bot.js';
 import { CATEGORIES } from '../llm.js';
 import { bus, emitAdmin, emitConversation, notifyTeam, vapidPublicKey } from '../notify.js';
 import { refreshTeamRecords, syncAll } from '../sync.js';
@@ -56,6 +56,7 @@ function messageOut(m, names = userNames()) {
     automatic: !!meta.auto, edited: !!meta.edited, original: meta.original || null, ticketId: meta.ticketId || null,
     deliveryError: meta.deliveryError || null, external: !!meta.external, learned: !!meta.learned, withheldReason: meta.withheldReason || null, checkNote: meta.checkNote || null,
     // A draft read in English that goes out in the guest's language; once sent, the English that was agreed.
+    redrafted: m.status === 'pending' ? meta.redrafted || 0 : 0,
     sendIn: m.status === 'pending' && meta.sendIn && !english(meta.sendIn) ? meta.sendIn : null, english: m.status === 'sent' ? meta.english || null : null,
     attachments: (m.role === 'guest' ? q.all('SELECT token, kind FROM files WHERE message_id = ?', m.id) : meta.attachments || []).map((a) => adminFile(a)), links: meta.links || [],
     authorName: names[m.created_by] || names[meta.approvedBy] || names[meta.answeredBy] || null,
@@ -204,6 +205,12 @@ admin.post('/messages/:id/approve', async (req, res) => {
   const { text, remember, scope, sensitive, attachments, translate } = req.body || {};
   const out = await approveDraft(Number(req.params.id), req.user, { text, remember: !!remember, scope, sensitive: setBool(sensitive), attachments, translate: translate !== false });
   res.json({ message: messageOut(out.message), knowledgeId: out.knowledgeId });
+});
+
+/** The assistant writes a waiting draft again from what the team member tells it. Nothing is sent. */
+admin.post('/messages/:id/redraft', async (req, res) => {
+  const m = await redraftDraft(Number(req.params.id), req.user, { instruction: req.body?.instruction, text: req.body?.text });
+  res.json({ draft: messageOut(m) });
 });
 
 admin.post('/messages/:id/reject', async (req, res) => {

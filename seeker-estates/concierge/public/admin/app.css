@@ -823,3 +823,8 @@ input[type="color"] { width: 64px; height: 44px; padding: 3px; border: 1.5px sol
 .fin-counted li { padding-bottom: 10px; border-bottom: 1px solid var(--line); }
 .fin-period { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 6px 0 0 30px; font-size: 14px; }
 .fin-period input { width: auto; }
+
+/* Approval: the suggestion to read, and the box for telling the assistant what to change */
+.draft-preview { margin: 4px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface); max-height: 50dvh; overflow: auto; }
+.redraft { margin-top: 10px; padding: 10px 12px; border: 1.5px dashed var(--line); border-radius: var(--radius-s); }
+.redraft > * + * { margin-top: 8px; }
