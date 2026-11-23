@@ -32,7 +32,7 @@ Run date D = 2026-11-23 (Monday, GMT). I read `data/policy.json` first. These ar
 
 | Item | Value | Source |
 |---|---|---|
-| Stay | 4 nights, **5 adults**, lead 18 d, made 22 Nov 21:54Z | Smoobu; PriceLabs `get_pms_reservations` |
+| Stay | 4 nights, lead 18 d, made 22 Nov 21:54Z | Smoobu; PriceLabs `get_pms_reservations` |
 | Room paid | **£488.35**, including VAT £81.39 (1/6). Ex-VAT £406.96, which is the PriceLabs `rental_revenue`. | Smoobu price-elements |
 | Cleaning | **£129** (P04's Airbnb cleaning is £142) | Smoobu price-details |
 | Commission | **£92.60 = 15.00% of £617.35** (room plus cleaning, so £19.35 of it is on cleaning). Barking has no booster, so nothing to flag. | Smoobu |
@@ -44,7 +44,7 @@ Run date D = 2026-11-23 (Monday, GMT). I read `data/policy.json` first. These ar
 - Three 10% layers (0.729) give **£488.43, which is £0.08 off**. No combination of 0-4 layers from {Mobile 10%, Genius 10/15/20%, Last Minute 10/15%, Early Booker, Domestic, occupancy 5/10%, Black Friday 30%} on any plan reconciles to the penny on £580. The searches covered Standard, NR, Weekly, Monthly and NR Weekly, with per-night and whole-stay rounding (`ch23s/stack.py`).
 - The 8p may come from a mid-day price set. P04's Airbnb listing shows such a set today (see §3), and PriceLabs `booked_price` reads 149 for 11 Dec, where Smoobu at 07:20Z read 148.
 - **Most likely stack: Mobile 10% x Genius L1 10% x one of Non-refundable 10% or Last Minute 10%** (lead 18 d is inside the 30-day Last Minute).
-  - There is no occupancy -5%. At 5 guests that fits the NR occupancy rule in policy (`non_refundable_rate`: 5 guests -0%).
+  - There is no occupancy -5%. That fits the NR occupancy rule in policy (`non_refundable_rate`) at this party size.
   - It is not Weekly (4 nights).
   - It is not Monthly: 0.8 x 0.81 = 0.648 does not fit, so the 24 Oct Monthly-plan problem did not happen this time.
   - **Which plan and which promotions: NOT CHECKED** (no extranet breakdown).
@@ -85,7 +85,7 @@ Run date D = 2026-11-23 (Monday, GMT). I read `data/policy.json` first. These ar
 
 ### 2. P06 Airbnb, two new stays: the hidden 0.765 tier is confirmed on P06, but the stays do not reconcile
 
-| Stay (3 adults) | Made (lead) | Room paid | Cleaning | Commission | Smoobu 22 Nov 07:20Z | Paid / Smoobu |
+| Stay | Made (lead) | Room paid | Cleaning | Commission | Smoobu 22 Nov 07:20Z | Paid / Smoobu |
 |---|---|---|---|---|---|---|
 | 29 Nov-2 Dec, 3 n | 22 Nov 18:24Z (7 d) | **£513.04** | £129 | £99.52 (15.5% of £642.04) | 286 + 271 + 304 = £861 | **0.5959** |
 | 3-6 Dec, 3 n | 22 Nov 22:13Z (11 d) | **£768.82** | £129 | £139.16 (15.5% of £897.82) | 323 + 358 + 359 = £1,040 | **0.7393** |
@@ -131,7 +131,7 @@ Run date D = 2026-11-23 (Monday, GMT). I read `data/policy.json` first. These ar
 
 | Item | Value | Source |
 |---|---|---|
-| Stay | Airbnb, **21-26 Dec, 5 nights**, 5 adults, made 22 Nov 10:48Z (lead 29 d) | Smoobu; PriceLabs `get_pms_reservations` |
+| Stay | Airbnb, **21-26 Dec, 5 nights**, made 22 Nov 10:48Z (lead 29 d) | Smoobu; PriceLabs `get_pms_reservations` |
 | Room / cleaning / commission | **£1,481.76** / £150 / £252.92 (**15.5%** of £1,631.76) | Smoobu price-elements |
 | Smoobu at booking | 394 + 419 + 410 + 415 + 420 = **£2,058** (push 21 Nov 19:37Z; next push 23 Nov 00:20Z) | Smoobu 22 Nov 07:20Z |
 | Fit | **£2,058 x 0.9 x 0.8 = £1,481.76 exactly.** That is the hidden 0.9 tier plus the 20% "Special offer". | `ch23s/p06fit.py` |
