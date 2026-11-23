@@ -325,6 +325,7 @@ export function openDb(file) {
   // Our commission is taken on the full net revenue, before cleaning: the default, and applied once to terms saved earlier.
   if (!db.prepare("SELECT 1 FROM settings WHERE key = 'fin_fee_before_cleaning'").get()) { db.exec('UPDATE property_terms SET cleaning_before = 0'); db.prepare("INSERT INTO settings(key, value) VALUES('fin_fee_before_cleaning', '1')").run(); }
   if (!has('expenses', 'bill')) db.exec('ALTER TABLE expenses ADD COLUMN bill INTEGER NOT NULL DEFAULT 0'); // 1 = a household bill of a flat we rent (council tax, energy, internet...)
+  if (!has('properties', 'fin_off_from')) db.exec('ALTER TABLE properties ADD COLUMN fin_off_from TEXT; ALTER TABLE properties ADD COLUMN fin_off_to TEXT;'); // Finance: months (YYYY-MM) for which the flat is left out; no end = until it is ticked again
   if (!has('properties', 'fin_same_as')) db.exec('ALTER TABLE properties ADD COLUMN fin_same_as INTEGER'); // Finance: a second listing of the same flat is counted with this one
   if (!has('properties', 'team_record')) db.exec("ALTER TABLE properties ADD COLUMN team_record TEXT");
   if (!has('reservations', 'extras')) db.exec("ALTER TABLE reservations ADD COLUMN extras TEXT NOT NULL DEFAULT '[]'");

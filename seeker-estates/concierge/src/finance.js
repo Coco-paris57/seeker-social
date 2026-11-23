@@ -94,6 +94,21 @@ export function setCleaning(list, month) {
   return saved;
 }
 
+/** Which flats are counted. `list` is [{ propertyId, off, from, to }]: off with a first month and, optionally, a last one. */
+export function setCounted(list) {
+  let changed = 0;
+  for (const x of Array.isArray(list) ? list : []) {
+    const id = Number(x.propertyId);
+    if (!q.get('SELECT 1 FROM properties WHERE id = ?', id)) continue;
+    if (!x.off) { changed += q.run('UPDATE properties SET fin_off_from = NULL, fin_off_to = NULL WHERE id = ? AND fin_off_from IS NOT NULL', id).changes; continue; }
+    if (!validMonth(x.from)) throw new HttpError(400, 'Choose the first month to leave the flat out.');
+    const to = x.to ? String(x.to) : null;
+    if (to && (!validMonth(to) || to < x.from)) throw new HttpError(400, 'The last month must be the same as the first month or later.');
+    changed += q.run('UPDATE properties SET fin_off_from = ?, fin_off_to = ? WHERE id = ?', x.from, to, id).changes;
+  }
+  return changed;
+}
+
 export function addExpense({ propertyId, date, amount, category, note, monthly, owner, bill }, userId) {
   const a = num(amount);
   if (!(a > 0) || a > 10_000_000) throw new HttpError(400, 'Enter the amount as a number above zero.');
@@ -115,7 +130,10 @@ function monthFigures(month) {
   const start = `${month}-01`;
   const end = `${nextMonth(month)}-01`;
   const days = nightsBetween(start, end);
-  const all = q.all('SELECT id, name, display_name, active, fin_same_as FROM properties ORDER BY COALESCE(position, 100000), name COLLATE NOCASE');
+  // A flat left out of Finance for a period (not ours yet, handed back, being refurbished) is not counted in those months.
+  const off = (p) => !!p.fin_off_from && p.fin_off_from <= month && (!p.fin_off_to || p.fin_off_to >= month);
+  const everything = q.all('SELECT id, name, display_name, active, fin_same_as, fin_off_from, fin_off_to FROM properties ORDER BY COALESCE(position, 100000), name COLLATE NOCASE');
+  const all = everything.filter((p) => !off(p));
   const ids = new Set(all.map((p) => p.id));
   const mainOf = (p) => (p.fin_same_as && ids.has(p.fin_same_as) && p.fin_same_as !== p.id ? p.fin_same_as : p.id);
   const properties = all.filter((p) => mainOf(p) === p.id);
@@ -180,13 +198,13 @@ function monthFigures(month) {
     rented: round(rows.filter((r) => r.model !== 'management').reduce((s, r) => s + r.profit, 0)),
     otherCosts: round(managed.reduce((s, r) => s + r.expenses + r.bills, 0) + general), // managed flats' own expenses and the business's general ones
   };
-  return { rows, totals, expenses };
+  return { rows, totals, expenses, excluded: everything.filter(off).map((p) => ({ id: p.id, name: p.name || p.display_name })) };
 }
 
 /** One month in full, with the twelve months up to it for the trend. */
 export function finance(month) {
   const m = validMonth(month) ? month : londonDate().slice(0, 7);
-  const { rows, totals, expenses } = monthFigures(m);
+  const { rows, totals, expenses, excluded } = monthFigures(m);
   const names = Object.fromEntries(q.all('SELECT id, name, display_name FROM properties').map((p) => [p.id, p.name || p.display_name]));
   const series = [];
   for (let i = -11; i <= 0; i++) {
@@ -197,6 +215,8 @@ export function finance(month) {
   return {
     month: m, today: londonDate().slice(0, 7), rows, totals, series, currency: '£',
     missingTerms: rows.filter((r) => !r.model).length,
+    excluded,
+    flats: q.all('SELECT id, name, display_name, fin_off_from, fin_off_to FROM properties WHERE active = 1 OR fin_off_from IS NOT NULL ORDER BY COALESCE(position, 100000), name COLLATE NOCASE').map((p) => ({ id: p.id, name: p.name || p.display_name, offFrom: p.fin_off_from || null, offTo: p.fin_off_to || null })),
     expenses: expenses.map((e) => ({ id: e.id, propertyId: e.property_id, propertyName: e.property_id ? names[e.property_id] || 'Removed property' : null, date: e.date, amount: e.amount, category: e.category, note: e.note, monthly: !!e.monthly, owner: !!e.owner, bill: !!e.bill })),
     properties: q.all('SELECT id, name, display_name FROM properties WHERE active = 1 ORDER BY COALESCE(position, 100000), name COLLATE NOCASE').map((p) => ({ id: p.id, name: p.name || p.display_name })),
     hasPrices: !!q.get('SELECT 1 FROM booking_money LIMIT 1'),

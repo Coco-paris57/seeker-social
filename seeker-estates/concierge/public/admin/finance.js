@@ -247,6 +247,44 @@ function flatChart(d) {
     h('p', { class: 'hint' }, 'Income is what the flat brings to us: net revenue on a rented flat; our commission and the cleaning charge on a managed one. VAT is left out, as it is passed on.'));
 }
 
+/** Which flats are counted: untick one to leave it out of every figure for a period. */
+function countedDialog(d) {
+  return openDialog({
+    title: 'Flats counted in Finance',
+    wide: true,
+    build: (close) => {
+      const rows = d.flats.map((f) => {
+        const on = check(f.name, { checked: !f.offFrom });
+        const from = h('input', { type: 'month', value: f.offFrom || d.month, 'aria-label': `First month to leave out ${f.name}` });
+        const to = h('input', { type: 'month', value: f.offTo || '', 'aria-label': `Last month to leave out ${f.name}` });
+        const period = h('div', { class: 'fin-period' }, h('span', null, 'Leave out from'), from, h('span', null, 'until'), to, h('span', { class: 'muted' }, '(empty = until ticked again)'));
+        const sync = () => { period.hidden = on.input.checked; };
+        on.input.addEventListener('change', sync);
+        sync();
+        return { f, on, from, to, el: h('li', null, on.wrap, period) };
+      });
+      const save = button('Save', { variant: 'primary', type: 'submit', icon: 'check' });
+      const form = h('form', { class: 'stack' },
+        h('p', { class: 'muted' }, 'Untick a flat to leave it out of the totals, charts and table for the months you choose, for example before you took it on, after you handed it back, or while it is closed for works. Its bookings and costs are kept and count again outside that period.'),
+        h('ul', { class: 'fin-counted' }, rows.map((r) => r.el)),
+        h('div', { class: 'actions' }, save, button('Cancel', { onclick: () => close() })));
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        busy(save, async () => {
+          try {
+            await api('/finance/counted', { method: 'PUT', body: { flats: rows.map((r) => ({ propertyId: r.f.id, off: !r.on.input.checked, from: r.from.value, to: r.to.value || null })) } });
+            toast('Saved', { kind: 'ok' });
+            close(true);
+          } catch (err) {
+            showError(err);
+          }
+        });
+      });
+      return form;
+    },
+  });
+}
+
 function expenseDialog(d) {
   return openDialog({
     title: 'Add an expense',
@@ -333,6 +371,9 @@ export function financeView() {
     fill(body,
       !d.hasPrices && h('p', { class: 'note' }, icon('info', 16), 'No prices have come in from Smoobu yet. They arrive with the next sync, a few minutes after the app starts.'),
       d.missingTerms > 0 && h('p', { class: 'note' }, icon('alert', 16), `${d.missingTerms} ${d.missingTerms === 1 ? 'flat has' : 'flats have'} no terms yet, so ${d.missingTerms === 1 ? 'its' : 'their'} profit is shown without rent or commission. Press "Set terms" in the table.`),
+      h('p', { class: 'fin-counted-bar' },
+        button('Flats counted', { icon: 'check', small: true, onclick: async () => { if (await countedDialog(d)) load(); } }),
+        d.excluded.length > 0 ? h('span', { class: 'muted' }, ` Left out of ${monthName(d.month)}: ${d.excluded.map((x) => x.name).join(', ')}.`) : h('span', { class: 'muted' }, ' All flats are counted this month.')),
       h('div', { class: 'tiles' },
         tile(money(t.revenue, c), 'Guests paid', `${t.bookings} ${t.bookings === 1 ? 'booking' : 'bookings'} · ${t.nights} nights`),
         tile(money(t.fees, c), 'Booking-site fees', t.revenue ? `${Math.round((t.fees / t.revenue) * 100)}% of what guests paid` : null),

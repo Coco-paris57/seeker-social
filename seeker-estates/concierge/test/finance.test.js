@@ -154,3 +154,25 @@ test('bills of a rented flat are costs shown on their own; the portfolio says wh
   assert.ok(s.commission >= 210 && s.cleaningMargin >= 110);
   assert.equal(Math.round((s.commission + s.cleaningMargin + s.rented - s.otherCosts) * 100), Math.round(d.totals.profit * 100)); // the sources add up to the profit
 });
+
+test('a flat can be left out of finance for a period, and counts again outside it', async () => {
+  const flat = q.get("SELECT id FROM properties WHERE name = 'Rented flat'").id;
+  const has = async (m) => (await month(m)).rows.some((r) => r.propertyId === flat);
+  const before = (await month('2027-02')).totals.profit;
+  assert.ok(await has('2027-02'));
+  assert.equal((await team('PUT', '/api/admin/finance/counted', { flats: [{ propertyId: flat, off: true, from: '2027-02', to: '2027-01' }] })).status, 400);
+  assert.equal((await team('PUT', '/api/admin/finance/counted', { flats: [{ propertyId: flat, off: true, from: '2027-02', to: '2027-03' }] })).json.changed, 1);
+  const d = await month('2027-02');
+  assert.ok(!d.rows.some((r) => r.propertyId === flat));
+  assert.deepEqual(d.excluded.map((x) => x.name), ['Rented flat']);
+  assert.equal(Math.round((before - d.totals.profit) * 100), 31000); // its 310 profit is no longer in the total
+  assert.ok(d.flats.some((f) => f.id === flat && f.offFrom === '2027-02' && f.offTo === '2027-03'));
+  assert.ok(!(await has('2027-03')) && (await has('2027-01')) && (await has('2027-04')));
+  // No end month: left out until it is ticked again.
+  await team('PUT', '/api/admin/finance/counted', { flats: [{ propertyId: flat, off: true, from: '2027-02' }] });
+  assert.ok(!(await has('2028-06')));
+  await team('PUT', '/api/admin/finance/counted', { flats: [{ propertyId: flat, off: false }] });
+  assert.ok(await has('2027-02'));
+  assert.equal((await month('2027-02')).totals.profit, before);
+  assert.equal((await client(srv.base)('PUT', '/api/admin/finance/counted', { flats: [] })).status, 401);
+});

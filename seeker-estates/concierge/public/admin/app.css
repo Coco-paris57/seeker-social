@@ -816,3 +816,10 @@ input[type="color"] { width: 64px; height: 44px; padding: 3px; border: 1.5px sol
 .fin-flat-total { margin: 10px 0 0; font-size: 15px; }
 .fin-flat-pie .hint { margin: 4px 0 0; }
 .fin-empty { margin: 0; }
+
+/* Finance: which flats are counted */
+.fin-counted-bar { margin: 0 0 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.fin-counted { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; max-height: 55vh; overflow: auto; }
+.fin-counted li { padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.fin-period { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 6px 0 0 30px; font-size: 14px; }
+.fin-period input { width: auto; }
