@@ -1,6 +1,7 @@
 // Seeker Concierge team app: start-up, sign-in state, navigation, routing and live updates.
 import { api, fill, h, icon, loading, onUnauthorized, refreshTimes, showError, toast, openDialog } from './lib.js';
-import { inbox, session } from './state.js';
+import { inbox, isAdmin, session } from './state.js';
+import { financeView } from './finance.js';
 import { authView } from './auth.js';
 import { inboxView } from './inbox.js';
 import { conversationsView } from './conversations.js';
@@ -28,6 +29,7 @@ const NAV = [
   { key: 'properties', href: '#/properties', label: 'Properties', icon: 'shield' },
   { key: 'knowledge', href: '#/knowledge', label: 'Knowledge', icon: 'book' },
   { key: 'insights', href: '#/insights', label: 'Insights', icon: 'eye' }, // side menu on wide screens; on phones it is under Properties and Settings
+  { key: 'finance', href: '#/finance', label: 'Finance', icon: 'bolt', admin: true }, // administrators only
 ];
 
 /** Hash to screen. Notifications link to #/inbox, #/tickets/<id> and #/conversations/<id>. */
@@ -41,6 +43,7 @@ function parseRoute() {
       ? { nav: 'properties', view: `property-${num}`, title: 'Property', params: { id: num } }
       : { nav: 'properties', view: 'properties', title: 'Properties', params: {} };
     case 'insights': return { nav: 'insights', view: 'insights', title: 'Insights', params: {} };
+    case 'finance': return { nav: 'finance', view: 'finance', title: 'Finance', params: {} };
     case 'calendar': return { nav: 'calendar', view: 'calendar', title: 'Calendar', params: {} };
     case 'todo': return { nav: 'todo', view: 'todo', title: 'To do', params: {} };
     case 'tidy': return { nav: 'knowledge', view: 'tidy', title: 'Weekly tidy-up', params: {} };
@@ -59,6 +62,7 @@ function createView(route) {
   if (route.view === 'properties') return propertiesView();
   if (route.view.startsWith('property-')) return propertyView(route.params);
   if (route.view === 'insights') return insightsView();
+  if (route.view === 'finance') return financeView();
   if (route.view === 'dashboard') return dashboardView();
   if (route.view === 'calendar') return calendarView();
   if (route.view === 'todo') return todoView();
@@ -82,7 +86,7 @@ let unreadBadge = null; // count of unread chats on the Chats tab
 
 function buildShell() {
   const badges = [];
-  const links = NAV.map((item) => {
+  const links = NAV.filter((item) => !item.admin || isAdmin()).map((item) => {
     const badge = ['inbox', 'conversations', 'todo'].includes(item.key) ? h('span', { class: 'badge', hidden: true }) : null;
     if (item.key === 'todo') todoBadge = badge;
     if (item.key === 'inbox') badges.push(badge);
@@ -97,7 +101,7 @@ function buildShell() {
       title: 'More', sheet: true,
       build: (close) => h('div', { class: 'more-sheet' },
         h('button', { type: 'button', class: 'btn btn-secondary more-search', onclick: () => { close(); openPalette(); } }, icon('search', 18), h('span', null, 'Search guests, properties and screens')),
-        h('div', { class: 'more-grid' }, [['#/calendar', 'bookmark', 'Calendar'], ['#/properties', 'shield', 'Properties'], ['#/knowledge', 'book', 'Knowledge'], ['#/insights', 'eye', 'Insights'], ['#/scheduled', 'clock', 'Scheduled messages'], ['#/extras', 'plus', 'Paid extras']]
+        h('div', { class: 'more-grid' }, [['#/calendar', 'bookmark', 'Calendar'], ['#/properties', 'shield', 'Properties'], ['#/knowledge', 'book', 'Knowledge'], ['#/insights', 'eye', 'Insights'], ...(isAdmin() ? [['#/finance', 'bolt', 'Finance']] : []), ['#/scheduled', 'clock', 'Scheduled messages'], ['#/extras', 'plus', 'Paid extras']]
           .map(([href, i, label]) => h('a', { class: 'more-tile', href, onclick: () => close() }, h('span', { class: 'more-icon' }, icon(i, 20)), label))),
         h('a', { class: 'more-user', href: '#/settings', onclick: () => close() }, h('span', { class: 'more-icon' }, icon('user', 20)), h('span', null, h('strong', null, session.user.name), h('small', null, 'Settings · notifications · sign out')), icon('chevron', 16))),
     });

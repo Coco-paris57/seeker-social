@@ -136,6 +136,40 @@ CREATE TABLE IF NOT EXISTS care (          -- things worth doing for a guest (a 
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS care_open ON care(status, reservation_id);
+CREATE TABLE IF NOT EXISTS booking_money (   -- the price of each Smoobu booking, for Finance. No guest details; kept after the booking itself is cleared
+  id INTEGER PRIMARY KEY,          -- Smoobu reservation id
+  property_id INTEGER NOT NULL,
+  arrival TEXT NOT NULL,
+  departure TEXT NOT NULL,
+  channel TEXT,
+  price REAL NOT NULL DEFAULT 0,        -- what the guest paid
+  commission REAL NOT NULL DEFAULT 0,   -- the booking site's fee, included in the price
+  cancelled INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT
+);
+CREATE INDEX IF NOT EXISTS booking_money_property ON booking_money(property_id, arrival);
+CREATE TABLE IF NOT EXISTS property_terms (  -- how a flat earns for us, from a month onwards
+  id INTEGER PRIMARY KEY,
+  property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+  from_month TEXT NOT NULL,        -- 'YYYY-MM'; '2000-01' = from the start
+  model TEXT NOT NULL,             -- 'rent' (we rent it and keep the revenue) | 'management' (a share of net revenue) | 'none'
+  rent REAL NOT NULL DEFAULT 0,    -- per month
+  percent REAL NOT NULL DEFAULT 0, -- our commission on net revenue
+  UNIQUE(property_id, from_month)
+);
+CREATE TABLE IF NOT EXISTS expenses (
+  id INTEGER PRIMARY KEY,
+  property_id INTEGER,             -- NULL = the business as a whole
+  date TEXT NOT NULL,              -- 'YYYY-MM-DD'; for a monthly expense, when it starts
+  amount REAL NOT NULL,
+  category TEXT NOT NULL DEFAULT 'Other',
+  note TEXT NOT NULL DEFAULT '',
+  monthly INTEGER NOT NULL DEFAULT 0,   -- 1 = repeats every month
+  ended TEXT,                      -- 'YYYY-MM': last month a monthly expense applies
+  owner INTEGER NOT NULL DEFAULT 0,     -- 1 = recharged to the owner of a managed flat
+  created_by INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 CREATE TABLE IF NOT EXISTS history_read (reservation_id INTEGER PRIMARY KEY);   -- past Smoobu threads already studied
 CREATE TABLE IF NOT EXISTS history_samples (message_id INTEGER PRIMARY KEY, body TEXT NOT NULL);   -- replies the team wrote by hand in the past: for the writing style
 CREATE TABLE IF NOT EXISTS examples (   -- replies a team member approved, kept so the assistant learns each property

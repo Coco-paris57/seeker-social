@@ -741,3 +741,24 @@ input[type="color"] { width: 64px; height: 44px; padding: 3px; border: 1.5px sol
 .care > h3 { margin: 14px 0 8px; }
 .care-box { margin-top: 10px; }
 .care-card .card-title { flex-wrap: wrap; }
+
+/* Finance */
+.fin-month { min-width: 9.5em; text-align: center; font-family: var(--font-display, inherit); }
+.tile-good .tile-value { color: var(--green-700, #1f5a45); }
+.tile-bad .tile-value, .fin-neg { color: var(--danger, #b3261e); }
+.fin-chart { display: grid; grid-template-columns: repeat(12, 1fr); gap: 6px; align-items: end; height: 190px; }
+.fin-col { display: grid; grid-template-rows: 1fr auto; gap: 6px; height: 100%; padding: 4px 2px; border: 0; border-radius: 8px; background: none; cursor: pointer; font: inherit; color: inherit; min-width: 0; }
+.fin-col:hover, .fin-col.is-current { background: rgba(0, 0, 0, 0.05); }
+.fin-bars { display: flex; align-items: flex-end; justify-content: center; gap: 3px; height: 100%; }
+.fin-bar { display: block; width: 42%; max-width: 18px; border-radius: 4px 4px 0 0; }
+.fin-net { background: #9bb8a9; }
+.fin-profit { background: #1f5a45; }
+.fin-loss { background: #b3261e; }
+.fin-label { font-size: 11.5px; color: var(--muted, #5b665f); white-space: nowrap; overflow: hidden; }
+.fin-key { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin: 0 4px 0 10px; }
+.fin-legend .fin-key:first-child { margin-left: 0; }
+.fin-table td, .fin-table th { white-space: nowrap; }
+.fin-table td, .fin-table th { padding-left: 8px; padding-right: 8px; }
+.fin-table tfoot th, .fin-table tfoot td { border-top: 2px solid var(--line); font-weight: 600; }
+.section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.section-head h2 { margin: 0; }

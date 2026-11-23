@@ -18,6 +18,7 @@ import { syncThread } from '../thread-sync.js';
 import { learnStyle, setStyle, styleStatus } from '../style.js';
 import { historyStatus, startHistory } from '../history.js';
 import { careFor, stayCare } from '../care.js';
+import { addExpense, finance, removeExpense, setTerms } from '../finance.js';
 import { importGuestMessage } from './webhooks.js';
 import { createTask, refreshTasks, todoCount, TASK_TYPES } from '../tasks.js';
 import { offersFor } from '../bot.js';
@@ -1016,6 +1017,28 @@ admin.put('/style', requireAdmin, (req, res) => {
   setStyle(req.body?.style);
   audit(req.user.id, 'style.edit');
   res.json({ ...styleStatus(), history: historyStatus() });
+});
+
+// --- finance: what each flat brings in (administrators only) -------------------------------
+
+admin.get('/finance', requireAdmin, (req, res) => res.json(finance(String(req.query.month || ''))));
+
+admin.put('/finance/terms/:propertyId', requireAdmin, (req, res) => {
+  setTerms(Number(req.params.propertyId), req.body || {});
+  audit(req.user.id, 'finance.terms', `property ${req.params.propertyId}: ${req.body?.model}`);
+  res.json({ ok: true });
+});
+
+admin.post('/finance/expenses', requireAdmin, (req, res) => {
+  const id = addExpense(req.body || {}, req.user.id);
+  audit(req.user.id, 'finance.expense', `expense ${id}`);
+  res.status(201).json({ id });
+});
+
+admin.delete('/finance/expenses/:id', requireAdmin, (req, res) => {
+  removeExpense(Number(req.params.id), String(req.query.month || ''));
+  audit(req.user.id, 'finance.expense_remove', `expense ${req.params.id}`);
+  res.json({ ok: true });
 });
 
 // --- branding: this agency's name, colours and logo ---------------------------------------

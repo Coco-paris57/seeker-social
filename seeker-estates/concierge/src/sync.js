@@ -1,5 +1,6 @@
 // Copies apartments and reservations from Smoobu into the local database.
 // Only the fields the concierge needs are kept: no email, phone, price or payment data.
+import { backfillMoney, recordMoney } from './finance.js';
 import { emitAdmin } from './notify.js';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -75,6 +76,7 @@ export function upsertReservation(b) {
     else q.run('INSERT OR REPLACE INTO blocks(id, property_id, arrival, departure) VALUES(?, ?, ?, ?)', b.id, property.id, b.arrival, b.departure);
     return;
   }
+  recordMoney(b, property.id, bookingState(b));
   const first = b.firstname || '';
   const last = b.lastname || '';
   const checkin = checkinFromNotice(b.notice);
@@ -147,6 +149,7 @@ export async function syncReservations() {
   q.run('DELETE FROM blocks');
   for (const b of bookings) upsertReservation(b);
   emitAdmin('todo'); // open calendars and to-do lists show the change at once
+  backfillMoney().catch((e) => console.error(`Finance: older bookings: ${e.message}`));
   // Guest names are not needed once a stay is long over.
   q.run('DELETE FROM reservations WHERE departure < ?', addDays(today, -120));
   return { reservations: bookings.length };
