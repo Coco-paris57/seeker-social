@@ -133,3 +133,24 @@ test('cleaning amounts can be entered for several flats at once, without touchin
   assert.equal((await team('PUT', '/api/admin/finance/cleaning', { flats: [{ propertyId: flat, cost: 'lots' }] })).json.saved, 1); // not a number counts as nothing
   assert.equal((await client(srv.base)('PUT', '/api/admin/finance/cleaning', { flats: [] })).status, 401);
 });
+
+test('bills of a rented flat are costs shown on their own; the portfolio says where the profit comes from', async () => {
+  const flat = q.get("SELECT id FROM properties WHERE name = 'Clean flat'").id; // managed 20%, cleaning 70 cost / 125 charge
+  await team('PUT', '/api/admin/finance/cleaning', { month: '2027-02', flats: [{ propertyId: flat, cost: '70', charge: '125' }] });
+  const rentedFlat = q.insert("INSERT INTO properties(smoobu_id, name, display_name, qr_token) VALUES(903, 'Rented flat', 'Rented flat', 'qr-rented')");
+  upsertReservation({ ...booking(70, '2027-02-05', '2027-02-09', 1500, 200), apartment: { id: 903 } });
+  await team('PUT', `/api/admin/finance/terms/${rentedFlat}`, { model: 'rent', rent: '800', cleaningCost: '50' });
+  assert.equal((await team('POST', '/api/admin/finance/expenses', { date: '2027-01-01', amount: '100', category: 'Council tax', monthly: true, bill: true })).status, 400); // a bill belongs to a flat
+  await team('POST', '/api/admin/finance/expenses', { propertyId: rentedFlat, date: '2027-01-01', amount: '100', category: 'Council tax', monthly: true, bill: true });
+  await team('POST', '/api/admin/finance/expenses', { propertyId: rentedFlat, date: '2027-02-10', amount: '40', category: 'Supplies' });
+  const d = await month('2027-02');
+  const r = d.rows.find((x) => x.propertyId === rentedFlat);
+  assert.deepEqual([r.net, r.rent, r.cleaningCost, r.bills, r.expenses, r.profit], [1300, 800, 50, 100, 40, 310]);
+  assert.equal(d.totals.bills, 100);
+  assert.ok(d.expenses.some((e) => e.bill && e.category === 'Council tax') && d.expenses.some((e) => !e.bill && e.category === 'Supplies'));
+  const m = d.rows.find((x) => x.propertyId === flat);
+  assert.deepEqual([m.commission, m.cleaningMargin], [210, 110]); // what we keep: 20% of 1050, and 2 x (125 - 70)
+  const s = d.totals.sources;
+  assert.ok(s.commission >= 210 && s.cleaningMargin >= 110);
+  assert.equal(Math.round((s.commission + s.cleaningMargin + s.rented - s.otherCosts) * 100), Math.round(d.totals.profit * 100)); // the sources add up to the profit
+});

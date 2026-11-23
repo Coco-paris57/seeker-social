@@ -94,14 +94,15 @@ export function setCleaning(list, month) {
   return saved;
 }
 
-export function addExpense({ propertyId, date, amount, category, note, monthly, owner }, userId) {
+export function addExpense({ propertyId, date, amount, category, note, monthly, owner, bill }, userId) {
   const a = num(amount);
   if (!(a > 0) || a > 10_000_000) throw new HttpError(400, 'Enter the amount as a number above zero.');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date || ''))) throw new HttpError(400, 'Choose the date of the expense.');
   const pid = propertyId ? Number(propertyId) : null;
   if (pid && !q.get('SELECT 1 FROM properties WHERE id = ?', pid)) throw new HttpError(404, 'Property not found.');
-  return q.insert('INSERT INTO expenses(property_id, date, amount, category, note, monthly, owner, created_by) VALUES(?, ?, ?, ?, ?, ?, ?, ?)',
-    pid, date, round(a), String(category || 'Other').trim().slice(0, 40) || 'Other', String(note || '').trim().slice(0, 200), monthly ? 1 : 0, owner && pid ? 1 : 0, userId ?? null);
+  if (bill && !pid) throw new HttpError(400, 'Choose the flat this bill is for.');
+  return q.insert('INSERT INTO expenses(property_id, date, amount, category, note, monthly, owner, bill, created_by) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    pid, date, round(a), String(category || 'Other').trim().slice(0, 40) || 'Other', String(note || '').trim().slice(0, 200), monthly ? 1 : 0, owner && pid && !bill ? 1 : 0, bill ? 1 : 0, userId ?? null);
 }
 
 /** Expenses that fall in a month: one-off ones dated in it, and monthly ones running at the time. */
@@ -141,6 +142,7 @@ function monthFigures(month) {
     const mine = expenses.filter((e) => memberIds.includes(e.property_id));
     const ours = mine.filter((e) => !e.owner).reduce((s, e) => s + e.amount, 0);
     const owners = mine.filter((e) => e.owner).reduce((s, e) => s + e.amount, 0);
+    const bills = mine.filter((e) => e.bill && !e.owner).reduce((s, e) => s + e.amount, 0); // household bills of a flat we rent: part of our costs, shown on their own
     if (!members.some((x) => x.active) && !bookings && !mine.length) continue;
     const net = revenue - fees;
     const rent = model === 'rent' ? t.rent : 0;
@@ -156,7 +158,8 @@ function monthFigures(month) {
       propertyId: p.id, name: p.name || p.display_name, model,
       listings: members.filter((x) => x.id !== p.id).map((x) => ({ id: x.id, name: x.name || x.display_name })), percent: model === 'management' ? t.percent : null, termsFrom: t?.from_month && t.from_month !== '2000-01' ? t.from_month : null,
       bookings, nights, occupancy: Math.min(100, Math.round((nights / days) * 100)), revenue: round(revenue), fees: round(fees), net: round(net),
-      rent: round(rent), commission: round(commission), vat: round(vat), expenses: round(ours), ownerExpenses: round(owners),
+      rent: round(rent), commission: round(commission), vat: round(vat), expenses: round(ours - bills), bills: round(bills), ownerExpenses: round(owners),
+      cleaningMargin: model === 'management' ? round(cleaningCharge - cleaningCost) : null, // what we keep from cleaning on a managed flat: the charge to the owner less what the clean costs us
       cleans, cleaningCost: round(cleaningCost), cleaningCharge: round(cleaningCharge), cleaningCostEach: t?.cleaning_cost || 0, cleaningChargeEach: t?.cleaning_charge || 0, cleaningVat: round(cleaningVat), cleaningBefore: t ? !!t.cleaning_before : false,
       ownerPayout: model === 'management' ? round(net - commission - vat - cleaningCharge - owners) : null, profit: round(profit),
     });
@@ -165,9 +168,17 @@ function monthFigures(month) {
   const sum = (k) => round(rows.reduce((s, r) => s + (r[k] || 0), 0));
   const nights = rows.reduce((s, r) => s + r.nights, 0);
   const totals = {
-    revenue: sum('revenue'), fees: sum('fees'), net: sum('net'), rent: sum('rent'), commission: sum('commission'), vat: sum('vat'), cleaningCost: sum('cleaningCost'), cleaningCharge: sum('cleaningCharge'), expenses: round(sum('expenses') + general), general: round(general),
+    revenue: sum('revenue'), fees: sum('fees'), net: sum('net'), rent: sum('rent'), commission: sum('commission'), vat: sum('vat'), cleaningCost: sum('cleaningCost'), cleaningCharge: sum('cleaningCharge'), expenses: round(sum('expenses') + general), bills: sum('bills'), general: round(general),
     ownerPayout: sum('ownerPayout'), profit: round(sum('profit') - general), nights, bookings: rows.reduce((s, r) => s + r.bookings, 0),
     occupancy: rows.length ? Math.min(100, Math.round((nights / (days * rows.length)) * 100)) : 0, adr: nights ? round(sum('revenue') / nights) : 0,
+  };
+  // Where the profit comes from across all flats: commission, the margin on cleaning, and the margin on flats we rent.
+  const managed = rows.filter((r) => r.model === 'management');
+  totals.sources = {
+    commission: round(managed.reduce((s, r) => s + r.commission, 0)),
+    cleaningMargin: round(managed.reduce((s, r) => s + r.cleaningMargin, 0)),
+    rented: round(rows.filter((r) => r.model !== 'management').reduce((s, r) => s + r.profit, 0)),
+    otherCosts: round(managed.reduce((s, r) => s + r.expenses + r.bills, 0) + general), // managed flats' own expenses and the business's general ones
   };
   return { rows, totals, expenses };
 }
@@ -186,7 +197,7 @@ export function finance(month) {
   return {
     month: m, today: londonDate().slice(0, 7), rows, totals, series, currency: '£',
     missingTerms: rows.filter((r) => !r.model).length,
-    expenses: expenses.map((e) => ({ id: e.id, propertyId: e.property_id, propertyName: e.property_id ? names[e.property_id] || 'Removed property' : null, date: e.date, amount: e.amount, category: e.category, note: e.note, monthly: !!e.monthly, owner: !!e.owner })),
+    expenses: expenses.map((e) => ({ id: e.id, propertyId: e.property_id, propertyName: e.property_id ? names[e.property_id] || 'Removed property' : null, date: e.date, amount: e.amount, category: e.category, note: e.note, monthly: !!e.monthly, owner: !!e.owner, bill: !!e.bill })),
     properties: q.all('SELECT id, name, display_name FROM properties WHERE active = 1 ORDER BY COALESCE(position, 100000), name COLLATE NOCASE').map((p) => ({ id: p.id, name: p.name || p.display_name })),
     hasPrices: !!q.get('SELECT 1 FROM booking_money LIMIT 1'),
   };
