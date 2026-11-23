@@ -5,6 +5,7 @@ import { q, getRaw, setRaw } from './db.js';
 import { smoobu } from './smoobu.js';
 import { addDays, londonDate, HttpError } from './util.js';
 
+const VAT = 0.2; // UK VAT, charged to the owner on top of our management commission
 const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
 const round = (n) => Math.round(n * 100) / 100;
 const nightsBetween = (a, b) => Math.round((Date.parse(`${b}T12:00:00Z`) - Date.parse(`${a}T12:00:00Z`)) / 86400_000);
@@ -101,20 +102,21 @@ function monthFigures(month) {
     const net = revenue - fees;
     const rent = model === 'rent' ? t.rent : 0;
     const commission = model === 'management' ? (net * t.percent) / 100 : 0;
+    const vat = commission * VAT; // the owner pays it; it is passed on to HMRC, so it is not our profit
     // Rented by us: we keep the net revenue and pay the rent. Managed: we keep the commission; the rest is the owner's.
     const profit = model === 'management' ? commission - ours : net - rent - ours;
     rows.push({
       propertyId: p.id, name: p.name || p.display_name, model, percent: model === 'management' ? t.percent : null, termsFrom: t?.from_month && t.from_month !== '2000-01' ? t.from_month : null,
       bookings, nights, occupancy: Math.min(100, Math.round((nights / days) * 100)), revenue: round(revenue), fees: round(fees), net: round(net),
-      rent: round(rent), commission: round(commission), expenses: round(ours), ownerExpenses: round(owners),
-      ownerPayout: model === 'management' ? round(net - commission - owners) : null, profit: round(profit),
+      rent: round(rent), commission: round(commission), vat: round(vat), expenses: round(ours), ownerExpenses: round(owners),
+      ownerPayout: model === 'management' ? round(net - commission - vat - owners) : null, profit: round(profit),
     });
   }
   const general = expenses.filter((e) => !e.property_id).reduce((s, e) => s + e.amount, 0);
   const sum = (k) => round(rows.reduce((s, r) => s + (r[k] || 0), 0));
   const nights = rows.reduce((s, r) => s + r.nights, 0);
   const totals = {
-    revenue: sum('revenue'), fees: sum('fees'), net: sum('net'), rent: sum('rent'), commission: sum('commission'), expenses: round(sum('expenses') + general), general: round(general),
+    revenue: sum('revenue'), fees: sum('fees'), net: sum('net'), rent: sum('rent'), commission: sum('commission'), vat: sum('vat'), expenses: round(sum('expenses') + general), general: round(general),
     ownerPayout: sum('ownerPayout'), profit: round(sum('profit') - general), nights, bookings: rows.reduce((s, r) => s + r.bookings, 0),
     occupancy: rows.length ? Math.min(100, Math.round((nights / (days * rows.length)) * 100)) : 0, adr: nights ? round(sum('revenue') / nights) : 0,
   };

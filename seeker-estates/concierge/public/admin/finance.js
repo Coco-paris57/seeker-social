@@ -18,13 +18,13 @@ function termsDialog(row, month) {
     build: (close) => {
       const model = h('select', null,
         h('option', { value: 'rent', selected: row.model === 'rent' || !row.model }, 'We rent it (we pay rent and keep the revenue)'),
-        h('option', { value: 'management', selected: row.model === 'management' }, 'We manage it for an owner (commission on net revenue)'),
+        h('option', { value: 'management', selected: row.model === 'management' }, 'We manage it for an owner (commission + VAT on net revenue)'),
         h('option', { value: 'none' }, 'Not set'));
       const rent = h('input', { type: 'text', inputMode: 'decimal', value: row.rent || '', placeholder: 'For example 2400' });
       const percent = h('input', { type: 'text', inputMode: 'decimal', value: row.percent ?? '', placeholder: 'For example 18' });
       const from = h('select', null, h('option', { value: '' }, 'From the start (all months)'), h('option', { value: month }, `From ${monthName(month)} onwards`));
       const rentField = field('Rent we pay each month (£)', rent);
-      const percentField = field('Our commission (% of net revenue)', percent, { hint: 'Net revenue is what the guest paid minus the booking site\'s fee.' });
+      const percentField = field('Our commission (% of net revenue, + VAT)', percent, { hint: 'Enter the percentage before VAT. Net revenue is what the guest paid minus the booking site\'s fee. VAT at 20% is added on top of the commission and comes off the owner\'s payout; it is not counted in our profit.' });
       const sync = () => { rentField.hidden = model.value !== 'rent'; percentField.hidden = model.value !== 'management'; };
       model.addEventListener('change', sync);
       sync();
@@ -114,7 +114,7 @@ export function financeView() {
     const c = d.currency;
     const peak = Math.max(1, ...d.series.map((s) => Math.abs(s.profit)), ...d.series.map((s) => s.net));
     const bar = (value, cls) => { const b = h('span', { class: `fin-bar ${cls}` }); b.style.height = `${Math.max(2, Math.round((Math.abs(value) / peak) * 100))}%`; return b; };
-    const terms = (r) => (r.model === 'rent' ? 'Rented' : r.model === 'management' ? `Managed · ${r.percent}%` : 'Not set');
+    const terms = (r) => (r.model === 'rent' ? 'Rented' : r.model === 'management' ? `Managed · ${r.percent}% + VAT` : 'Not set');
     const edit = (r) => button(r.model ? 'Edit' : 'Set terms', { small: true, variant: r.model ? 'ghost' : 'primary', icon: 'edit', onclick: async () => { if (await termsDialog(r, d.month)) load(); } });
     const cell = (v, cls) => h('td', { class: cls || null }, v);
     const removeBtn = (e) => {
@@ -155,12 +155,12 @@ export function financeView() {
               h('th', { scope: 'row' }, h('a', { href: `#/properties/${r.propertyId}` }, r.name)),
               cell(r.model ? terms(r) : chip('Not set', { tone: 'warn' })),
               cell(`${r.nights} (${r.occupancy}%)`), cell(money(r.revenue, c)), cell(money(r.fees, c)), cell(money(r.net, c)),
-              cell(r.model === 'rent' ? `${money(r.rent, c)} rent` : r.model === 'management' ? `${money(r.commission, c)} ours` : '–'),
+              cell(r.model === 'rent' ? `${money(r.rent, c)} rent` : r.model === 'management' ? `${money(r.commission, c)} ours + ${money(r.vat, c)} VAT` : '–'),
               cell(r.expenses || r.ownerExpenses ? `${money(r.expenses, c)}${r.ownerExpenses ? ` + ${money(r.ownerExpenses, c)} owner` : ''}` : '–'),
               cell(r.ownerPayout == null ? '–' : money(r.ownerPayout, c)),
               cell(h('strong', null, money(r.profit, c)), r.profit < 0 ? 'fin-neg' : 'fin-pos'), cell(edit(r))))),
             h('tfoot', null, h('tr', null, h('th', { scope: 'row' }, 'Total'), cell(''), cell(`${t.nights} (${t.occupancy}%)`), cell(money(t.revenue, c)), cell(money(t.fees, c)), cell(money(t.net, c)),
-              cell(`${money(t.rent, c)} rent · ${money(t.commission, c)} ours`), cell(`${money(t.expenses, c)}${t.general ? ` (${money(t.general, c)} general)` : ''}`), cell(money(t.ownerPayout, c)),
+              cell(`${money(t.rent, c)} rent · ${money(t.commission, c)} ours + ${money(t.vat, c)} VAT`), cell(`${money(t.expenses, c)}${t.general ? ` (${money(t.general, c)} general)` : ''}`), cell(money(t.ownerPayout, c)),
               cell(h('strong', null, money(t.profit, c)), t.profit < 0 ? 'fin-neg' : 'fin-pos'), cell('')))))
           : h('p', { class: 'muted' }, 'No flats yet.'),
         h('p', { class: 'hint' }, 'A booking that runs across two months is shared between them night by night. Cancelled bookings are left out. Future months show what is booked so far.')),

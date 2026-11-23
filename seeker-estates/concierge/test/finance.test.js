@@ -47,7 +47,7 @@ test('finance: revenue and fees come from Smoobu prices, shared across months by
   await team('PUT', `/api/admin/finance/terms/${ctx.propertyId}`, { model: 'management', percent: '20', from: '2026-04' });
   await team('POST', '/api/admin/finance/expenses', { propertyId: ctx.propertyId, date: '2026-04-02', amount: '40', category: 'Maintenance', owner: true });
   r = (await month('2026-04')).rows[0]; // net 200 - 30 = 170
-  assert.deepEqual([r.net, r.commission, r.ownerExpenses, r.ownerPayout, r.expenses, r.profit], [170, 34, 40, 96, 30, 4]);
+  assert.deepEqual([r.net, r.commission, r.vat, r.ownerExpenses, r.ownerPayout, r.expenses, r.profit], [170, 34, 6.8, 40, 89.2, 30, 4]); // VAT is on top of the commission, paid by the owner, not our profit
   assert.equal((await month('2026-03')).rows[0].model, 'rent'); // earlier months keep the old terms
 
   // The booking's price is kept after the guest's details are cleared, and a later cancellation removes it from the figures.
