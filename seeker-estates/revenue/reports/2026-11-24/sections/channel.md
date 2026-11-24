@@ -57,7 +57,7 @@ Run date D = 2026-11-24 (Tuesday, GMT). I read `data/policy.json` first. These a
 | **Paid per £100 Smoobu** | **£88.14** (VAT incl.), £73.45 ex-VAT. Net after 15%: **£74.92** (guest x 0.85, as in the table in §7), or £71.99 if the full commission incl. the cleaning share is taken off the room. | |
 
 - The cancelled stay was the best-paying Booking.com stay per £100 Smoobu since the 24 Oct cut (P04 10-14 Dec £84.20; P11 27-30 Nov £77.18 / £74.10).
-- **4-7 Dec is now open in Smoobu at 312 / 332 / 271 = £915, min 2** (+19.0% vs £769 at booking; Reyhan's 4-6 Dec min 2 DSO at 21:18:56Z, 32 min before the cancellation reached Smoobu's clock, is a min-stay change only. Corentin to confirm or revert).
+- **4-7 Dec is now open in Smoobu at 312 / 332 / 271 = £915, min 2** (+19.0% vs £769 at booking). Reyhan's 4-6 Dec min 2 DSO at 21:18:56Z, about 33 min after the cancellation (about 20:46Z), is a min-stay change only; P12 was pushed at 21:20Z. Corentin to confirm or revert.
   - Booking.com Standard would be ceil(x1.15) = 359 + 382 + 312 = **£1,053**. With the same 0.765 stack it would pay £805.55. Booking.com display: NOT CHECKED (WAF).
   - Airbnb sells it live: **4-7 Dec room £699.97 = 0.765 x £915** (lead 10, 07:28:23Z) and 4-6 Dec £492.66 = 0.765 x £644 (07:26:03Z). Net at 15.5%: £591.47 for 4-7 Dec, above the £553.62 the cancelled Booking.com stay would have netted.
 
@@ -71,7 +71,7 @@ Run date D = 2026-11-24 (Tuesday, GMT). I read `data/policy.json` first. These a
 | Booked since +15% (18 Nov) | 2 / 2 confirmed | 7 | £1,027.08 | £216.39 |
 
 - **This verifies the Dispatcher's 27 / 16 / 11.** Cancellation rate: **11 of 27 = 40.7% by count**, 41 of 111 nights = 36.9%, 41.7% of room value.
-- P12 accounts for 5 of the 11 cancellations (3-7 Dec, 4-7 Dec, 4-8 Dec, 11-13 Dec, plus 20-23 Nov on P04 is the other Mile End-era pair); Mile End and Camden together are 9 of 11.
+- By flat: P12 4 of the 11 cancellations (3-7 Dec, 4-8 Dec, 4-7 Dec, 11-13 Dec), P11 4, P13 2, P04 1. Mile End and Camden together are 8 of 11.
 - Pace over 30.74 days (24 Oct 13:38Z to 24 Nov 07:19Z): **0.88 a day gross, 0.52 confirmed** (yesterday 0.91 / 0.57).
 - **No new Booking.com booking.** None made after 22 Nov 21:54Z (Smoobu modified-since list; PriceLabs `get_pms_reservations` 23-24 Nov).
 - P11 27-30 Nov (Booking.com) shows a Smoobu "modification" at 23 Nov 15:21:12 Smoobu clock. Room £538.73, cleaning £149 and commission £123.79 are unchanged; what changed is NOT CHECKED.
@@ -260,7 +260,7 @@ Airbnb-only flats need no correction: P01 -35.9%, P05 -13.3%, P06 -46.8%, P09 -2
    - Setting: Airbnb host 551951609 > listing 1455876748739910219 > Calendar: block 24 Nov-5 Jan now, or unlist. Then map it to 3562176.
 3. **High: Scott Ellis Gardens on Airbnb at 0.72x, Special offer still on.** -£274.12 to -£370.44 per 3-night card (£237.42 / £238.14 / £176.22 of that is the visible 20% Special offer).
    - Corentin to keep or end it: Airbnb > listing 1823298025501355473 > Pricing > Discounts > New listing promotion.
-   - **New: Smoobu blocks on Scott Ellis 29 Nov-9 Dec (extended 23 Nov about 09:58Z), plus 6 Jan and 12 Jan**; 5 Jan freed. 11 nights closed, worth £3,880 at yesterday's Smoobu. Not in policy: **Corentin to confirm or remove (Smoobu > Calendar > 3588993).**
+   - **New: Smoobu blocks on Scott Ellis 29 Nov-9 Dec (extended 23 Nov about 09:58Z), plus 6 Jan and 12 Jan**; 5 Jan freed. 11 nights newly closed, worth £3,880 at yesterday's Smoobu (5 Jan, £330, reopened). Not in policy: **Corentin to confirm or remove (Smoobu > Calendar > 3588993).**
 4. **High: Booking.com cancellations at 40.7% (11 of 27) since 24 Oct; P12 4-7 Dec lost £677.79 room.** That stay paid £88.14 per £100 Smoobu (net £74.92), the best since the cut (£886 list x 0.765, size only). Confirmed pace is down to 0.52 a day. No new Booking.com booking.
    - The nights are open at Smoobu £915 (+19%) and selling on Airbnb at £699.97 room (0.765). Booking.com Standard should read £1,053: NOT CHECKED (WAF).
    - Reyhan's P12 4-6 Dec min 2 DSO: Corentin to confirm or revert.
