@@ -201,7 +201,7 @@ Expected = Smoobu x policy discounts (Airbnb 0% markup; P20's own last-minute 15
 | Ref | Channel | Stay (lead) | Search guests | Smoobu rate | Expected | Displayed room | Gap | Flag | Source |
 |---|---|---|---|---|---|---|---|---|---|
 | P11 | Booking.com (new, 25 Nov) | 25-27 Nov, 2 n (0) | - | £420 at booking (£436 / £395 alternatives) | £484 Standard | **£280.67 paid** | -42.0% | size only (stack is policy); no exact x1.10 / x1.15 fit | Smoobu price elements; PriceLabs reservations |
-| P04 | Booking.com | 10-14 Dec | - | £642 (open again) | £740 Standard | cancelled (was £488.35) | - | - | Smoobu modified-since |
+| P04 | Booking.com | 10-14 Dec | - | £642 (open again) | £741 Standard | cancelled (was £488.35) | - | - | Smoobu modified-since |
 | P04 synced 1657 | Airbnb | 2-3 Dec, 1 n (6) | 2 | £403 (PL £424) | £403.00 | £324.36 | -19.5% | FLAG | p04_0203dec 07:24:32Z |
 | P04 synced 1657 | Airbnb | 6-9 Dec (10) | 2 | £490 (PL £523) | £490.00 | £400.09 | -18.3% | FLAG (follows PL) | p04_0609dec 07:24:35Z |
 | P04 synced 1657 | Airbnb | 10-13 Dec (14) | 2 | £495 (PL £486) | £495.00 | £371.78 | -24.9% | FLAG | p04_1013dec 07:24:42Z |
