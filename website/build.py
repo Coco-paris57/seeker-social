@@ -118,7 +118,7 @@ Key facts (page updated {datetime.date.today():%d %B %Y}):
 - {F['homes']} homes: 18 across London and 1 in Kings Langley, near Warner Bros. Studio Tour London.
 - {F['reviews']} guest reviews, {F['booking_score']} on Booking.com, {F['occupancy']} average occupancy.
 - Booking direct on {u}/book/ is {F['direct_discount']} below Airbnb and Booking.com for the same home.
-- Landlord fees: fully managed {P['managed_fee']}% + VAT, mid-term {P['midterm_fee']}% + VAT, guaranteed rent quoted per property, £0 set-up.
+- Landlord fees: fully managed {P['managed_fee']}% + VAT of net revenue (guest payments minus Airbnb/Booking.com fees), mid-term {P['midterm_fee']}% + VAT, guaranteed rent quoted per property, £0 set-up.
 - Contact: {C.EMAIL} · WhatsApp {C.PHONE} · {C.COMPANY_LEGAL}
 
 ## Guests

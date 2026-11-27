@@ -41,8 +41,8 @@
       var midNights = 365 - C.shortCap;
       var midRev = marketRent * C.midPremium[i] * 12 * (midNights / 365) * C.midOcc[i];
       var gross = shortRev + midRev;
-      var fee = gross * C.fee;
       var platform = shortRev * C.platformShort + midRev * C.platformMid;
+      var fee = (gross - platform) * C.fee; // our fee is on net revenue, after platform fees
       var running = B.running * 12;
       return { gross: gross, fee: fee, platform: platform, running: running, net: gross - fee - platform - running };
     });

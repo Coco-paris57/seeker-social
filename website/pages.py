@@ -30,7 +30,7 @@ FAQ_OWNER = [
     ("Is short letting legal in London?",
      "In Greater London, a home can be let as short-term accommodation for up to 90 nights in a calendar year without planning permission, provided the conditions in the law are met. We build every plan around that: short stays up to the limit, then furnished mid-term stays of a month or more for the rest of the year. General information, not legal advice."),
     ("What does it cost?",
-     f"Fully managed is {P['managed_fee']}% of booking revenue + VAT, with no set-up fee. Mid-term-only management is {P['midterm_fee']}% + VAT. Guaranteed rent has no fee at all: you receive a fixed monthly rent. Full details are on our <a href=\"~/pricing/\">pricing page</a>."),
+     f"Fully managed is {P['managed_fee']}% + VAT of net revenue: what guests pay, minus the Airbnb, Booking.com or payment fees. There is no set-up fee. Mid-term-only management is {P['midterm_fee']}% + VAT. Guaranteed rent has no fee at all: you receive a fixed monthly rent. Full details are on our <a href=\"~/pricing/\">pricing page</a>."),
     ("Who pays for cleaning, utilities and repairs?",
      "Guests pay a cleaning fee on each short stay, which covers turnover cleaning and fresh linen. On the managed plans the owner covers utilities, Wi-Fi and council tax, and repairs beyond small fixes are agreed with you first. On guaranteed rent, we cover the running costs."),
     ("Do I need permission from my lender, freeholder or insurer?",
@@ -499,7 +499,7 @@ def plans_html(ctx):
     <h3>Fully managed</h3>
     <p class="for">Short stays up to 90 nights a year, mid-term stays the rest. The most income.</p>
     <div class="price">{P['managed_fee']}%<small> + VAT</small></div>
-    <p class="price-note">of booking revenue · {P['setup_fee']} set-up fee</p>
+    <p class="price-note">of net revenue, after Airbnb &amp; Booking.com fees · {P['setup_fee']} set-up fee</p>
     <ul>
       <li>{icon('check')} Everything in Mid-term lets</li>
       <li>{icon('check')} Listing on Airbnb, Booking.com &amp; direct</li>
@@ -664,7 +664,7 @@ def landlords():
          "serviceType": "Short-let and mid-term property management", "provider": {"@id": C.SITE_URL + "/#org"},
          "areaServed": {"@type": "City", "name": "London"},
          "offers": [
-             {"@type": "Offer", "name": "Fully managed", "description": f"{P['managed_fee']}% of booking revenue + VAT"},
+             {"@type": "Offer", "name": "Fully managed", "description": f"{P['managed_fee']}% + VAT of net revenue (guest payments minus platform fees)"},
              {"@type": "Offer", "name": "Mid-term lets", "description": f"{P['midterm_fee']}% of rent + VAT"},
              {"@type": "Offer", "name": "Guaranteed rent", "description": "Fixed monthly rent, no management fee"}]},
         faq_schema(FAQ_OWNER), crumbs_schema(ctx, [("", "Home"), ("landlords/", "For landlords")])]
@@ -711,6 +711,28 @@ def pricing():
     <div class="table-scroll"><table class="compare">
       <thead><tr><th>Cost</th><th class="us">Fully managed</th><th>Mid-term lets</th><th>Guaranteed rent</th></tr></thead>
       <tbody>{trs}</tbody></table></div>
+  </div>
+</section>
+<section class="section section--sand">
+  <div class="wrap split">
+    <div class="reveal">
+      <span class="eyebrow">How your payout works</span>
+      <h2>Our fee comes after <em>the platforms take theirs.</em></h2>
+      <p class="lead">On the fully managed plan we charge {P['managed_fee']}% + VAT of net revenue: what the guest paid, minus the Airbnb, Booking.com or payment fees. You never pay our fee on money the platforms keep.</p>
+      <p>Cleaning is then paid from the cleaning fee the guest already paid, and any maintenance or other costs are deducted at cost, with receipts, on your monthly statement.</p>
+    </div>
+    <div class="card reveal">
+      <span class="eyebrow">Example booking</span>
+      <table class="breakdown"><tbody>
+        <tr><td>Guest pays, including an £80 cleaning fee</td><td>£1,000</td></tr>
+        <tr><td>Airbnb / Booking.com fees (e.g. 15%)</td><td>− £150</td></tr>
+        <tr class="total"><td>Net revenue</td><td>£850</td></tr>
+        <tr><td>Seeker fee: {P['managed_fee']}% + VAT of £850</td><td>− £{round(850 * P['managed_fee'] / 100 * 1.2)}</td></tr>
+        <tr><td>Cleaning (covered by the guest's cleaning fee)</td><td>− £80</td></tr>
+        <tr class="total"><td>To you, before any maintenance or other costs</td><td>£{850 - round(850 * P['managed_fee'] / 100 * 1.2) - 80}</td></tr>
+      </tbody></table>
+      <p class="muted" style="margin-top:12px;font-size:.9em">Illustration only. Platform fees vary by channel; direct bookings have only card fees.</p>
+    </div>
   </div>
 </section>
 <section class="section section--white">
@@ -777,13 +799,13 @@ def calculator():
         </div>
         <table class="breakdown"><tbody>
           <tr><td>Estimated booking revenue (a year)</td><td data-out="gross">—</td></tr>
-          <tr><td>Seeker fee ({P['managed_fee']}% + VAT)</td><td data-out="fee">—</td></tr>
-          <tr><td>Platform &amp; payment fees</td><td data-out="platform">—</td></tr>
+          <tr><td>Airbnb, Booking.com &amp; payment fees</td><td data-out="platform">—</td></tr>
+          <tr><td>Seeker fee ({P['managed_fee']}% + VAT of net revenue)</td><td data-out="fee">—</td></tr>
           <tr><td>Utilities, Wi-Fi, council tax, consumables</td><td data-out="running">—</td></tr>
           <tr class="total"><td>Net to you (a year, mid-point)</td><td data-out="net">—</td></tr>
         </tbody></table>
         <details><summary>How we estimate this</summary>
-          <p>Short stays up to {K['shortCap']} nights a year (we assume {K['shortNights'][0]}–{K['shortNights'][1]} nights sold), furnished mid-term stays for the rest of the year at {int(K['midPremium'][0] * 100 - 100)}–{int(K['midPremium'][1] * 100 - 100)}% above an unfurnished long-let rent with {int(K['midOcc'][0] * 100)}–{int(K['midOcc'][1] * 100)}% occupancy. Cleaning is paid by guests and excluded. The long let assumes a {int(K['longVoid'] * 100)}% void allowance and a 12% + VAT agency fee. Figures are before tax and are estimates, not a guarantee of income.</p>
+          <p>Short stays up to {K['shortCap']} nights a year (we assume {K['shortNights'][0]}–{K['shortNights'][1]} nights sold), furnished mid-term stays for the rest of the year at {int(K['midPremium'][0] * 100 - 100)}–{int(K['midPremium'][1] * 100 - 100)}% above an unfurnished long-let rent with {int(K['midOcc'][0] * 100)}–{int(K['midOcc'][1] * 100)}% occupancy. Our fee is charged on net revenue, after Airbnb, Booking.com and payment fees. Guests' cleaning fees pay for cleaning and are left out of both sides. The long let assumes a {int(K['longVoid'] * 100)}% void allowance and a 12% + VAT agency fee. Figures are before tax and are estimates, not a guarantee of income.</p>
         </details>
         <span data-calc-summary hidden></span>
         <a class="btn btn--clay" href="#enquire">Get my exact figure, free</a>

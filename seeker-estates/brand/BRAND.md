@@ -88,7 +88,7 @@ Real photos of our homes, bright and uncluttered; no stock people, no fake inter
 - WhatsApp: +44 7397 573367 → `https://wa.me/447397573367`. Email: corentin@seekerestates.com.
 
 ## 9. Facts we can say (confirmed Oct 2026)
-19 homes across London (+ Kings Langley near the Studio Tour) · 520+ guest reviews · 8.9 on Booking.com · 90% average occupancy · average stay 6 nights · book direct = 10% below Airbnb/Booking.com · ID-verified guests, security deposit, **public liability insured** · Fully managed 15% + VAT, mid-term 12% + VAT, guaranteed rent quoted per property, £0 set-up.
+19 homes across London (+ Kings Langley near the Studio Tour) · 520+ guest reviews · 8.9 on Booking.com · 90% average occupancy · average stay 6 nights · book direct = 10% below Airbnb/Booking.com · ID-verified guests, security deposit, **public liability insured** · Fully managed 15% + VAT of **net revenue** (guest payments minus Airbnb/Booking.com fees — never say "of booking revenue"), mid-term 12% + VAT, guaranteed rent quoted per property, £0 set-up.
 
 **Never say:** "fully insured"; anything about licensing or redress schemes; yield multiples ("double your rent"). Landlord posts end with "General information, not legal advice." Seeker Estates Ltd · Company no. 15310020.
 
