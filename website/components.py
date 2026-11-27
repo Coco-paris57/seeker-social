@@ -68,6 +68,14 @@ def wa_link(audience="guest", label=None, cls="wa-link"):
             f'aria-label="Message us on WhatsApp: {E(C.PHONE)}">{WHATSAPP_SVG}<span>{text}</span></a>')
 
 
+def wa_button(audience="guest", label="Chat on WhatsApp", cls="btn btn--ghost"):
+    """A full button that opens WhatsApp: most visitors (and most leads) prefer it to a form."""
+    if not C.WHATSAPP:
+        return ""
+    return (f'<a class="{cls} btn--wa" href="{wa_url(audience)}" target="_blank" rel="noopener" data-wa>'
+            f'{WHATSAPP_SVG}<span>{E(label)}</span></a>')
+
+
 def wa_float(audience):
     if not C.WHATSAPP:
         return ""
@@ -343,7 +351,7 @@ def mini_estimator(ctx):
 <p class="bookbar-note">Free and instant. No email needed to see your estimate.</p>"""
 
 
-def lead_form(ctx, kind="landlord", title="Get your free appraisal", button="Request my appraisal"):
+def lead_form(ctx, kind="landlord", title="Get your free appraisal", button="Request my appraisal", wa=None):
     beds = "".join(f'<option value="{k}"{" selected" if k == "2" else ""}>{v["label"]}</option>' for k, v in C.CALC["beds"].items())
     if kind == "landlord":
         extra = f"""
@@ -362,9 +370,10 @@ def lead_form(ctx, kind="landlord", title="Get your free appraisal", button="Req
     </select></label>
   <input type="hidden" name="estimate" data-calc-field="estimate">"""
     else:
-        extra = """
+        mid = ' selected' if wa == "monthly" else ""
+        extra = f"""
   <label class="field"><span>I'm a…</span>
-    <select class="select input" name="topic"><option>Guest with a booking question</option><option>Company booking a mid-term stay</option><option>Landlord / property owner</option><option>Other</option></select></label>
+    <select class="select input" name="topic"><option>Guest with a booking question</option><option{mid}>Company booking a mid-term stay</option><option>Landlord / property owner</option><option>Other</option></select></label>
   <label class="field"><span>Message</span><textarea class="input" name="message" required></textarea></label>"""
     phone_req = " required" if kind == "landlord" else ""
     return f"""<form class="form" data-lead="{kind}" novalidate>
@@ -379,6 +388,7 @@ def lead_form(ctx, kind="landlord", title="Get your free appraisal", button="Req
   <label class="consent"><input type="checkbox" name="consent" required> <span>I agree that {C.BRAND} may contact me about this enquiry. See our <a href="{ctx.url('privacy/')}">privacy policy</a>.</span></label>
   <button class="btn btn--clay btn--block" type="submit">{button}</button>
   <p class="form-status" role="status" aria-live="polite"></p>
+  {f'<div class="form-alt"><span>Prefer to chat? Most people reply faster on WhatsApp.</span>{wa_button(wa or ("owner" if kind == "landlord" else "guest"), "Message us on WhatsApp", "btn btn--ghost btn--block")}</div>' if C.WHATSAPP else ""}
 </form>"""
 
 

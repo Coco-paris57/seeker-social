@@ -1,7 +1,7 @@
 import json
 """Page content for the Seeker Estates website. Each function returns (path, html)."""
 import site_config as C
-from components import (E, Ctx, area_art, wa_link, bookbar, crumbs, crumbs_schema, cta_band, faq_block, faq_schema,
+from components import (E, Ctx, area_art, wa_link, wa_button, bookbar, crumbs, crumbs_schema, cta_band, faq_block, faq_schema,
                         gallery, icon, photo_img, photos, lead_form, lodging_schema, mini_estimator, org_schema, page, section_head)
 
 F = C.FACTS
@@ -191,7 +191,7 @@ def home():
         <h3>Your property, earning, without the work.</h3>
         <p>We furnish advice, list, price, clean, host and maintain. You get a monthly statement and a payout, or a fixed guaranteed rent.</p>
         <ul>
-          <li>{icon('check')} Fully managed from {P['managed_fee']}% + VAT, no set-up fee</li>
+          <li>{icon('check')} <a href="{ctx.url('pricing/')}">Fully managed from {P['managed_fee']}% + VAT</a>, no set-up fee</li>
           <li>{icon('check')} Guaranteed rent option: fixed income, no voids</li>
           <li>{icon('check')} Built around London's 90-night rule</li>
           <li>{icon('check')} Your lease read before anything is signed</li>
@@ -426,7 +426,7 @@ def mid_term():
     <span class="eyebrow">Furnished monthly stays · London</span>
     <h1>A London home for a month, <em>or six.</em></h1>
     <p class="lead">Furnished apartments with bills, Wi-Fi and council tax included in one monthly price. For relocations, project teams, insurance claims and anyone between homes.</p>
-    <div class="hero-actions"><a class="btn btn--clay" href="#enquire">Request a monthly quote</a><a class="btn btn--ghost" {BOOK}>Check dates online</a></div>
+    <div class="hero-actions"><a class="btn btn--clay" href="#enquire">Request a monthly quote</a>{wa_button("monthly", "Ask on WhatsApp")}<a class="btn btn--ghost" {BOOK}>Check dates online</a></div>
   </div>
 </section>
 
@@ -456,7 +456,7 @@ def mid_term():
         <li>{icon('check')}<div><strong>Company-friendly</strong><span>Invoices to companies and agents.</span></div></li>
       </ul>
     </div>
-    <div class="card reveal" id="enquire">{lead_form(ctx, kind="contact", title="Request a monthly quote", button="Send my request")}</div>
+    <div class="card reveal" id="enquire">{lead_form(ctx, kind="contact", title="Request a monthly quote", button="Send my request", wa="monthly")}</div>
   </div>
 </section>
 
@@ -555,8 +555,9 @@ def landlords():
       <p class="lead">We turn your home into a professionally run serviced apartment: furnished stays for guests and companies, managed end to end, inside London's rules. Or we pay you a fixed rent every month.</p>
       {mini_estimator(ctx)}
       <ul class="trust" style="margin-top:28px">
-        <li>{icon('check')} From {P['managed_fee']}% + VAT</li><li>{icon('check')} {P['setup_fee']} set-up</li><li>{icon('check')} {F['occupancy']} average occupancy</li>
+        <li>{icon('check')} <a href="{ctx.url('pricing/')}">From {P['managed_fee']}% + VAT</a></li><li>{icon('check')} {P['setup_fee']} set-up</li><li>{icon('check')} {F['occupancy']} average occupancy</li>
       </ul>
+      <div class="hero-actions" style="margin-top:24px">{wa_button("owner", "Ask us on WhatsApp")}<a class="btn btn--ghost" href="{ctx.url('pricing/')}#payout">See every fee {icon('arrow')}</a></div>
     </div>
     <div class="card reveal" id="enquire" style="box-shadow:var(--shadow)">
       {lead_form(ctx)}
@@ -570,7 +571,7 @@ def landlords():
   <div class="wrap">
     {section_head("Three ways to work with us", "Choose income, <em>or choose certainty.</em>", "All plans include the same team and the same standards. We'll recommend the right one for your property at the appraisal.")}
     {plans_html(ctx)}
-    <p class="small muted" style="margin-top:20px">Prices exclude VAT. Guests pay a cleaning fee on short stays. See <a href="{ctx.url('pricing/')}">full pricing</a> for who pays what.</p>
+    <div class="plans-foot"><p class="small muted">Prices exclude VAT. Our fee is charged on net revenue, after Airbnb and Booking.com fees.</p><a class="btn btn--ghost" href="{ctx.url('pricing/')}#payout">See every fee, with an example {icon('arrow')}</a></div>
   </div>
 </section>
 
@@ -713,7 +714,7 @@ def pricing():
       <tbody>{trs}</tbody></table></div>
   </div>
 </section>
-<section class="section section--sand">
+<section class="section section--sand" id="payout">
   <div class="wrap split">
     <div class="reveal">
       <span class="eyebrow">How your payout works</span>
@@ -808,7 +809,7 @@ def calculator():
           <p>Short stays up to {K['shortCap']} nights a year (we assume {K['shortNights'][0]}–{K['shortNights'][1]} nights sold), furnished mid-term stays for the rest of the year at {int(K['midPremium'][0] * 100 - 100)}–{int(K['midPremium'][1] * 100 - 100)}% above an unfurnished long-let rent with {int(K['midOcc'][0] * 100)}–{int(K['midOcc'][1] * 100)}% occupancy. Our fee is charged on net revenue, after Airbnb, Booking.com and payment fees. Guests' cleaning fees pay for cleaning and are left out of both sides. The long let assumes a {int(K['longVoid'] * 100)}% void allowance and a 12% + VAT agency fee. Figures are before tax and are estimates, not a guarantee of income.</p>
         </details>
         <span data-calc-summary hidden></span>
-        <a class="btn btn--clay" href="#enquire">Get my exact figure, free</a>
+        <div class="hero-actions"><a class="btn btn--clay" href="#enquire">Get my exact figure, free</a><a class="btn btn--light" href="{ctx.url('pricing/')}#payout">How our fee works</a></div>
       </div>
     </div>
   </div>
